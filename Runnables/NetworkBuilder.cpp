@@ -24,7 +24,6 @@ int main(int argc, char** argv) {
     new LoadDimacsGraph(shell);
     new DynamicToStaticTransferGraph(shell);
     new ReverseTransferGraph(shell);
-    new BenToDimacs(shell);
     new SaveDimacsGraph(shell);
 
     new ParseGTFS(shell);

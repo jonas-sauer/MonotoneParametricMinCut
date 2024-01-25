@@ -35,8 +35,6 @@ Runnables/BikeSharing
 Runnables/CH
 Runnables/DelayExperimentsShell
 Runnables/DemandMapServer
-Runnables/EvaluationShell
-Runnables/GraphServer
 Runnables/IsochroneShell
 Runnables/MultimodalCoverageShell
 Runnables/NetworkBuilder

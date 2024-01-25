@@ -14,9 +14,9 @@ allDebug: ShellsDebug MapServersDebug UnitTestsDebug
 allRelease: ShellsRelease MapServersRelease UnitTestsRelease
 
 #Shells
-ShellsDebug: AssignmentDebug BenchmarkShellDebug BikeSharingDebug CHDebug DelayExperimentsShellDebug EvaluationShellDebug IsochroneShellDebug MultimodalCoverageShellDebug NetworkBuilderDebug NetworkOrderShellDebug PartitionShellDebug QueriesShellDebug ULTRADebug UltraAssignmentDebug ULTRAExperimentsShellDebug UnrestrictedWalkingShellDebug ValidationShellDebug
+ShellsDebug: AssignmentDebug BenchmarkShellDebug BikeSharingDebug CHDebug DelayExperimentsShellDebug IsochroneShellDebug MultimodalCoverageShellDebug NetworkBuilderDebug NetworkOrderShellDebug PartitionShellDebug QueriesShellDebug ULTRADebug UltraAssignmentDebug ULTRAExperimentsShellDebug UnrestrictedWalkingShellDebug ValidationShellDebug
 
-ShellsRelease: AssignmentRelease BenchmarkShellRelease BikeSharingRelease CHRelease DelayExperimentsShellRelease EvaluationShellRelease IsochroneShellRelease MultimodalCoverageShellRelease NetworkBuilderRelease NetworkOrderShellRelease PartitionShellRelease QueriesShellRelease ULTRARelease UltraAssignmentRelease ULTRAExperimentsShellRelease UnrestrictedWalkingShellRelease ValidationShellRelease
+ShellsRelease: AssignmentRelease BenchmarkShellRelease BikeSharingRelease CHRelease DelayExperimentsShellRelease IsochroneShellRelease MultimodalCoverageShellRelease NetworkBuilderRelease NetworkOrderShellRelease PartitionShellRelease QueriesShellRelease ULTRARelease UltraAssignmentRelease ULTRAExperimentsShellRelease UnrestrictedWalkingShellRelease ValidationShellRelease
 
 AssignmentDebug:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o Assignment Assignment.cpp $(DYN_LIBRARIES)
@@ -47,12 +47,6 @@ DelayExperimentsShellDebug:
 
 DelayExperimentsShellRelease:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o DelayExperimentsShell DelayExperimentsShell.cpp $(DYN_LIBRARIES)
-
-EvaluationShellDebug:
-	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o EvaluationShell EvaluationShell.cpp $(DYN_LIBRARIES)
-
-EvaluationShellRelease:
-	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o EvaluationShell EvaluationShell.cpp $(DYN_LIBRARIES)
 
 IsochroneShellDebug:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o IsochroneShell IsochroneShell.cpp $(DYN_LIBRARIES)
@@ -121,9 +115,9 @@ ValidationShellRelease:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o ValidationShell ValidationShell.cpp $(DYN_LIBRARIES)
 
 #MapServers
-MapServersDebug: DemandMapServerDebug GraphServerDebug RaptorMapServerDebug
+MapServersDebug: DemandMapServerDebug RaptorMapServerDebug
 
-MapServersRelease: DemandMapServerRelease GraphServerRelease RaptorMapServerRelease
+MapServersRelease: DemandMapServerRelease RaptorMapServerRelease
 
 DemandMapServerDebug:
 	$(CC) -std=c++14 -fopenmp -Wno-deprecated-register $(OPTIMIZATION) $(RELEASE) -pthread -o mongoose.so -c ../MapServer/mongoose/mongoose.c
@@ -133,16 +127,6 @@ DemandMapServerDebug:
 DemandMapServerRelease:
 	$(CC) -std=c++14 -fopenmp -Wno-deprecated-register $(OPTIMIZATION) $(RELEASE) -pthread -o mongoose.so -c ../MapServer/mongoose/mongoose.c
 	$(CC) $(FLAGS) $(INCLUDE) $(LIBRARY_PATH) $(OPTIMIZATION) $(RELEASE) -o DemandMapServer DemandMapServer.cpp -pthread mongoose.so -ldl $(DYN_LIBRARIES)
-	rm mongoose.so
-
-GraphServerDebug:
-	$(CC) -std=c++14 -fopenmp -Wno-deprecated-register $(OPTIMIZATION) $(RELEASE) -pthread -o mongoose.so -c ../MapServer/mongoose/mongoose.c
-	$(CC) $(FLAGS) $(INCLUDE) $(LIBRARY_PATH) $(OPTIMIZATION) $(DEBUG) -o GraphServer GraphServer.cpp -pthread mongoose.so -ldl $(DYN_LIBRARIES)
-	rm mongoose.so
-
-GraphServerRelease:
-	$(CC) -std=c++14 -fopenmp -Wno-deprecated-register $(OPTIMIZATION) $(RELEASE) -pthread -o mongoose.so -c ../MapServer/mongoose/mongoose.c
-	$(CC) $(FLAGS) $(INCLUDE) $(LIBRARY_PATH) $(OPTIMIZATION) $(RELEASE) -o GraphServer GraphServer.cpp -pthread mongoose.so -ldl $(DYN_LIBRARIES)
 	rm mongoose.so
 
 RaptorMapServerDebug:

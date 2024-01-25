@@ -27,9 +27,6 @@ using WithReverseEdgesAndViaVertex = List<Attribute<ReverseEdge, Edge>, Attribut
 using WithReverseEdgesAndWeight = List<Attribute<ReverseEdge, Edge>, Attribute<Weight, int>>;
 using WithReverseEdgesAndCapacity = List<Attribute<ReverseEdge, Edge>, Attribute<Capacity, int>>;
 
-using StrasserGraph = StaticGraph<NoVertexAttributes, WithTravelTimeAndDistance>;
-using StrasserGraphWithCoordinates = StaticGraph<WithCoordinates, WithTravelTimeAndDistance>;
-
 using TransferGraph = StaticGraph<WithCoordinates, WithTravelTime>;
 using DynamicTransferGraph = DynamicGraph<WithCoordinates, WithTravelTime>;
 using TransferEdgeList = EdgeList<WithCoordinates, WithTravelTime>;

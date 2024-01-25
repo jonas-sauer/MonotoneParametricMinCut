@@ -79,29 +79,6 @@ public:
     }
 };
 
-class BenToDimacs : public ParameterizedCommand {
-
-public:
-    BenToDimacs(BasicShell& shell) :
-        ParameterizedCommand(shell, "benToDimacs", "Loads a graph from Ben's binary files and saves it in DIMACS format.") {
-        addParameter("Input file");
-        addParameter("Output file");
-        addParameter("Time factor", "1");
-        addParameter("Distance factor", "1");
-        addParameter("Coordinate factor", "1");
-    }
-
-    virtual void execute() noexcept {
-        StrasserGraphWithCoordinates graph;
-        Graph::fromStrasserBinary(getParameter("Input file"), graph, getParameter<double>("Time factor"), getParameter<double>("Distance factor"), getParameter<double>("Coordinate factor"));
-        Graph::printInfo(graph);
-        graph.printAnalysis();
-        const std::string outputFile = getParameter("Output file");
-        Graph::toDimacs(outputFile, graph, graph[TravelTime]);
-        graph.writeBinary(FileSystem::ensureExtension(outputFile, ".binary"));
-    }
-};
-
 class SaveDimacsGraph : public ParameterizedCommand {
 
 public:
