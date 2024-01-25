@@ -60,8 +60,8 @@ public:
         if (tokens.size() < 2) tokens.emplace_back(shell.ask("tex output file> "));
         if (tokens[1] == "") return;
         std::ofstream os(tokens[1]);
-        AssertMsg(os, "cannot open file: " << tokens[1]);
-        AssertMsg(os.is_open(), "cannot open file: " << tokens[1]);
+        Assert(os, "cannot open file: " << tokens[1]);
+        Assert(os.is_open(), "cannot open file: " << tokens[1]);
         int minX = intMax;
         int maxX = -intMax;
         int minY = 0;
@@ -311,8 +311,8 @@ public:
         }
         const double boxWidth = 1 / ((1.7 * columns.size()) + 0.3);
         std::ofstream os(tokens[1]);
-        AssertMsg(os, "cannot open file: " << tokens[1]);
-        AssertMsg(os.is_open(), "cannot open file: " << tokens[1]);
+        Assert(os, "cannot open file: " << tokens[1]);
+        Assert(os.is_open(), "cannot open file: " << tokens[1]);
         os << "\\newcommand{\\plotHeight}{6.5cm}\n"
            << "\\newcommand{\\plotWidth}{0.951\\textwidth}\n"
            << "\\newcommand{\\boxWidth}{" << boxWidth << "}\n"
@@ -469,9 +469,9 @@ public:
 
 private:
     inline double percentile(const std::vector<double>& sortedData, const double p) const noexcept {
-        AssertMsg(!sortedData.empty(), "Percentile is not defined for empty data sets!");
-        AssertMsg(p >= 0, "Percentile cannot be negative!");
-        AssertMsg(p <= 1, "Percentile cannot be greater than one!");
+        Assert(!sortedData.empty(), "Percentile is not defined for empty data sets!");
+        Assert(p >= 0, "Percentile cannot be negative!");
+        Assert(p <= 1, "Percentile cannot be greater than one!");
         if (sortedData.size() == 1) return sortedData.front();
         const double index = (sortedData.size() - 1) * p;
         const size_t lowerIndex = index;

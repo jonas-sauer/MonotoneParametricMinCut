@@ -287,7 +287,7 @@ public:
         arrivalTime(data.numberOfStops(), never),
         arrivalTimeByTrip(data.numberOfStops(), never),
         profiler(profilerTemplate) {
-        AssertMsg(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
+        Assert(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
         profiler.registerPhases({PHASE_CLEAR, PHASE_INITIALIZATION, PHASE_CONNECTION_SCAN, PHASE_FINAL_TRANSFERS});
         profiler.registerMetrics({METRIC_CONNECTIONS, METRIC_EDGES, METRIC_STOPS_BY_TRIP, METRIC_STOPS_BY_TRANSFER});
         profiler.initialize();
@@ -358,8 +358,8 @@ private:
         transferModule.arrivalByTrip(sourceVertex, sourceDepartureTime);
         transferModule.runInitialTransfers();
         for (const Vertex stop : transferModule.getReachedStops()) {
-            AssertMsg(data.isStop(stop), "Reached POI " << stop << " is not a stop!");
-            AssertMsg(transferModule.getDistance(stop) != INFTY, "Vertex " << stop << " was not reached!");
+            Assert(data.isStop(stop), "Reached POI " << stop << " is not a stop!");
+            Assert(transferModule.getDistance(stop) != INFTY, "Vertex " << stop << " was not reached!");
             arrivalTime[stop] = transferModule.getDistance(stop);
         }
 

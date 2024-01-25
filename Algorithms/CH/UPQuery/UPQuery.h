@@ -257,7 +257,7 @@ private:
         distance[vertex] = initialDistance;
         parent[vertex] = parentVertex;
         if constexpr (FOR_SWEEP) {
-            AssertMsg(upwardSweepGraph.externalToInternal(vertex) < upwardSweepGraph.graph.numVertices(), "Vertex is not in sweep graph! (original: "<< internalToOriginal(vertex) << ", CH: " << vertex << ", sweep: " << upwardSweepGraph.externalToInternal(vertex) << ")");
+            Assert(upwardSweepGraph.externalToInternal(vertex) < upwardSweepGraph.graph.numVertices(), "Vertex is not in sweep graph! (original: "<< internalToOriginal(vertex) << ", CH: " << vertex << ", sweep: " << upwardSweepGraph.externalToInternal(vertex) << ")");
             sweepStart = std::min(sweepStart, sweepStartOf[upwardSweepGraph.externalToInternal(vertex)]);
             if constexpr (UseTargetBuckets) {
                 bucketSources.insert(vertex);
@@ -269,7 +269,7 @@ private:
 
     inline void settle() noexcept {
         const Vertex u = Vertex(Q.extractFront() - &(dijkstraLabel[0]));
-        AssertMsg(u < graph[FORWARD].numVertices(), u << " is not a valid vertex!");
+        Assert(u < graph[FORWARD].numVertices(), u << " is not a valid vertex!");
         if constexpr (StallOnDemand) {
             for (Edge edge : graph[BACKWARD].edgesFrom(u)) {
                 const Vertex v = graph[BACKWARD].get(ToVertex, edge);
@@ -284,7 +284,7 @@ private:
             if (distance[v] > newDistance) {
                 Q.update(&dijkstraLabel[v]);
                 distance[v] = newDistance;
-                AssertMsg(parent[u] != int(noVertex), "Invalid parent!");
+                Assert(parent[u] != int(noVertex), "Invalid parent!");
                 parent[v] = parent[u];
             }
         }
@@ -326,11 +326,11 @@ private:
         }
 
         for (const Vertex vertex : bucketSources) {
-            AssertMsg(dijkstraLabel[vertex].distance[0] != never, "Reached vertex " << vertex << " has no distance set!");
+            Assert(dijkstraLabel[vertex].distance[0] != never, "Reached vertex " << vertex << " has no distance set!");
             for (const Edge edge : stopGraph.graph.edgesFrom(vertex)) {
                 const int newDistance = distance[vertex] + stopGraph.graph.get(Weight, edge);
                 const Vertex poi = stopGraph.graph.get(ToVertex, edge);
-                AssertMsg(stops.contains(poi), "POI " << poi << " is not a stop!");
+                Assert(stops.contains(poi), "POI " << poi << " is not a stop!");
                 check(poi);
                 if (newDistance < distance[poi]) {
                     distance[poi] = newDistance;
@@ -377,7 +377,7 @@ private:
         }
 
         for (const Vertex vertex : bucketSources) {
-            AssertMsg(parent[vertex] != int(noVertex), "Invalid parent!");
+            Assert(parent[vertex] != int(noVertex), "Invalid parent!");
             for (const Edge edge : targetGraph.graph.edgesFrom(vertex)) {
                 const int newDistance = distance[vertex] + targetGraph.graph.get(Weight, edge);
                 const Vertex poi = targetGraph.graph.get(ToVertex, edge);

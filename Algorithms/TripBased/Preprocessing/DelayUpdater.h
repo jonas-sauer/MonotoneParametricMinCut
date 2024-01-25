@@ -395,7 +395,7 @@ public:
     }
 
     inline void applyNextUpdate(const bool allowDepartureDelays) noexcept {
-        AssertMsg(nextLogEntry < updateLog.size(), "No update log entries left!");
+        Assert(nextLogEntry < updateLog.size(), "No update log entries left!");
         applyUpdate(updateLog[nextLogEntry], allowDepartureDelays);
         nextLogEntry++;
     }
@@ -412,7 +412,7 @@ public:
     }
 
     inline int nextUpdateFinishTime() const noexcept {
-        AssertMsg(nextLogEntry < updateLog.size(), "No update log entries left!");
+        Assert(nextLogEntry < updateLog.size(), "No update log entries left!");
         return updateLog[nextLogEntry].finishTime;
     }
 

@@ -26,39 +26,38 @@ public:
         elements.reserve(size);
     }
 
-    inline void push_back(const ElementType& element) {
+    inline void push_back(const ElementType& element) noexcept {
         elements.emplace_back(element);
         siftUp(size() - 1);
     }
 
     template<typename... ARGS>
-    inline void emplace_back(ARGS&&... args) {
+    inline void emplace_back(ARGS&&... args) noexcept {
         elements.emplace_back(args...);
         siftUp(size() - 1);
     }
 
-    inline void remove_min() {
-        Assert(!empty());
+    inline void remove_min() noexcept {
+        Assert(!empty(), "Trying to extract element from an empty heap!");
         siftDownHole(0);
     }
 
-    inline ElementType pop_min() {
-        Assert(!empty());
+    inline ElementType pop_min() noexcept {
+        Assert(!empty(), "Trying to extract element from an empty heap!");
         ElementType result = std::move(elements[0]);
         siftDownHole(0);
         return result;
     }
 
-    inline void decreaseKey(const size_t i) {
-        Assert(i >= 0);
-        Assert(i < elements.size());
-        Assert((left(i) >= elements.size()) || (!less(elements[left(i)], elements[i])));
-        Assert((right(i) >= elements.size()) || (!less(elements[right(i)], elements[i])));
+    inline void decreaseKey(const size_t i) noexcept {
+        Assert(i < elements.size(), "Invalid element!");
+        Assert((left(i) >= elements.size()) || (!less(elements[left(i)], elements[i])), "Element " << i << " is larger than its left child!");
+        Assert((right(i) >= elements.size()) || (!less(elements[right(i)], elements[i])), "Element " << i << " is larger than its right child!");
         siftUp(i);
     }
 
     template<typename Range>
-    inline void build(const Range& range) {
+    inline void build(const Range& range) noexcept {
         clear();
         for (const ElementType& element : range) {
             elements.emplace_back(element);
@@ -68,17 +67,17 @@ public:
         }
     }
 
-    inline void clear() {elements.clear();}
-    inline size_t size() const {return elements.size();}
-    inline bool empty() const {return elements.empty();}
-    inline ElementType& min() {return elements[0];}
-    inline const ElementType& min() const {return elements[0];}
-    inline ElementType& front() {return elements[0];}
-    inline const ElementType& front() const {return elements[0];}
-    inline ElementType& operator[](const size_t i) {return elements[i];}
-    inline const ElementType& operator[](const size_t i) const {return elements[i];}
+    inline void clear() noexcept {elements.clear();}
+    inline size_t size() const noexcept {return elements.size();}
+    inline bool empty() const noexcept {return elements.empty();}
+    inline ElementType& min() noexcept {return elements[0];}
+    inline const ElementType& min() const noexcept {return elements[0];}
+    inline ElementType& front() noexcept {return elements[0];}
+    inline const ElementType& front() const noexcept {return elements[0];}
+    inline ElementType& operator[](const size_t i) noexcept {return elements[i];}
+    inline const ElementType& operator[](const size_t i) const noexcept {return elements[i];}
 
-    inline void printErrors(const size_t i = 0) {
+    inline void printErrors(const size_t i = 0) noexcept {
         const size_t l = left(i);
         if ((l < size()) && (less(elements[l], elements[i]))) {
             std::cout << "Heap is broken! (" << i << ", " << l << ")" << std::endl;
@@ -92,27 +91,25 @@ public:
     }
 
 private:
-    inline size_t left(const size_t i) const {return (i * 2) + 1;}
-    inline size_t right(const size_t i) const {return (i * 2) + 2;}
-    inline size_t parent(const size_t i) const {return (i - 1) / 2;}
-    inline bool isLeaf(const size_t i) const {return left(i) >= size();}
+    inline size_t left(const size_t i) const noexcept {return (i * 2) + 1;}
+    inline size_t right(const size_t i) const noexcept {return (i * 2) + 2;}
+    inline size_t parent(const size_t i) const noexcept {return (i - 1) / 2;}
+    inline bool isLeaf(const size_t i) const noexcept {return left(i) >= size();}
 
-    inline void siftDown(size_t i = 0) {
-        using std::swap;
-        Assert(i >= 0);
-        Assert(i < size());
+    inline void siftDown(size_t i = 0) noexcept {
+        Assert(i < size(), "Cannot siftDown " << i << " on heap of size " << size());
         while (true) {
             size_t minChild = left(i);
             if (minChild >= size()) return;
             if (minChild + 1 < size() && less(elements[minChild + 1], elements[minChild])) minChild++;
             if (less(elements[i], elements[minChild])) return;
-            swap(elements[minChild], elements[i]);
+            std::swap(elements[minChild], elements[i]);
             i = minChild;
         }
     }
 
-    inline void siftDownHole(size_t i = 0) {
-        AssertMsg(i < size(), "Cannot siftDownHole " << i << " on heap of size " << size());
+    inline void siftDownHole(size_t i = 0) noexcept {
+        Assert(i < size(), "Cannot siftDownHole " << i << " on heap of size " << size());
         while (true) {
             const size_t r = right(i);
             if (r < size()) {
@@ -138,13 +135,12 @@ private:
         }
     }
 
-    inline void siftUp(size_t i) {
-        using std::swap;
-        Assert(i < size());
+    inline void siftUp(size_t i) noexcept {
+        Assert(i < size(), "Cannot siftUp " << i << " on heap of size " << size());
         while (i > 0) {
             const size_t p = parent(i);
             if (less(elements[i], elements[p])) {
-                swap(elements[p], elements[i]);
+                std::swap(elements[p], elements[i]);
                 i = p;
             } else {
                 return;

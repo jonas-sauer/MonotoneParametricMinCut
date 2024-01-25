@@ -300,7 +300,7 @@ public:
         {
             int threadId = omp_get_thread_num();
             pinThreadToCoreId((threadId * pinMultiplier) % numCores);
-            AssertMsg(omp_get_num_threads() == numberOfThreads, "Number of threads is " << omp_get_num_threads() << ", but should be " << numberOfThreads << "!");
+            Assert(omp_get_num_threads() == numberOfThreads, "Number of threads is " << omp_get_num_threads() << ", but should be " << numberOfThreads << "!");
 
             OperatorHullRangeRAPTOR<false> ohrr(cyclingNetwork);
             size_t currentOperator = 0;

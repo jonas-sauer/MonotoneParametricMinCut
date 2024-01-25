@@ -77,7 +77,7 @@ protected:
     template<typename T>
     IdMapping(const Construct::InvertTag, const T& original) :
         std::vector<size_t>(original.size()) {
-        AssertMsg(original.isValid(), "The original is not valid!");
+        Assert(original.isValid(), "The original is not valid!");
         for (size_t i = 0; i < size(); i++) {
             (*this)[original[i]] = i;
         }
@@ -86,7 +86,7 @@ protected:
     template<typename T>
     IdMapping(const Construct::InvertTag, T&& original) :
         std::vector<size_t>(std::move(original)) {
-        AssertMsg(isValid(), "The original is not valid!");
+        Assert(isValid(), "The original is not valid!");
         std::vector<bool> seen(size(), false);
         for (size_t i = 0; i < size(); i++) {
             if (seen[i]) continue;
@@ -172,8 +172,8 @@ public:
 public:
     template<typename T>
     inline std::vector<T> getPermuted(const std::vector<T>& vector) const noexcept {
-        AssertMsg(vector.size() == size(), "Cannot permute a vector of size " << vector.size() << " with a permutation of size " << size() << "!");
-        AssertMsg(isValid(), "The permutation is not valid!");
+        Assert(vector.size() == size(), "Cannot permute a vector of size " << vector.size() << " with a permutation of size " << size() << "!");
+        Assert(isValid(), "The permutation is not valid!");
         std::vector<T> result(size());
         for (size_t i = 0; i < size(); i++) {
             result[(*this)[i]] = vector[i];
@@ -194,14 +194,14 @@ public:
 
     template<typename T>
     inline void mapPermutation(std::vector<T>& vector) const noexcept {
-        AssertMsg(isValid(), "The permutation is not valid!");
+        Assert(isValid(), "The permutation is not valid!");
         mapPermutationImplementation(vector);
     }
 
     inline Permutation splitAt(const size_t limit) const noexcept;
 
     inline Permutation extend(const size_t newSize) const noexcept {
-        AssertMsg(newSize >= size(), "newSize is smaller than size!");
+        Assert(newSize >= size(), "newSize is smaller than size!");
         Permutation result = *this;
         for (size_t i = size(); i < newSize; i++) {
             result.emplace_back(i);
@@ -298,7 +298,7 @@ public:
     }
 
     inline Order extend(const size_t newSize) const noexcept {
-        AssertMsg(newSize >= size(), "newSize is smaller than size!");
+        Assert(newSize >= size(), "newSize is smaller than size!");
         Order result = *this;
         for (size_t i = size(); i < newSize; i++) {
             result.emplace_back(i);

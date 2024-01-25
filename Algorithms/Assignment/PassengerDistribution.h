@@ -48,7 +48,7 @@ inline std::vector<size_t> getGroupSizesCumulative(const std::vector<int>& value
             groupSizes[sampleElements[i].index]++;
         }
     }
-    AssertMsg(Vector::sum(groupSizes) == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << Vector::sum(groupSizes) << "!");
+    Assert(Vector::sum(groupSizes) == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << Vector::sum(groupSizes) << "!");
     return groupSizes;
 }
 
@@ -74,7 +74,7 @@ inline std::vector<size_t> getGroupSizes(const std::vector<int>& values, const s
             groupSizes[sampleElements[i].index]++;
         }
     }
-    AssertMsg(Vector::sum(groupSizes) == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << Vector::sum(groupSizes) << "!");
+    Assert(Vector::sum(groupSizes) == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << Vector::sum(groupSizes) << "!");
     return groupSizes;
 }
 
@@ -89,7 +89,7 @@ inline std::array<int, 2> getGroupSizesCumulative(const std::array<int, 2> value
     const int64_t valueSum = values[1];
     std::array<int, 2> groupSizes = {static_cast<int>((values[0] * numberOfPassengers) / valueSum), static_cast<int>(((values[1] - values[0]) * numberOfPassengers) / valueSum)};
     std::array<int, 2> remainderValues = {static_cast<int>((values[0] * numberOfPassengers) % valueSum), static_cast<int>(((values[1] - values[0]) * numberOfPassengers) % valueSum)};
-    AssertMsg(remainderValues[0] + remainderValues[1] == 0 || remainderValues[0] + remainderValues[1] == valueSum, "Remainder sum is " << (remainderValues[0] + remainderValues[1]) << ", but should be " << valueSum << "!");
+    Assert(remainderValues[0] + remainderValues[1] == 0 || remainderValues[0] + remainderValues[1] == valueSum, "Remainder sum is " << (remainderValues[0] + remainderValues[1]) << ", but should be " << valueSum << "!");
     if (remainderValues[0] != 0) {
         if (static_cast<int>(random() % (remainderValues[0] + remainderValues[1])) < remainderValues[0]) {
             groupSizes[0]++;
@@ -97,7 +97,7 @@ inline std::array<int, 2> getGroupSizesCumulative(const std::array<int, 2> value
             groupSizes[1]++;
         }
     }
-    AssertMsg(groupSizes[0] + groupSizes[1] == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << (groupSizes[0] + groupSizes[1]) << "!");
+    Assert(groupSizes[0] + groupSizes[1] == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << (groupSizes[0] + groupSizes[1]) << "!");
     return groupSizes;
 }
 
@@ -105,7 +105,7 @@ inline std::array<int, 2> getGroupSizes(const std::array<int, 3> values, const i
     const int64_t valueSum = values[2];
     std::array<int, 2> groupSizes = {static_cast<int>((values[0] * numberOfPassengers) / valueSum), static_cast<int>((values[1] * numberOfPassengers) / valueSum)};
     std::array<int, 2> remainderValues = {static_cast<int>((values[0] * numberOfPassengers) % valueSum), static_cast<int>((values[1] * numberOfPassengers) % valueSum)};
-    AssertMsg(remainderValues[0] + remainderValues[1] == 0 || remainderValues[0] + remainderValues[1] == valueSum, "Remainder sum is " << (remainderValues[0] + remainderValues[1]) << ", but should be " << valueSum << "!");
+    Assert(remainderValues[0] + remainderValues[1] == 0 || remainderValues[0] + remainderValues[1] == valueSum, "Remainder sum is " << (remainderValues[0] + remainderValues[1]) << ", but should be " << valueSum << "!");
     if (remainderValues[0] != 0) {
         if (static_cast<int>(random() % (remainderValues[0] + remainderValues[1])) < remainderValues[0]) {
             groupSizes[0]++;
@@ -113,7 +113,7 @@ inline std::array<int, 2> getGroupSizes(const std::array<int, 3> values, const i
             groupSizes[1]++;
         }
     }
-    AssertMsg(groupSizes[0] + groupSizes[1] == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << (groupSizes[0] + groupSizes[1]) << "!");
+    Assert(groupSizes[0] + groupSizes[1] == numberOfPassengers, "New groups should comprise " << numberOfPassengers << " passengers, but is " << (groupSizes[0] + groupSizes[1]) << "!");
     return groupSizes;
 }
 

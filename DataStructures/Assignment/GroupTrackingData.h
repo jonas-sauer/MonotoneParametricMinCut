@@ -18,13 +18,13 @@ struct ConnectionBasedGroupTrackingData {
 
     inline void validate() const noexcept {
         for (const GroupList& groupList : groupsWalkingOnLink) {
-            AssertMsg(groupList.empty(), "There are groups walking to a stop from the last iteration!");
+            Assert(groupList.empty(), "There are groups walking to a stop from the last iteration!");
         }
         for (const GroupList& groupList : groupsWaitingAtConnection) {
-            AssertMsg(groupList.empty(), "There are groups waiting at a stop from the last iteration!");
+            Assert(groupList.empty(), "There are groups waiting at a stop from the last iteration!");
         }
         for (const GroupList& groupList : groupsInTrip) {
-            AssertMsg(groupList.empty(), "There are groups in a trip from the last iteration!");
+            Assert(groupList.empty(), "There are groups in a trip from the last iteration!");
         }
     }
 
@@ -42,10 +42,10 @@ struct SequentialGroupTrackingData {
 
     inline void validate() const noexcept {
         for (const GroupList& groupList : groupsWaitingAtConnection) {
-            AssertMsg(groupList.empty(), "There are groups waiting at a stop from the last iteration!");
+            Assert(groupList.empty(), "There are groups waiting at a stop from the last iteration!");
         }
         for (const GroupList& groupList : groupsInTrip) {
-            AssertMsg(groupList.empty(), "There are groups in a trip from the last iteration!");
+            Assert(groupList.empty(), "There are groups in a trip from the last iteration!");
         }
     }
 
@@ -64,12 +64,12 @@ struct GroupTrackingData {
 
     inline void validate() const noexcept {
         for (const GroupList& groupList : groupsInTrip) {
-            AssertMsg(groupList.empty(), "There are groups in a trip from the last iteration!");
+            Assert(groupList.empty(), "There are groups in a trip from the last iteration!");
         }
         for (size_t stop = 0; stop < groupsOriginatingAtStop.size(); stop++) {
-            AssertMsg(groupsOriginatingAtStop[stop].empty(), "There are groups originating at a stop from the last iteration!");
-            AssertMsg(groupsWalkingToStop[stop].empty(), "There are groups walking to a stop from the last iteration!");
-            AssertMsg(groupsWaitingAtStop[stop].empty(), "There are groups waiting at a stop from the last iteration!");
+            Assert(groupsOriginatingAtStop[stop].empty(), "There are groups originating at a stop from the last iteration!");
+            Assert(groupsWalkingToStop[stop].empty(), "There are groups walking to a stop from the last iteration!");
+            Assert(groupsWaitingAtStop[stop].empty(), "There are groups waiting at a stop from the last iteration!");
         }
     }
 
@@ -79,7 +79,7 @@ struct GroupTrackingData {
         size_t i = originatingGroups.size() - 1;
         size_t newGroups = 0;
         while (i != size_t(-1) && originatingGroups[i].arrivalTime <= connection.departureTime) {
-            AssertMsg(!originatingGroups[i].ids.empty(), "There is an empty set of passengers originating!");
+            Assert(!originatingGroups[i].ids.empty(), "There is an empty set of passengers originating!");
             newGroups += originatingGroups[i].ids.size();
             i--;
         }
@@ -96,7 +96,7 @@ struct GroupTrackingData {
         std::vector<GroupArrivalLabel> removedLabels;
         size_t newGroups = 0;
         while ((!walkingGroups.empty()) && (walkingGroups.min().arrivalTime <= connection.departureTime)) {
-            AssertMsg(!walkingGroups.min().ids.empty(), "There is an empty set of passengers walking!");
+            Assert(!walkingGroups.min().ids.empty(), "There is an empty set of passengers walking!");
             removedLabels.emplace_back(std::move(walkingGroups.pop_min()));
             newGroups += removedLabels.back().ids.size();
         }

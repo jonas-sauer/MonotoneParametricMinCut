@@ -40,7 +40,7 @@ inline std::string read(const std::string& fileName) {
 
 inline void write(const std::string& fileName, const std::string& text) {
     std::ofstream file(fileName);
-    AssertMsg(file.is_open(), "Could not open file: " << fileName);
+    Assert(file.is_open(), "Could not open file: " << fileName);
     file << text;
     file.flush();
     file.close();
@@ -48,7 +48,7 @@ inline void write(const std::string& fileName, const std::string& text) {
 
 inline void trim(const std::string& fromFile, std::ostream& to, const size_t minWordLength = 1) {
     std::ifstream from(fromFile);
-    Assert(from.is_open());
+    Assert(from.is_open(), "Could not open file: " << fromFile);
     while (!from.eof()) {
         std::string line;
         getline(from, line);
@@ -68,8 +68,8 @@ inline void trim(const std::string& fromFile, std::ostream& to, const size_t min
 
 inline void trim(const std::string& fromFile, const std::string& toFile, const size_t minWordLength = 1) {
     std::ofstream to(toFile);
-    Assert(to);
-    Assert(to.is_open());
+    Assert(to, "Could not open file: " << toFile);
+    Assert(to.is_open(), "Could not open file: " << toFile);
     trim(fromFile, to, minWordLength);
 }
 

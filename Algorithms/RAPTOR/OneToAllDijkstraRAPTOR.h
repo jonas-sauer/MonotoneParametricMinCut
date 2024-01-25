@@ -61,7 +61,7 @@ public:
         sourceDepartureTime(intMax),
         earliestArrival(data.transferGraph.numVertices(), never),
         profiler(profilerTemplate) {
-        AssertMsg(data.hasImplicitBufferTimes(), "Departure buffer times have to be implicit!");
+        Assert(data.hasImplicitBufferTimes(), "Departure buffer times have to be implicit!");
         profiler.registerExtraRounds({EXTRA_ROUND_CLEAR, EXTRA_ROUND_INITIALIZATION});
         profiler.registerPhases({PHASE_INITIALIZATION, PHASE_COLLECT, PHASE_SCAN, PHASE_TRANSFERS});
         profiler.registerMetrics({METRIC_ROUTES, METRIC_ROUTE_SEGMENTS, METRIC_VERTICES, METRIC_EDGES, METRIC_STOPS_BY_TRIP, METRIC_STOPS_BY_TRANSFER});
@@ -171,10 +171,10 @@ public:
 
     inline int getArrivalTime(const Vertex vertex, const size_t round) const noexcept {
         if (data.isStop(vertex)) {
-            AssertMsg(rounds[round][vertex].arrivalTime < never, "No label found for stop " << vertex << " in round " << round << "!");
+            Assert(rounds[round][vertex].arrivalTime < never, "No label found for stop " << vertex << " in round " << round << "!");
             return rounds[round][vertex].arrivalTime;
         } else {
-            AssertMsg(dijkstraLabels[round][vertex].arrivalTime < never, "No label found for vertex " << vertex << " in round " << round << "!");
+            Assert(dijkstraLabels[round][vertex].arrivalTime < never, "No label found for vertex " << vertex << " in round " << round << "!");
             return dijkstraLabels[round][vertex].arrivalTime;
         }
     }
@@ -204,8 +204,8 @@ private:
     inline void collectRoutesServingUpdatedStops() noexcept {
         for (const StopId stop : stopsUpdatedByTransfer) {
             for (const RouteSegment& route : data.routesContainingStop(stop)) {
-                AssertMsg(data.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
-                AssertMsg(data.stopIds[data.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR data contains invalid route segments!");
+                Assert(data.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
+                Assert(data.stopIds[data.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR data contains invalid route segments!");
                 if (route.stopIndex + 1 == data.numberOfStopsInRoute(route.routeId)) continue;
                 if (data.lastTripOfRoute(route.routeId)[route.stopIndex].departureTime < previousRound()[stop].arrivalTime) continue;
                 if (routesServingUpdatedStops.contains(route.routeId)) {
@@ -223,12 +223,12 @@ private:
             profiler.countMetric(METRIC_ROUTES);
             StopIndex stopIndex = routesServingUpdatedStops[route];
             const size_t tripSize = data.numberOfStopsInRoute(route);
-            AssertMsg(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ", RoundIndex: " << rounds.size() - 1 << ")!");
+            Assert(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ", RoundIndex: " << rounds.size() - 1 << ")!");
 
             const StopId* stops = data.stopArrayOfRoute(route);
             const StopEvent* trip = data.lastTripOfRoute(route);
             StopId stop = stops[stopIndex];
-            AssertMsg(trip[stopIndex].departureTime >= previousRound()[stop].arrivalTime, "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousRound()[stop].arrivalTime << ", LastDeparture: " << trip[stopIndex].departureTime << ", RoundIndex: " << rounds.size() - 1 << ")!");
+            Assert(trip[stopIndex].departureTime >= previousRound()[stop].arrivalTime, "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousRound()[stop].arrivalTime << ", LastDeparture: " << trip[stopIndex].departureTime << ", RoundIndex: " << rounds.size() - 1 << ")!");
 
             StopIndex parentIndex = stopIndex;
             const StopEvent* firstTrip = data.firstTripOfRoute(route);
@@ -256,7 +256,7 @@ private:
         stopsUpdatedByTransfer.clear();
         initialTransfers.template run<FORWARD, BACKWARD>(sourceVertex);
         for (const Vertex vertex : initialTransfers.getForwardPOIs()) {
-            AssertMsg(initialTransfers.getForwardDistance(vertex) != INFTY, "Vertex " << vertex << " was not reached!");
+            Assert(initialTransfers.getForwardDistance(vertex) != INFTY, "Vertex " << vertex << " was not reached!");
             DijkstraLabel& label = dijkstraLabels[0][vertex];
             label.arrivalTime = sourceDepartureTime + initialTransfers.getForwardDistance(vertex);
             label.parent = sourceVertex;
@@ -270,7 +270,7 @@ private:
     inline void relaxTransfers() noexcept {
         stopsUpdatedByTransfer.clear();
         routesServingUpdatedStops.clear();
-        AssertMsg(queue.empty(), "Queue still has " << queue.size() << " elements!");
+        Assert(queue.empty(), "Queue still has " << queue.size() << " elements!");
         for (const StopId stop : stopsUpdatedByRoute) {
             DijkstraLabel& label = dijkstraLabels.back()[stop];
             label.arrivalTime = earliestArrival[stop];
@@ -300,12 +300,12 @@ private:
     }
 
     inline Round& currentRound() noexcept {
-        AssertMsg(!rounds.empty(), "Cannot return current round, because no round exists!");
+        Assert(!rounds.empty(), "Cannot return current round, because no round exists!");
         return rounds.back();
     }
 
     inline Round& previousRound() noexcept {
-        AssertMsg(rounds.size() >= 2, "Cannot return previous round, because less than two rounds exist!");
+        Assert(rounds.size() >= 2, "Cannot return previous round, because less than two rounds exist!");
         return rounds[rounds.size() - 2];
     }
 
@@ -315,8 +315,8 @@ private:
     }
 
     inline bool arrivalByRoute(const StopId stop, const int arrivalTime) noexcept {
-        AssertMsg(data.isStop(stop), "Stop " << stop << " is out of range!");
-        AssertMsg(arrivalTime >= sourceDepartureTime, "Arriving by route BEFORE departing from the source (source departure time: " << String::secToTime(sourceDepartureTime) << " [" << sourceDepartureTime << "], arrival time: " << String::secToTime(arrivalTime) << " [" << arrivalTime << "], stop: " << stop << ")!");
+        Assert(data.isStop(stop), "Stop " << stop << " is out of range!");
+        Assert(arrivalTime >= sourceDepartureTime, "Arriving by route BEFORE departing from the source (source departure time: " << String::secToTime(sourceDepartureTime) << " [" << sourceDepartureTime << "], arrival time: " << String::secToTime(arrivalTime) << " [" << arrivalTime << "], stop: " << stop << ")!");
         if (earliestArrival[stop] <= arrivalTime) return false;
         profiler.countMetric(METRIC_STOPS_BY_TRIP);
         currentRound()[stop].arrivalTime = arrivalTime;
@@ -326,8 +326,8 @@ private:
     }
 
     inline bool arrivalByEdge(const Vertex vertex, const int arrivalTime, const Vertex parent) noexcept {
-        AssertMsg(data.isStop(parent), "Parent vertex (" << parent << ") is not a stop");
-        AssertMsg(arrivalTime >= sourceDepartureTime, "Arriving by route BEFORE departing from the source (source departure time: " << String::secToTime(sourceDepartureTime) << " [" << sourceDepartureTime << "], arrival time: " << String::secToTime(arrivalTime) << " [" << arrivalTime << "])!");
+        Assert(data.isStop(parent), "Parent vertex (" << parent << ") is not a stop");
+        Assert(arrivalTime >= sourceDepartureTime, "Arriving by route BEFORE departing from the source (source departure time: " << String::secToTime(sourceDepartureTime) << " [" << sourceDepartureTime << "], arrival time: " << String::secToTime(arrivalTime) << " [" << arrivalTime << "])!");
         if (earliestArrival[vertex] <= arrivalTime) return false;
         DijkstraLabel& label = dijkstraLabels.back()[vertex];
         label.arrivalTime = arrivalTime;
@@ -338,8 +338,8 @@ private:
     }
 
     inline void arrivalByTransfer(const StopId stop, const int arrivalTime, const Vertex parent, const int parentDepartureTime) noexcept {
-        AssertMsg(data.isStop(stop), "Stop " << stop << " is out of range!");
-        AssertMsg(arrivalTime >= sourceDepartureTime, "Arriving by route BEFORE departing from the source (source departure time: " << String::secToTime(sourceDepartureTime) << " [" << sourceDepartureTime << "], arrival time: " << String::secToTime(arrivalTime) << " [" << arrivalTime << "])!");
+        Assert(data.isStop(stop), "Stop " << stop << " is out of range!");
+        Assert(arrivalTime >= sourceDepartureTime, "Arriving by route BEFORE departing from the source (source departure time: " << String::secToTime(sourceDepartureTime) << " [" << sourceDepartureTime << "], arrival time: " << String::secToTime(arrivalTime) << " [" << arrivalTime << "])!");
         EarliestArrivalLabel& label = currentRound()[stop];
         stopsUpdatedByTransfer.insert(stop);
         if (label.arrivalTime <= arrivalTime) return;
@@ -357,12 +357,12 @@ private:
         } else {
             const DijkstraLabel& label = dijkstraLabels[round][vertex];
             if (label.arrivalTime >= (journeys.empty() ? never : journeys.back().back().arrivalTime)) return;
-            AssertMsg(label.parent != noVertex, "Vertex " << vertex << ": Label with " << round << " trips has no parent! (arrival time: " << label.arrivalTime << ")");
+            Assert(label.parent != noVertex, "Vertex " << vertex << ": Label with " << round << " trips has no parent! (arrival time: " << label.arrivalTime << ")");
             journey.emplace_back(label.parent, vertex, rounds[round][label.parent].arrivalTime, label.arrivalTime, false, noRouteId);
             vertex = label.parent;
         }
         while (vertex != sourceVertex) {
-            AssertMsg(round != size_t(-1), "Backtracking parent pointers did not pass through the source stop!");
+            Assert(round != size_t(-1), "Backtracking parent pointers did not pass through the source stop!");
             const EarliestArrivalLabel& label = rounds[round][vertex];
             journey.emplace_back(label.parent, vertex, label.parentDepartureTime, label.arrivalTime, label.usesRoute, label.routeId);
             vertex = label.parent;
@@ -384,7 +384,7 @@ private:
     }
 
     inline void printRoundsForStop(const StopId stop) const noexcept {
-        AssertMsg(data.isStop(stop), stop << " is not a valid stop!");
+        Assert(data.isStop(stop), stop << " is not a valid stop!");
         std::cout << "Raptor Label for stop " << stop << ":" << std::endl;
         std::cout << std::setw(10) << "Round" << std::setw(14) << "arrivalTime" << std::setw(14) << "parent" << std::endl;
         for (size_t i = 0; i < rounds.size(); i++) {

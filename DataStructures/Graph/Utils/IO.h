@@ -27,8 +27,8 @@ namespace Graph {
     template<typename GRAPH, typename WEIGHT_TYPE>
     inline void toDimacs(const std::string& fileBaseName, const GRAPH& graph, const std::vector<WEIGHT_TYPE>& weight) noexcept {
         std::ofstream grOs(fileBaseName + ".gr");
-        AssertMsg(grOs, "Cannot create output stream for " << fileBaseName << ".gr");
-        AssertMsg(grOs.is_open(), "Cannot open output stream for " << fileBaseName << ".gr");
+        Assert(grOs, "Cannot create output stream for " << fileBaseName << ".gr");
+        Assert(grOs.is_open(), "Cannot open output stream for " << fileBaseName << ".gr");
         grOs << "p sp " << graph.numVertices() << " " << graph.numEdges() << std::endl;
         for (const auto [edge, from] : graph.edgesWithFromVertex()) {
             grOs << "a " << (from + 1) << " " << (graph.get(ToVertex, edge) + 1) << " " << weight[edge] << std::endl;
@@ -36,8 +36,8 @@ namespace Graph {
         grOs.close();
         if constexpr (GRAPH::HasVertexAttribute(Coordinates)) {
             std::ofstream coOs(fileBaseName + ".co");
-            AssertMsg(coOs, "Cannot create output stream for " << fileBaseName << ".co");
-            AssertMsg(coOs.is_open(), "Cannot open output stream for " << fileBaseName << ".co");
+            Assert(coOs, "Cannot create output stream for " << fileBaseName << ".co");
+            Assert(coOs.is_open(), "Cannot open output stream for " << fileBaseName << ".co");
             coOs << "p aux sp co " << graph.numVertices() << std::endl;
             for (const Vertex vertex : graph.vertices()) {
                 coOs << "v " << (vertex + 1) << " " << graph.get(Coordinates, vertex).x << " " << graph.get(Coordinates, vertex).y << std::endl;
@@ -54,8 +54,8 @@ namespace Graph {
     template<typename GRAPH>
     inline void toGML(const std::string& fileBaseName, const GRAPH& graph) noexcept {
         std::ofstream gml(fileBaseName + ".gml");
-        AssertMsg(gml, "Cannot create output stream for " << fileBaseName << ".gml");
-        AssertMsg(gml.is_open(), "Cannot open output stream for " << fileBaseName << ".gml");
+        Assert(gml, "Cannot create output stream for " << fileBaseName << ".gml");
+        Assert(gml.is_open(), "Cannot open output stream for " << fileBaseName << ".gml");
         gml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
         gml << "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n";
         gml << "    <graph id=\"G\" edgedefault=\"directed\">\n";
@@ -86,7 +86,7 @@ namespace Graph {
         if constexpr (GRAPH::HasEdgeAttribute(Weight)) IO::deserialize(fileName + "/weight", weight);
         if constexpr (GRAPH::HasEdgeAttribute(Distance)) IO::deserialize(fileName + "/geo_distance", geo_distance);
         if constexpr (GRAPH::HasEdgeAttribute(TravelTime)) IO::deserialize(fileName + "/travel_time", travel_time);
-        AssertMsg(latitude.size() == longitude.size(), "Latitude and longitude vector have different sizes! (" << latitude.size() << " vs. " << longitude.size() << ")");
+        Assert(latitude.size() == longitude.size(), "Latitude and longitude vector have different sizes! (" << latitude.size() << " vs. " << longitude.size() << ")");
         SimpleDynamicGraph temp;
         temp.addVertices(first_out.size() - 1);
         for (const Vertex vertex : temp.vertices()) {
@@ -113,7 +113,7 @@ namespace Graph {
                 (void)edge;
             }
         }
-        Assert(graph.satisfiesInvariants());
+        Assert(graph.satisfiesInvariants(), "Graph does not satisfy invariants!");
     }
 
 }

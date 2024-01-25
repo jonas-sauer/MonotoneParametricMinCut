@@ -74,8 +74,8 @@ public:
     }
 
     inline void run(const Vertex destinationVertex, std::vector<AccumulatedVertexDemand::Entry>& demand) noexcept {
-        AssertMsg(!demand.empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
-        AssertMsg(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
+        Assert(!demand.empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
+        Assert(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
         profiler.startAssignmentForDestination(destinationVertex);
 
         sort(demand, [](const AccumulatedVertexDemand::Entry& a, const AccumulatedVertexDemand::Entry& b){return a.earliestDepartureTime < b.earliestDepartureTime;});
@@ -112,9 +112,9 @@ public:
 private:
     inline void walkToInitialStops(const std::vector<AccumulatedVertexDemand::Entry>& demand) noexcept {
         for (const AccumulatedVertexDemand::Entry& demandEntry : demand) {
-            AssertMsg(demandEntry.originVertex != demandEntry.destinationVertex, "Origin and destination vertex of demand are identical (" << demandEntry.originVertex << ")!");
-            AssertMsg(settings.allowDepartureStops || !data.isStop(demandEntry.originVertex), "Demand is originating from a stop (" << demandEntry.originVertex << ")!");
-            AssertMsg(data.isStop(demandEntry.originVertex) || data.transferGraph.outDegree(demandEntry.originVertex) > 0, "Origin vertex " << demandEntry.originVertex << " of demand is isolated!");
+            Assert(demandEntry.originVertex != demandEntry.destinationVertex, "Origin and destination vertex of demand are identical (" << demandEntry.originVertex << ")!");
+            Assert(settings.allowDepartureStops || !data.isStop(demandEntry.originVertex), "Demand is originating from a stop (" << demandEntry.originVertex << ")!");
+            Assert(data.isStop(demandEntry.originVertex) || data.transferGraph.outDegree(demandEntry.originVertex) > 0, "Origin vertex " << demandEntry.originVertex << " of demand is isolated!");
             int minTravelTime = INFTY;
             SequentialChoiceSet choiceSet = collectInitialWalkingChoices(demandEntry, minTravelTime);
             const GroupId originalGroup = assignmentData.createNewGroup(demandEntry, settings.passengerMultiplier);
@@ -141,8 +141,8 @@ private:
                     }
                     spawnInitialWalkingGroup(group, choiceSet.options[i]);
                 }
-                AssertMsg(originalGroupIndex < choiceSet.size(), "No groups have been assigned!");
-                AssertMsg(assignmentData.groups[originalGroup].groupSize == groupSizes[originalGroupIndex], "Original group has wrong size (size should be: " << groupSizes[originalGroupIndex] << ", size is: " << assignmentData.groups[originalGroup].groupSize << ")!");
+                Assert(originalGroupIndex < choiceSet.size(), "No groups have been assigned!");
+                Assert(assignmentData.groups[originalGroup].groupSize == groupSizes[originalGroupIndex], "Original group has wrong size (size should be: " << groupSizes[originalGroupIndex] << ", size is: " << assignmentData.groups[originalGroup].groupSize << ")!");
             }
         }
     }
@@ -203,7 +203,7 @@ private:
         if (groupsInTrip.empty()) return;
 
         for (const GroupId group : groupsInTrip) {
-            AssertMsg(group < assignmentData.connectionsPerGroup.size(), "Group " << group << " is out of bounds (0, " << assignmentData.connectionsPerGroup.size() << ")");
+            Assert(group < assignmentData.connectionsPerGroup.size(), "Group " << group << " is out of bounds (0, " << assignmentData.connectionsPerGroup.size() << ")");
             assignmentData.connectionsPerGroup[group].emplace_back(i);
         }
 
@@ -253,7 +253,7 @@ private:
 
     inline void walkToNextStop(const ConnectionId from, GroupList& groupList, const int travelTime) noexcept {
         SequentialChoiceSet choiceSet = collectIntermediateWalkingChoices(from);
-        AssertMsg(!choiceSet.empty(), "" << groupList.size() << " groups arrived at stop " << from << " but have nowhere to go!");
+        Assert(!choiceSet.empty(), "" << groupList.size() << " groups arrived at stop " << from << " but have nowhere to go!");
         if (choiceSet.size() == 1) {
             if (choiceSet.options[0] == noConnection) return;
             groupTrackingData.groupsWaitingAtConnection[choiceSet.options[0]] += std::move(groupList);
@@ -277,7 +277,7 @@ private:
                     if (choiceSet.options[j] == noConnection) continue;
                     groupTrackingData.groupsWaitingAtConnection[choiceSet.options[j]].emplace_back(group);
                 }
-                AssertMsg(movedOriginalGroup, "Group has not moved to the next stop (Group: " << assignmentData.groups[groupList[i]] << ")");
+                Assert(movedOriginalGroup, "Group has not moved to the next stop (Group: " << assignmentData.groups[groupList[i]] << ")");
             }
         }
     }

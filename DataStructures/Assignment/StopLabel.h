@@ -14,8 +14,8 @@ public:
     StopLabel() : waitingProfile(1), transferProfile(1) {}
 
     inline void addWaitingEntry(const ProfileEntry& entry) noexcept {
-        AssertMsg(!waitingProfile.empty(), "Missing sentinel entry!");
-        AssertMsg(entry < waitingProfile.back(), "New entry " << entry << " is dominated by " << waitingProfile.back() << "!");
+        Assert(!waitingProfile.empty(), "Missing sentinel entry!");
+        Assert(entry < waitingProfile.back(), "New entry " << entry << " is dominated by " << waitingProfile.back() << "!");
         if (entry.departureTime == waitingProfile.back().departureTime) {
             waitingProfile.back() = entry;
         } else {
@@ -31,13 +31,13 @@ public:
             size_t insertionIndex = transferProfile.size() - 1;
             int shift = -1;
             while (transferProfile[insertionIndex].departureTime < entry.departureTime) {
-                AssertMsg(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
+                Assert(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
                 if (entry.patDominates(transferProfile[insertionIndex])) shift++;
                 insertionIndex--;
             }
             if (transferProfile[insertionIndex].patDominates(entry)) return;
             if (transferProfile[insertionIndex].departureTime == entry.departureTime) {
-                AssertMsg(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
+                Assert(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
                 shift++;
                 insertionIndex--;
             }
@@ -60,7 +60,7 @@ public:
                 transferProfile.resize(transferProfile.size() - shift);
             }
         }
-        AssertMsg(checkTransferProfile(), "Profile is not monotone!");
+        Assert(checkTransferProfile(), "Profile is not monotone!");
     }
 
     inline PerceivedTime evaluateWithDelay(const int time, const int maxDelay, const double waitingCosts) const noexcept {
@@ -69,26 +69,26 @@ public:
         for (size_t i = transferProfile.size() - 1; i > 0; i--) {
             if (transferProfile[i].departureTime < time) continue;
             const double newProbability = delayProbability(transferProfile[i].departureTime - time, maxDelay);
-            AssertMsg((newProbability >= probability && newProbability <= 1.0), "delayProbability (" << newProbability << ") is not a probability! (x: " << (transferProfile[i].departureTime - time) << ", maxDelay: " << maxDelay << ")");
+            Assert((newProbability >= probability && newProbability <= 1.0), "delayProbability (" << newProbability << ") is not a probability! (x: " << (transferProfile[i].departureTime - time) << ", maxDelay: " << maxDelay << ")");
             pat += (newProbability - probability) * transferProfile[i].evaluate(time, waitingCosts);
-            AssertMsg(pat < INFTY, "PAT has reached infinity (time: " << time << ", entry.departureTime: " << transferProfile[i].departureTime << ", probability: " << newProbability << ")!");
+            Assert(pat < INFTY, "PAT has reached infinity (time: " << time << ", entry.departureTime: " << transferProfile[i].departureTime << ", probability: " << newProbability << ")!");
             probability = newProbability;
             if (probability >= 1) break;
         }
         if (probability < 1.0) {
             pat = (probability > 0.0000001) ? (pat / probability) : (std::numeric_limits<PerceivedTime>::infinity());
         }
-        AssertMsg(pat == pat, "PAT calculation failed (result = " << pat << ")!");
+        Assert(pat == pat, "PAT calculation failed (result = " << pat << ")!");
         return pat;
     }
 
     inline const ProfileEntry& getSkipEntry() const noexcept {
-        AssertMsg(!waitingProfile.empty(), "Missing sentinel entry!");
+        Assert(!waitingProfile.empty(), "Missing sentinel entry!");
         return waitingProfile.back();
     }
 
     inline const ProfileEntry& getFailureEntry(const int time) const noexcept {
-        AssertMsg(!transferProfile.empty(), "Missing sentinel entry!");
+        Assert(!transferProfile.empty(), "Missing sentinel entry!");
         size_t i = transferProfile.size() - 1;
         while (transferProfile[i].departureTime < time) i--;
         return transferProfile[i];
@@ -107,7 +107,7 @@ private:
 
     inline bool checkTransferProfile() const noexcept {
         for (size_t i = 0; i < transferProfile.size() - 1; i++) {
-            AssertMsg(transferProfile[i + 1] < transferProfile[i], "Profile is not monotone! (" << transferProfile[i + 1] << " >= " << transferProfile[i] << ")");
+            Assert(transferProfile[i + 1] < transferProfile[i], "Profile is not monotone! (" << transferProfile[i + 1] << " >= " << transferProfile[i] << ")");
         }
         return true;
     }

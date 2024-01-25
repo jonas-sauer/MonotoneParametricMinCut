@@ -47,7 +47,7 @@ namespace Graph {
             computeReverseEdgePointers(to);
         }
         to.checkVectorSize();
-        AssertMsg(to.satisfiesInvariants(), "Invariants not satisfied!");
+        Assert(to.satisfiesInvariants(), "Invariants not satisfied!");
         from.clear();
     }
 
@@ -78,7 +78,7 @@ namespace Graph {
         if constexpr (!FromType::HasEdgeAttribute(ReverseEdge)) {
             computeReverseEdgePointers(to);
         }
-        Assert(to.satisfiesInvariants());
+        Assert(to.satisfiesInvariants(), "Graph does not satisfy invariants!");
         from.clear();
     }
 
@@ -118,7 +118,7 @@ namespace Graph {
         for (Vertex v = Vertex(to.beginOut.size() - 2); v < to.beginOut.size(); v--) {
             const Vertex u = Vertex(v + 1);
             if (from[OutDegree][v] == 0) to.beginOut[v] = to.beginOut[u];
-            AssertMsg(to.beginOut[v] <= to.beginOut[u], "Adjacency data structure is out of order!");
+            Assert(to.beginOut[v] <= to.beginOut[u], "Adjacency data structure is out of order!");
         }
         to.vertexAttributes.assign(from.vertexAttributes, attributeNameChanges...);
         to.edgeAttributes.assign(from.edgeAttributes, attributeNameChanges...);
@@ -126,7 +126,7 @@ namespace Graph {
             computeReverseEdgePointers(to);
         }
         to.checkVectorSize();
-        Assert(to.satisfiesInvariants());
+        Assert(to.satisfiesInvariants(), "Graph does not satisfy invariants!");
         from.clear();
     }
 
@@ -142,7 +142,7 @@ namespace Graph {
             computeReverseEdgePointers(to);
         }
         to.checkVectorSize();
-        Assert(to.satisfiesInvariants());
+        Assert(to.satisfiesInvariants(), "Graph does not satisfy invariants!");
         from.clear();
     }
 
@@ -194,7 +194,7 @@ namespace Graph {
             computeReverseEdgePointers(to);
         }
         to.checkVectorSize();
-        Assert(to.satisfiesInvariants());
+        Assert(to.satisfiesInvariants(), "Graph does not satisfy invariants!");
         from.clear();
     }
 

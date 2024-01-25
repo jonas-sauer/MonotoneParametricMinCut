@@ -96,8 +96,8 @@ public:
         parentLabel(PathRetrieval ? arrivalTime.size() : 0),
         finalTransferSet(arrivalTime.size(), false),
         profiler(profilerTemplate) {
-        AssertMsg(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
-        AssertMsg(!Graph::hasLoops(data.transferGraph), "Shortcut graph may not have loops!");
+        Assert(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
+        Assert(!Graph::hasLoops(data.transferGraph), "Shortcut graph may not have loops!");
         profiler.registerPhases({PHASE_CLEAR, PHASE_INITIALIZATION, PHASE_CONNECTION_SCAN, PHASE_UPWARD_SWEEP, PHASE_DOWNWARD_SEARCH});
         profiler.registerMetrics({METRIC_CONNECTIONS, METRIC_EDGES, METRIC_STOPS_BY_TRIP, METRIC_STOPS_BY_TRANSFER});
         profiler.initialize();
@@ -144,12 +144,12 @@ public:
     }
 
     inline bool reachable(const Vertex vertex) noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         return getEarliestArrivalTime(vertex) < never;
     }
 
     inline int getEarliestArrivalTime(const Vertex vertex) noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         const StopId stop = targetStopId[vertex];
         for (size_t numTrips = MaxTrips - 1; numTrips != size_t(-1); numTrips--) {
             checkFinalTransfer(vertex, numTrips);
@@ -161,7 +161,7 @@ public:
 
     template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
     inline std::vector<Journey> getJourneys(const Vertex vertex) noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         std::vector<Journey> journeys;
         for (size_t i = 0; i < MaxTrips; i++) {
             getJourney(journeys, i, vertex);
@@ -176,7 +176,7 @@ public:
     }
 
     inline std::vector<int> getArrivalTimes(const Vertex vertex) noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         const StopId stop = targetStopId[vertex];
         std::vector<int> arrivalTimes;
         for (size_t i = 0; i < MaxTrips; i++) {
@@ -187,12 +187,12 @@ public:
     }
 
     inline std::vector<Vertex> getPath(const Vertex vertex) noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         return journeyToPath(getJourneys(vertex).back());
     }
 
     inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         return data.journeyToText(getJourneys(vertex).back());
     }
 

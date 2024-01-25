@@ -193,8 +193,8 @@ public:
         graph.printAnalysis();
 
         std::ofstream metis(outputFile);
-        Assert(metis);
-        Assert(metis.is_open());
+        Assert(metis, "cannot open file: " << outputFile);
+        Assert(metis.is_open(), "cannot open file: " << outputFile);
         metis << graph.numVertices() << " " << (graph.numEdges() / 2) << " 011";
         for (const Vertex vertex : graph.vertices()) {
             metis << "\n" << std::max<int>(1, sqrt(connectionsPerStop[vertex]) + 0.5);
@@ -274,7 +274,7 @@ public:
         std::vector<uint64_t> weightOfColumn;
         std::vector<std::vector<StopId>> stopsOfColumn;
         std::ifstream mateisData(metisFile);
-        AssertMsg(mateisData.is_open(), "cannot open file: " << metisFile);
+        Assert(mateisData.is_open(), "cannot open file: " << metisFile);
         while (!mateisData.eof()) {
             std::string line;
             getline(mateisData, line);
@@ -360,8 +360,8 @@ public:
         }
 
         std::ofstream result(resultsFile);
-        Assert(result);
-        Assert(result.is_open());
+        Assert(result, "cannot open file: " << resultsFile);
+        Assert(result.is_open(), "cannot open file: " << resultsFile);
         result << "EdgeTime,Parts,BlockTime,BlockSize,BlockMode,PathCover,Blocks,Connections,ConnectionsMean,ConnectionsMax,ConnectionsMedian,Edges,EdgesMean,EdgesMax,EdgesMedian,Time\n";
 
         for (const int edgeTime : edgeTimes) {
@@ -373,7 +373,7 @@ public:
                 std::vector<uint64_t> weightOfColumn;
                 std::vector<std::vector<StopId>> stopsOfColumn;
                 std::ifstream mateisData(fullMetisFileName);
-                AssertMsg(mateisData.is_open(), "cannot open file: " << fullMetisFileName);
+                Assert(mateisData.is_open(), "cannot open file: " << fullMetisFileName);
                 while (!mateisData.eof()) {
                     std::string line;
                     getline(mateisData, line);

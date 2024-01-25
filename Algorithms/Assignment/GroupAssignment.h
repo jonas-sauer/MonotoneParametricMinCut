@@ -61,7 +61,7 @@ public:
             srand(settings.randomSeed);
             int threadId = omp_get_thread_num();
             pinThreadToCoreId((threadId * pinMultiplier) % numCores);
-            AssertMsg(omp_get_num_threads() == numberOfThreads, "Number of threads is " << omp_get_num_threads() << ", but should be " << numberOfThreads << "!");
+            Assert(omp_get_num_threads() == numberOfThreads, "Number of threads is " << omp_get_num_threads() << ", but should be " << numberOfThreads << "!");
 
             WorkerType worker(data, reverseGraph, settings, decisionModel);
 
@@ -147,8 +147,8 @@ public:
         GroupAssignmentStatistic stats(data, demand, assignmentData, settings.passengerMultiplier);
         std::cout << stats << std::endl;
         std::ofstream statistics(textFileName);
-        AssertMsg(statistics, "Cannot create output stream for: " << textFileName);
-        AssertMsg(statistics.is_open(), "Cannot open output stream for: " << textFileName);
+        Assert(statistics, "Cannot create output stream for: " << textFileName);
+        Assert(statistics.is_open(), "Cannot open output stream for: " << textFileName);
         statistics << stats << std::endl;
         statistics.close();
         stats.serialize(binaryFileName);
@@ -159,33 +159,33 @@ public:
         std::vector<GlobalPassengerList> globalPassengerListByDemandIndex;
         size_t idVertexDemandIndex = 0;
         for (const AccumulatedVertexDemand::Entry& demandEntry : demand.entries) {
-            AssertMsg(demandEntry.demandIndex + 1 >= globalPassengerListByDemandIndex.size(), "AccumulatedVertexDemand is not sorted by index, " << demandEntry.demandIndex << " comes after " << globalPassengerListByDemandIndex.size() << "!");
+            Assert(demandEntry.demandIndex + 1 >= globalPassengerListByDemandIndex.size(), "AccumulatedVertexDemand is not sorted by index, " << demandEntry.demandIndex << " comes after " << globalPassengerListByDemandIndex.size() << "!");
             globalPassengerListByDemandIndex.resize(demandEntry.demandIndex + 1);
             int passengerCount = demandEntry.numberOfPassengers * settings.passengerMultiplier;
             while (passengerCount > 0) {
-                AssertMsg(idVertexDemandIndex < idVertexDemand.entries.size(), "IdVertexDemandIndex is out of bounds (IdVertexDemandIndex: " << idVertexDemandIndex << ", Size: " << idVertexDemand.entries.size() << ")!");
-                AssertMsg(idVertexDemand.entries[idVertexDemandIndex].destinationVertex == demandEntry.destinationVertex, "DestinationVertex of AccumulatedVertexDemand does not match IdVertexDemand (" << idVertexDemand.entries[idVertexDemandIndex].destinationVertex << " != " << demandEntry.destinationVertex << ")!");
-                AssertMsg(idVertexDemand.entries[idVertexDemandIndex].originVertex == demandEntry.originVertex, "OriginVertex of AccumulatedVertexDemand does not match IdVertexDemand (" << idVertexDemand.entries[idVertexDemandIndex].originVertex << " != " << demandEntry.originVertex << ")!");
-                AssertMsg(idVertexDemand.entries[idVertexDemandIndex].departureTime == demandEntry.earliestDepartureTime, "DepartureTime of AccumulatedVertexDemand does not match IdVertexDemand (" << idVertexDemand.entries[idVertexDemandIndex].departureTime << " != " << demandEntry.earliestDepartureTime << ")!");
+                Assert(idVertexDemandIndex < idVertexDemand.entries.size(), "IdVertexDemandIndex is out of bounds (IdVertexDemandIndex: " << idVertexDemandIndex << ", Size: " << idVertexDemand.entries.size() << ")!");
+                Assert(idVertexDemand.entries[idVertexDemandIndex].destinationVertex == demandEntry.destinationVertex, "DestinationVertex of AccumulatedVertexDemand does not match IdVertexDemand (" << idVertexDemand.entries[idVertexDemandIndex].destinationVertex << " != " << demandEntry.destinationVertex << ")!");
+                Assert(idVertexDemand.entries[idVertexDemandIndex].originVertex == demandEntry.originVertex, "OriginVertex of AccumulatedVertexDemand does not match IdVertexDemand (" << idVertexDemand.entries[idVertexDemandIndex].originVertex << " != " << demandEntry.originVertex << ")!");
+                Assert(idVertexDemand.entries[idVertexDemandIndex].departureTime == demandEntry.earliestDepartureTime, "DepartureTime of AccumulatedVertexDemand does not match IdVertexDemand (" << idVertexDemand.entries[idVertexDemandIndex].departureTime << " != " << demandEntry.earliestDepartureTime << ")!");
                 for (const DestinationSpecificPassengerId destinationSpecificPassengerId : idVertexDemand.entries[idVertexDemandIndex].ids) {
                     globalPassengerListByDemandIndex[demandEntry.demandIndex].emplace_back(getGlobalPassengerId(demandEntry.destinationVertex, destinationSpecificPassengerId));
                     passengerCount--;
                 }
                 idVertexDemandIndex++;
             }
-            AssertMsg(passengerCount == 0, "Did not find IdVertexDemand for every passenger (demand index: " << demandEntry.demandIndex << ", idVertexIndex: " << idVertexDemandIndex << ", passengerCount: " << passengerCount << ")!");
+            Assert(passengerCount == 0, "Did not find IdVertexDemand for every passenger (demand index: " << demandEntry.demandIndex << ", idVertexIndex: " << idVertexDemandIndex << ", passengerCount: " << passengerCount << ")!");
         }
         std::vector<GlobalPassengerList> globalPassengerListByGroupId(assignmentData.groups.size());
         for (size_t i = assignmentData.groups.size() - 1; i < assignmentData.groups.size(); i--) {
             const GroupData& group = assignmentData.groups[i];
-            AssertMsg(group.groupSize <= globalPassengerListByDemandIndex[group.demandIndex].size(), "Not enough passengers for group (GroupSize: " << group.groupSize << ", Available passengers: " << globalPassengerListByDemandIndex[group.demandIndex].size() << ", demand index: " << group.demandIndex << ")!");
+            Assert(group.groupSize <= globalPassengerListByDemandIndex[group.demandIndex].size(), "Not enough passengers for group (GroupSize: " << group.groupSize << ", Available passengers: " << globalPassengerListByDemandIndex[group.demandIndex].size() << ", demand index: " << group.demandIndex << ")!");
             for (size_t j = 0; j < group.groupSize; j++) {
                 globalPassengerListByGroupId[i].emplace_back(globalPassengerListByDemandIndex[group.demandIndex].back());
                 globalPassengerListByDemandIndex[group.demandIndex].pop_back();
             }
         }
         for (const GlobalPassengerList& globalPassengerList : globalPassengerListByDemandIndex) {
-            AssertMsg(globalPassengerList.empty(), "Passengers have not been assigned to group!");
+            Assert(globalPassengerList.empty(), "Passengers have not been assigned to group!");
         }
         std::vector<GlobalPassengerList> passengersInConnection(assignmentData.groupsPerConnection.size());
         for (size_t connection = 0; connection < assignmentData.groupsPerConnection.size(); connection++) {

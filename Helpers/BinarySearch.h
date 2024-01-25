@@ -9,8 +9,8 @@
 template<typename FUNCTION>
 inline int firstFalseIndex(int minI, int maxI, const FUNCTION& f, const int maxIntervalSize = 16) {
     while (maxI - minI >= maxIntervalSize) {
-        Assert(minI >= 0);
-        Assert(minI < maxI);
+        Assert(minI >= 0, "minI is negative!");
+        Assert(minI < maxI, "minI exceeds maxI!");
         const int j = minI + ((maxI - minI) >> 1);
         if (f(j)) {
             minI = j + 1;
@@ -54,25 +54,25 @@ inline int firstIndexGreaterOrEqual(const int size, const VECTOR& vector, const 
     int minI = 0;
     int maxI = size - 1;
     while (maxI - minI >= maxIntervalSize) {
-        Assert(minI >= 0);
-        Assert(maxI < size);
-        Assert(minI < maxI);
+        Assert(minI >= 0, "minI is negative!");
+        Assert(maxI < size, "maxI exceeds size!");
+        Assert(minI < maxI, "minI exceeds maxI!");
         const VALUE& minValue = vector(minI);
         if (!less(minValue, value)) return minI;
         const VALUE& maxValue = vector(maxI);
         if (less(maxValue, value)) return maxI + 1;
-        Assert(!less(maxValue, minValue));
+        Assert(!less(maxValue, minValue), "minValue exceeds maxValue!");
         const int i = minI + ((maxI - minI) * ((value - minValue) / static_cast<double>(maxValue - minValue)));
-        Assert(i >= minI);
-        Assert(i <= maxI);
+        Assert(i >= minI, "i must be in [minI, maxI]!");
+        Assert(i <= maxI, "i must be in [minI, maxI]!");
         if (less(vector(i), value)) {
             minI = i + 1;
         } else {
             maxI = i - 1;
         }
-        Assert(minI >= 0);
-        Assert(maxI < size);
-        Assert(minI <= maxI);
+        Assert(minI >= 0, "minI is negative!");
+        Assert(maxI < size, "maxI exceeds size!");
+        Assert(minI < maxI, "minI exceeds maxI!");
         const int j = minI + ((maxI - minI) >> 1);
         if (less(vector(j), value)) {
             minI = j + 1;

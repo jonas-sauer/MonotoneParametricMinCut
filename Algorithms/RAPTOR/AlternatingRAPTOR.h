@@ -67,7 +67,7 @@ public:
         runForward(minTime);
         while (!queue.empty()) {
             ArrivalLabel label = queue.pop_min();
-            AssertMsg(currentArrivalTime < label.arrivalTime, "Queue key is decreasing: old key = " << currentArrivalTime << ", new key = " << label.arrivalTime << "!");
+            Assert(currentArrivalTime < label.arrivalTime, "Queue key is decreasing: old key = " << currentArrivalTime << ", new key = " << label.arrivalTime << "!");
             currentArrivalTime = label.arrivalTime;
             if constexpr (Debug) {
                 std::cout << "Current queue label: arrivalTime = " << String::secToTime(label.arrivalTime) << " (" << label.arrivalTime << "), numberOfTrips = " << label.numberOfTrips << std::endl;

@@ -32,7 +32,7 @@ inline DynamicFlowGraph generateSampleGraph(const ThreadPinning& threadPinning, 
                 bestIndex = i;
             }
         }
-        AssertMsg(!Vector::contains(sampleVertices, separator[bestIndex]), "Sample Vertex is a duplicate!");
+        Assert(!Vector::contains(sampleVertices, separator[bestIndex]), "Sample Vertex is a duplicate!");
         sampleVertices.emplace_back(separator[bestIndex]);
     }
     Progress progress(sampleVertices.size() * sampleTimes.size());

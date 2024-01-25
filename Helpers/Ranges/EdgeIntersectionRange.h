@@ -90,17 +90,17 @@ public:
     }
 
     inline Edge operator[](const size_t i) const noexcept {
-        AssertMsg(i < size(), "Index " << i << " is out of range!");
+        Assert(i < size(), "Index " << i << " is out of range!");
         return begin()[i];
     }
 
     inline Edge front() const noexcept {
-        AssertMsg(!empty(), "Range is empty!");
+        Assert(!empty(), "Range is empty!");
         return *(begin());
     }
 
     inline Edge back() const noexcept {
-        AssertMsg(!empty(), "Range is empty!");
+        Assert(!empty(), "Range is empty!");
         Edge result;
         for (Iterator i = begin(); i != end(); ++i) {
             result = *i;

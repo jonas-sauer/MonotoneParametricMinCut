@@ -218,7 +218,7 @@ public:
     inline void readIntermediateFile(const std::string& fileName, const double coordinateFactor = 0.000001) noexcept {
         map.clear();
         std::ifstream bssFile(fileName);
-        AssertMsg(bssFile.is_open(), "Could not open file " << fileName << "!");
+        Assert(bssFile.is_open(), "Could not open file " << fileName << "!");
         std::string line = "";
         while (!bssFile.eof()) {
             getline(bssFile, line);

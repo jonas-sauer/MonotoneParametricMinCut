@@ -120,7 +120,7 @@ public:
     inline void addDepartureTime(const int departureTime) noexcept {
         numDepartureTimes++;
         departureTimes[numDepartureTimes - 1] = departureTime;
-        AssertMsg(numDepartureTimes <= MaxSources, "Exceeded maximum number of sources!");
+        Assert(numDepartureTimes <= MaxSources, "Exceeded maximum number of sources!");
     }
 
     inline void addSource(const Vertex vertex, const int initialArrivalTime, const Vertex parentVertex) noexcept {
@@ -202,7 +202,7 @@ private:
         if (initialArrivalTime >= vertexLabel.arrivalTime[departure]) return;
         vertexLabel.arrivalTime[departure] = initialArrivalTime;
         vertexLabel.parent[departure] = parentVertex;
-        AssertMsg(upwardSweepGraph.externalToInternal(vertex) < upwardSweepGraph.graph.numVertices(), "Vertex is not in sweep graph! (original: "<< internalToOriginal(vertex) << ", CH: " << vertex << ", sweep: " << upwardSweepGraph.externalToInternal(vertex) << ")");
+        Assert(upwardSweepGraph.externalToInternal(vertex) < upwardSweepGraph.graph.numVertices(), "Vertex is not in sweep graph! (original: "<< internalToOriginal(vertex) << ", CH: " << vertex << ", sweep: " << upwardSweepGraph.externalToInternal(vertex) << ")");
         sweepStart = std::min(sweepStart, sweepStartOf[upwardSweepGraph.externalToInternal(vertex)]);
         if constexpr (UseTargetBuckets) {
             bucketSources.insert(vertex);
@@ -227,7 +227,7 @@ private:
     inline void settle() noexcept {
         Distance* distanceU = Q.extractFront();
         const Vertex u = Vertex(distanceU - &(distance[0]));
-        AssertMsg(u < graph[FORWARD].numVertices(), u << " is not a valid vertex!");
+        Assert(u < graph[FORWARD].numVertices(), u << " is not a valid vertex!");
         if constexpr (StallOnDemand) {
             for (Edge edge : graph[BACKWARD].edgesFrom(u)) {
                 const Vertex v = graph[BACKWARD].get(ToVertex, edge);
@@ -374,7 +374,7 @@ private:
             for (const Edge edge : targetGraph.graph.edgesFrom(vertex)) {
                 for (size_t i = 0; i < numDepartureTimes; i++) {
                     if (vertexLabel.arrivalTime[i] == INFTY) continue;
-                    AssertMsg(label[vertex].parent[i] != int(noVertex), "Invalid parent!");
+                    Assert(label[vertex].parent[i] != int(noVertex), "Invalid parent!");
                     const int newArrivalTime = vertexLabel.arrivalTime[i] + targetGraph.graph.get(Weight, edge);
                     const Vertex poi = targetGraph.graph.get(ToVertex, edge);
                     Label& poiLabel = getLabel(poi);

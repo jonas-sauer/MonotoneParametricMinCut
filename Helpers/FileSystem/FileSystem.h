@@ -88,9 +88,9 @@ namespace FileSystem {
         if (!isFile(oldName)) return false;
         if (isFile(newName)) return false;
         std::ifstream source(oldName, std::ios::binary);
-        AssertMsg(source.is_open(), "cannot open file: " << oldName);
+        Assert(source.is_open(), "cannot open file: " << oldName);
         std::ofstream destination(newName, std::ios::binary);
-        AssertMsg(destination.is_open(), "cannot open file: " << newName);
+        Assert(destination.is_open(), "cannot open file: " << newName);
         destination << source.rdbuf();
         source.close();
         destination.close();
@@ -119,11 +119,11 @@ namespace FileSystem {
             } else if (file[1] == '/') {
                 return extendPath(base, file.substr(2));
             }
-            AssertMsg(file[1] == '.', "Cannot extend path '" << base << "' with file '" << file << "'!");
+            Assert(file[1] == '.', "Cannot extend path '" << base << "' with file '" << file << "'!");
             if (file.size() == 2) {
                 return getParentDirectory(base);
             }
-            AssertMsg(file[2] == '/', "Cannot extend path '" << base << "' with file '" << file << "'!");
+            Assert(file[2] == '/', "Cannot extend path '" << base << "' with file '" << file << "'!");
             return extendPath(getParentDirectory(base), file.substr(3));
         }
         if (base[base.length() - 1] == '/') {

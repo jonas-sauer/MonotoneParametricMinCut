@@ -25,7 +25,7 @@ public:
         minimum(minimum),
         numberOfElements(numberOfElements),
         increment(increment) {
-        AssertMsg(increment > 0, "Step has to be greater than 0!");
+        Assert(increment > 0, "Step has to be greater than 0!");
     }
     ArithmeticProgression(IO::Deserialization& deserialize) {
         this->deserialize(deserialize);
@@ -97,13 +97,13 @@ public:
     }
 
     inline void prepend(const size_t n = 1) noexcept {
-        AssertMsg(numberOfElements > 0, "N has to be greater than 0!");
+        Assert(numberOfElements > 0, "N has to be greater than 0!");
         minimum -= (n * increment);
         numberOfElements += n;
     }
 
     inline void append(const size_t n = 1) noexcept {
-        AssertMsg(numberOfElements > 0, "N has to be greater than 0!");
+        Assert(numberOfElements > 0, "N has to be greater than 0!");
         numberOfElements += n;
     }
 
@@ -131,7 +131,7 @@ public:
     CoverByArithmeticProgressions(const std::vector<int>& numbers) : input(numbers) {
         sort(input);
         for (size_t i = 1; i < input.size(); i++) {
-            AssertMsg(input[i - 1] < input[i], "The vector of numbers contains duplicates (" << input[i - 1] << ", " << input[i] << ")!");
+            Assert(input[i - 1] < input[i], "The vector of numbers contains duplicates (" << input[i - 1] << ", " << input[i] << ")!");
         }
     }
 

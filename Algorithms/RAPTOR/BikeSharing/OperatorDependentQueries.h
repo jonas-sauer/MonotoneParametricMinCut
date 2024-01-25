@@ -184,8 +184,8 @@ private:
         IndexedMap<StopIndex, false, RouteId>& routesServingUpdatedStops = routesServingUpdatedStopsPerOperator[bikeOperator];
         for (const StopId stop : updatedStopsPerOperator[bikeOperator]) {
             for (const RouteSegment& route : network.routesContainingStop(stop)) {
-                AssertMsg(network.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
-                AssertMsg(network.stopIds[network.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR network contains invalid route segments!");
+                Assert(network.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
+                Assert(network.stopIds[network.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR network contains invalid route segments!");
                 if (route.stopIndex + 1 == network.numberOfStopsInRoute(route.routeId)) continue;
                 if (network.lastTripOfRoute(route.routeId)[route.stopIndex].departureTime < earliestArrivalPerOperator[bikeOperator][stop]) continue;
                 if constexpr (TripPruning) {
@@ -204,7 +204,7 @@ private:
     // RAPTOR route scanning begin
     // One scanning pass per operator
     inline void scanRoutes() noexcept {
-        AssertMsg(queue.empty(), "The queue still contains labels from the last round!");
+        Assert(queue.empty(), "The queue still contains labels from the last round!");
         scanRoutes(data.walkingNetwork, 0);
         for (size_t bikeOperator = 1; bikeOperator < data.numberOfOperators(); bikeOperator++) {
             scanRoutes(data.cyclingNetwork, bikeOperator);
@@ -219,12 +219,12 @@ private:
             if constexpr (Debug) RouteCount++;
             StopIndex stopIndex = routesServingUpdatedStopsPerOperator[bikeOperator][route];
             const size_t tripSize = network.numberOfStopsInRoute(route);
-            AssertMsg(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ")!");
+            Assert(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ")!");
 
             const StopId* stops = network.stopArrayOfRoute(route);
             const StopEvent* trip = network.lastTripOfRoute(route);
             StopId stop = stops[stopIndex];
-            AssertMsg(trip[stopIndex].departureTime >= previousRound[stop].arrivalTime, "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousRound[stop].arrivalTime << ", LastDaparture: " << trip[stopIndex].departureTime << ")!");
+            Assert(trip[stopIndex].departureTime >= previousRound[stop].arrivalTime, "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousRound[stop].arrivalTime << ", LastDaparture: " << trip[stopIndex].departureTime << ")!");
 
             StopIndex parentIndex = stopIndex;
             const StopEvent* firstTrip = network.firstTripOfRoute(route);

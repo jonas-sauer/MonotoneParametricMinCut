@@ -92,8 +92,8 @@ inline std::vector<Vertex> minimumBipartiteVertexCover(const GRAPH& graph) noexc
     }
     IndexedSet<false, Vertex> connectedVertices = data.leftSide;
     for (const Dinic::CutEdge edge : maximumBipartiteMatching(data)) {
-        AssertMsg(data.leftSide.contains(edge.from), "Matching edge is not directed from left to right side!");
-        AssertMsg(data.rightSide.contains(edge.to), "Matching edge is not directed from left to right side!");
+        Assert(data.leftSide.contains(edge.from), "Matching edge is not directed from left to right side!");
+        Assert(data.rightSide.contains(edge.to), "Matching edge is not directed from left to right side!");
         matchingGraph.deleteEdge(edge.from, edge.to);
         matchingGraph.addEdge(edge.to, edge.from);
         connectedVertices.remove(edge.from);

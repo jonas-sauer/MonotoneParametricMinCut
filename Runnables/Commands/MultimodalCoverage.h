@@ -382,8 +382,8 @@ struct MultimodalInitialTransferData {
         for (const CH::CH& ch : chData) {
             initialTransfers.emplace_back(ch, FORWARD, numStops);
         }
-        AssertMsg(modes.size() == NumTransferModes, "Wrong number of modes");
-        AssertMsg(initialTransfers.size() == NumTransferModes, "Wrong number of modes");
+        Assert(modes.size() == NumTransferModes, "Wrong number of modes");
+        Assert(initialTransfers.size() == NumTransferModes, "Wrong number of modes");
     }
 
     RAPTOR::TransitiveInitialTransfers transitiveInitialTransfers;

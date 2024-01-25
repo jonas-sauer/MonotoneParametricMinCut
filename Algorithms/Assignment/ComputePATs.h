@@ -50,7 +50,7 @@ public:
             const CSA::Connection& connection = data.connections[i];
             const ProfileEntry& skipEntry = stopLabels[connection.departureStopId].getSkipEntry();
 
-            AssertMsg(skipEntry.departureTime >= connection.departureTime, "Connections are scanned out of order (" << skipEntry.departureTime << " before " << connection.departureTime << ", index: " << i << ")!");
+            Assert(skipEntry.departureTime >= connection.departureTime, "Connections are scanned out of order (" << skipEntry.departureTime << " before " << connection.departureTime << ", index: " << i << ")!");
             connectionLabels[i].tripPAT = tripPAT[connection.tripId];
             connectionLabels[i].transferPAT = stopLabels[connection.arrivalStopId].evaluateWithDelay(connection.arrivalTime, maxDelay, waitingCosts) + transferCost;
             connectionLabels[i].skipPAT = skipEntry.evaluate(connection.departureTime, waitingCosts);
@@ -60,7 +60,7 @@ public:
             tripPAT[connection.tripId] = pat;
             if (pat >= connectionLabels[i].skipPAT) continue;
 
-            AssertMsg(pat < Unreachable, "Adding infinity PAT = " << pat << "!");
+            Assert(pat < Unreachable, "Adding infinity PAT = " << pat << "!");
             stopLabels[connection.departureStopId].addWaitingEntry(ProfileEntry(connection.departureTime, i, pat, waitingCosts));
             profiler.addToProfile();
             const int bufferTime = data.minTransferTime(connection.departureStopId);

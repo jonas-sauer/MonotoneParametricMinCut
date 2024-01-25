@@ -18,18 +18,18 @@ struct ProfileDijkstraLabel : public ExternalKHeapElement {
     }
 
     inline int key() const noexcept {
-        AssertMsg(hasUnsettledEntries(), "Label does not have entries and should not be in queue!");
+        Assert(hasUnsettledEntries(), "Label does not have entries and should not be in queue!");
         return entries[1].departureTime;
     }
 
     inline ProfileEntry settle() noexcept {
-        AssertMsg(hasUnsettledEntries(), "Label does not have entries to settle!");
+        Assert(hasUnsettledEntries(), "Label does not have entries to settle!");
         entries.pop_front();
         return entries[0];
     }
 
     inline bool insert(const ProfileEntry& entry) noexcept {
-        AssertMsg(entry.departureTime <= entries[0].departureTime, "Entry is inserted out of order! Last departure time: " << entries[0].departureTime << ", New departure time: " << entry.departureTime);
+        Assert(entry.departureTime <= entries[0].departureTime, "Entry is inserted out of order! Last departure time: " << entries[0].departureTime << ", New departure time: " << entry.departureTime);
         size_t i = entries.size();
         while (i > 0 && entries[i-1].departureTime < entry.departureTime) {
             i--;
@@ -48,7 +48,7 @@ struct ProfileDijkstraLabel : public ExternalKHeapElement {
                 entries.push_back(entry);
             }
         }
-        AssertMsg(hasUnsettledEntries(), "Label does not have entries to settle!");
+        Assert(hasUnsettledEntries(), "Label does not have entries to settle!");
         return true;
     }
 

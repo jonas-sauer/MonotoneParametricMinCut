@@ -41,8 +41,8 @@ public:
 
     virtual std::vector<Result> run(const Vertex sourceVertexId, const Vertex targetVertexId) noexcept {
         if constexpr (StopsOnly) {
-            AssertMsg(data.isStop(sourceVertexId), "The sourceVertexId " << sourceVertexId << " does not represent a stop!");
-            AssertMsg(data.isStop(targetVertexId), "The targetVertexId " << targetVertexId << " does not represent a stop!");
+            Assert(data.isStop(sourceVertexId), "The sourceVertexId " << sourceVertexId << " does not represent a stop!");
+            Assert(data.isStop(targetVertexId), "The targetVertexId " << targetVertexId << " does not represent a stop!");
         }
         const int minDepartureTime = getParameter<int>("minDepartureTime");
         const int maxDepartureTime = getParameter<int>("maxDepartureTime");

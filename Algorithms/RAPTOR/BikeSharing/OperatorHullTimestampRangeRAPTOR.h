@@ -269,8 +269,8 @@ private:
         routesServingUpdatedStops.clear();
         for (const StopId stop : stopsUpdatedByTransfer) {
             for (const RAPTOR::RouteSegment& route : cyclingNetwork.routesContainingStop(stop)) {
-                AssertMsg(cyclingNetwork.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
-                AssertMsg(cyclingNetwork.stopIds[cyclingNetwork.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR data contains invalid route segments!");
+                Assert(cyclingNetwork.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
+                Assert(cyclingNetwork.stopIds[cyclingNetwork.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR data contains invalid route segments!");
                 if (route.stopIndex + 1 == cyclingNetwork.numberOfStopsInRoute(route.routeId)) continue;
                 if (cyclingNetwork.lastTripOfRoute(route.routeId)[route.stopIndex].departureTime < previousArrivalTime(stop)) continue;
                 if (routesServingUpdatedStops.contains(route.routeId)) {
@@ -289,12 +289,12 @@ private:
             if constexpr (Debug) debugData[roundIndex].numberOfScannedRoutes++;
             StopIndex stopIndex = routesServingUpdatedStops[route];
             const size_t tripSize = cyclingNetwork.numberOfStopsInRoute(route);
-            AssertMsg(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ", RoundIndex: " << roundIndex << ")!");
+            Assert(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ", RoundIndex: " << roundIndex << ")!");
 
             const StopId* stops = cyclingNetwork.stopArrayOfRoute(route);
             const RAPTOR::StopEvent* trip = cyclingNetwork.lastTripOfRoute(route);
             StopId stop = stops[stopIndex];
-            AssertMsg(trip[stopIndex].departureTime >= previousArrivalTime(stop), "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousArrivalTime(stop) << ", LastDeparture: " << trip[stopIndex].departureTime << ", RoundIndex: " << roundIndex << ")!");
+            Assert(trip[stopIndex].departureTime >= previousArrivalTime(stop), "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousArrivalTime(stop) << ", LastDeparture: " << trip[stopIndex].departureTime << ", RoundIndex: " << roundIndex << ")!");
 
             StopIndex parentIndex = stopIndex;
             const RAPTOR::StopEvent* firstTrip = cyclingNetwork.firstTripOfRoute(route);

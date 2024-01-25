@@ -74,7 +74,7 @@ public:
         for (size_t toCell = 0; toCell < data.boundaryVertices.size(); toCell++) {
             DistanceBounds& bounds = distanceBounds[fromCell][toCell];
             if (bounds.upperBound == INFTY) {
-                AssertMsg(bounds.lowerBound == INFTY, "Cell " << toCell << " is partially reachable from " << fromCell);
+                Assert(bounds.lowerBound == INFTY, "Cell " << toCell << " is partially reachable from " << fromCell);
                 continue;
             }
             bounds.upperBound += data.maximumEccentricity[fromCell];

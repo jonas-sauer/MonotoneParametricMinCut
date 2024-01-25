@@ -116,7 +116,7 @@ public:
         }
 
         std::ifstream f(filename, std::ios::binary);
-        AssertMsg(f.is_open(), "The file " << filename << " could not be opened!");
+        Assert(f.is_open(), "The file " << filename << " could not be opened!");
 
         std::string extension(getFileExtension(filename));
         if (mimeTypes.find(extension) == mimeTypes.end()) extension = "txt";
@@ -133,7 +133,7 @@ public:
 
 protected:
     inline static void* callback(mg_event event, mg_connection *conn, const mg_request_info *requestInfo) noexcept {
-        Assert(server != nullptr);
+        Assert(server != nullptr, "No server found!");
         if (event == MG_NEW_REQUEST) {
             server->process(conn, requestInfo);
         }

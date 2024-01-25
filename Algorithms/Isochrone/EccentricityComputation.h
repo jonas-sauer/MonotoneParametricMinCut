@@ -174,7 +174,7 @@ private:
                 const int newDistance = distance[u] + weight;
                 distance[v] = branchlessConditional(newDistance < distance[v], newDistance, distance[v]);
             }
-            AssertMsg(distance[v] < INFTY, "Did not reach " << v << " from " << source);
+            Assert(distance[v] < INFTY, "Did not reach " << v << " from " << source);
             eccentricity[originalSource] = std::max(eccentricity[originalSource], distance[v]);
         }
     }

@@ -97,17 +97,17 @@ public:
     }
 
     inline size_t sizeOfCell(const size_t cell) const noexcept {
-        AssertMsg(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
+        Assert(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
         return endOfCell[cell] - beginOfCell[cell];
     }
 
     inline SubRange<std::vector<Vertex>> getCell(const size_t cell) const noexcept {
-        AssertMsg(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
+        Assert(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
         return SubRange<std::vector<Vertex>>(vertexData, beginOfCell[cell], endOfCell[cell]);
     }
 
     inline std::vector<Vertex> getVerticesOfCell(const size_t cell) const noexcept {
-        AssertMsg(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
+        Assert(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
         std::vector<Vertex> vertices;
         vertices.reserve(sizeOfCell(cell));
         for (const Vertex vertex : getCell(cell)) {
@@ -117,7 +117,7 @@ public:
     }
 
     inline SubRange<std::vector<Vertex>> getSeparatorOfCell(const size_t cell) const noexcept {
-        AssertMsg(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
+        Assert(isCell(cell), "Cannot access cell " << cell << " as only " << numberOfCells() << " cells exist!");
         return SubRange<std::vector<Vertex>>(vertexData, endOfCell[firstChildOfCell(cell)], beginOfCell[secondChildOfCell(cell)]);
     }
 
@@ -169,7 +169,7 @@ public:
                 }
             }
         }
-        AssertMsg(order.size() == numberOfVertices(), "Order has " << order.size() << " entries, but should have " << numberOfVertices() << " entries!");
+        Assert(order.size() == numberOfVertices(), "Order has " << order.size() << " entries, but should have " << numberOfVertices() << " entries!");
         return order;
     }
 
@@ -211,21 +211,21 @@ public:
     }
 
     inline void divideCell(const size_t cell, const std::vector<Vertex>& separator, const std::vector<Vertex>& firstChild, const std::vector<Vertex>& secondChild) noexcept {
-        AssertMsg(sizeOfCell(cell) == separator.size() + firstChild.size() + secondChild.size(), "The union of the sub cells does not match with the original cell (Size of cell " << cell << " is " << sizeOfCell(cell) << ", size of union is " << (separator.size() + firstChild.size() + secondChild.size()) << ")!");
+        Assert(sizeOfCell(cell) == separator.size() + firstChild.size() + secondChild.size(), "The union of the sub cells does not match with the original cell (Size of cell " << cell << " is " << sizeOfCell(cell) << ", size of union is " << (separator.size() + firstChild.size() + secondChild.size()) << ")!");
         const size_t level = levelOfCell(cell);
         for (const Vertex vertex : firstChild) {
-            AssertMsg(getCellIdOfVertex(vertex, level) == cell, "Vertex " << vertex << " is not part of cell " << cell << " (it is part of cell << " << getCellIdOfVertex(vertex, level) << ")!");
+            Assert(getCellIdOfVertex(vertex, level) == cell, "Vertex " << vertex << " is not part of cell " << cell << " (it is part of cell << " << getCellIdOfVertex(vertex, level) << ")!");
         }
         for (const Vertex vertex : separator) {
-            AssertMsg(getCellIdOfVertex(vertex, level) == cell, "Vertex " << vertex << " is not part of cell " << cell << " (it is part of cell << " << getCellIdOfVertex(vertex, level) << ")!");
+            Assert(getCellIdOfVertex(vertex, level) == cell, "Vertex " << vertex << " is not part of cell " << cell << " (it is part of cell << " << getCellIdOfVertex(vertex, level) << ")!");
         }
         for (const Vertex vertex : secondChild) {
-            AssertMsg(getCellIdOfVertex(vertex, level) == cell, "Vertex " << vertex << " is not part of cell " << cell << " (it is part of cell << " << getCellIdOfVertex(vertex, level) << ")!");
+            Assert(getCellIdOfVertex(vertex, level) == cell, "Vertex " << vertex << " is not part of cell " << cell << " (it is part of cell << " << getCellIdOfVertex(vertex, level) << ")!");
         }
         while (level >= numberOfLevels() - 1) {
             addLevel();
         }
-        AssertMsg(level == numberOfLevels() - 2, "Cannot divide cell " << cell << " in level " << level << " because level " << (numberOfLevels() - 1) << " already exists!");
+        Assert(level == numberOfLevels() - 2, "Cannot divide cell " << cell << " in level " << level << " because level " << (numberOfLevels() - 1) << " already exists!");
         size_t index = beginOfCell[cell];
         const size_t firstChildIndex = firstChildOfCell(cell);
         for (const Vertex vertex : firstChild) {
@@ -277,16 +277,16 @@ public:
 
 private:
     inline void addLevel() noexcept {
-        AssertMsg(firstCellOfLevel(numberOfLevels()) == beginOfCell.size(), "Lowest Level of binary tree is incomplete!");
-        AssertMsg(firstCellOfLevel(numberOfLevels()) == endOfCell.size(), "Lowest Level of binary tree is incomplete!");
+        Assert(firstCellOfLevel(numberOfLevels()) == beginOfCell.size(), "Lowest Level of binary tree is incomplete!");
+        Assert(firstCellOfLevel(numberOfLevels()) == endOfCell.size(), "Lowest Level of binary tree is incomplete!");
         for (const size_t cell : cellsOfLevel(numberOfLevels() - 1)) {
             beginOfCell.emplace_back(beginOfCell[cell]);
             endOfCell.emplace_back(beginOfCell[cell]);
             beginOfCell.emplace_back(endOfCell[cell]);
             endOfCell.emplace_back(endOfCell[cell]);
         }
-        AssertMsg(firstCellOfLevel(numberOfLevels()) == beginOfCell.size(), "Lowest Level of binary tree is incomplete!");
-        AssertMsg(firstCellOfLevel(numberOfLevels()) == endOfCell.size(), "Lowest Level of binary tree is incomplete!");
+        Assert(firstCellOfLevel(numberOfLevels()) == beginOfCell.size(), "Lowest Level of binary tree is incomplete!");
+        Assert(firstCellOfLevel(numberOfLevels()) == endOfCell.size(), "Lowest Level of binary tree is incomplete!");
     }
 
 private:

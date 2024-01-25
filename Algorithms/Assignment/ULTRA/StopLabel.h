@@ -46,8 +46,8 @@ public:
     }
 
     inline void addEntry(const int departureTime, const PerceivedTime pat, const int waitingTime, const double waitingCosts) noexcept {
-        AssertMsg(!profile.empty(), "The profile is not valid!");
-        AssertMsg(departureTime <= profile.back().departureTime, "New entry (" << departureTime << ") departs later than " << profile.back() << "!");
+        Assert(!profile.empty(), "The profile is not valid!");
+        Assert(departureTime <= profile.back().departureTime, "New entry (" << departureTime << ") departs later than " << profile.back() << "!");
         if (profile.back().departureTime == departureTime) {
             profile.back().normalizedPAT = pat + (departureTime * waitingCosts);
         } else {
@@ -68,13 +68,13 @@ public:
             size_t insertionIndex = transferProfile.size() - 1;
             int shift = -1;
             while (transferProfile[insertionIndex].departureTime < entry.departureTime) {
-                AssertMsg(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
+                Assert(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
                 if (transferProfile[insertionIndex].normalizedPAT >= entry.normalizedPAT) shift++;
                 insertionIndex--;
             }
             if (transferProfile[insertionIndex].normalizedPAT <= entry.normalizedPAT) return;
             if (transferProfile[insertionIndex].departureTime == entry.departureTime) {
-                AssertMsg(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
+                Assert(insertionIndex > 0, "Insertion index reached sentinel (sentinel time: " << transferProfile[0].departureTime << ", entry time: " << entry.departureTime << ")!");
                 shift++;
                 insertionIndex--;
             }
@@ -107,21 +107,21 @@ public:
         for (size_t i = transferProfile.size() - 1; i > 0; i--) {
             if (transferProfile[i].departureTime < time) continue;
             const double newProbability = delayProbability(transferProfile[i].departureTime - time, maxDelay);
-            AssertMsg((newProbability >= probability && newProbability <= 1.0), "delayProbability (" << newProbability << ") is not a probability! (x: " << (transferProfile[i].departureTime - time) << ", maxDelay: " << maxDelay << ")");
+            Assert((newProbability >= probability && newProbability <= 1.0), "delayProbability (" << newProbability << ") is not a probability! (x: " << (transferProfile[i].departureTime - time) << ", maxDelay: " << maxDelay << ")");
             pat += (newProbability - probability) * (transferProfile[i].normalizedPAT - (time * waitingCosts));
-            AssertMsg(pat < Unreachable, "PAT has reached infinity (time: " << time << ", transferProfile[i].departureTime: " << transferProfile[i].departureTime << ", probability: " << delayProbability(transferProfile[i].departureTime - time, maxDelay) << ")!");
+            Assert(pat < Unreachable, "PAT has reached infinity (time: " << time << ", transferProfile[i].departureTime: " << transferProfile[i].departureTime << ", probability: " << delayProbability(transferProfile[i].departureTime - time, maxDelay) << ")!");
             probability = newProbability;
             if (probability >= 1) break;
         }
         if (probability < 1.0) {
             pat = (probability > 0.0000001) ? (pat / probability) : (Unreachable);
         }
-        AssertMsg(pat == pat, "PAT calculation failed (result = " << pat << ")!");
+        Assert(pat == pat, "PAT calculation failed (result = " << pat << ")!");
         return pat;
     }
 
     inline PerceivedTime evaluateWithoutDelay(const int time, const double waitingCosts) const noexcept {
-        AssertMsg(profile.back().departureTime >= time, "Profile contains entries that are too early!");
+        Assert(profile.back().departureTime >= time, "Profile contains entries that are too early!");
         if (profile.size() <= 1) {
             return Unreachable;
         } else {
@@ -136,37 +136,37 @@ public:
     }
 
     inline void findIndex(const int time) noexcept {
-        AssertMsg(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
+        Assert(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
         if (profile.back().departureTime >= time) {
             index = profile.size() - 1;
         } else if (profile[index].departureTime >= time) {
             do {
                 index++;
-                AssertMsg(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
+                Assert(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
             } while (profile[index].departureTime >= time);
             index--;
         } else {
             do {
                 index--;
-                AssertMsg(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
+                Assert(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
             } while (profile[index].departureTime < time);
         }
-        AssertMsg(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
-        AssertMsg(profile[index].departureTime >= time, "Departure time is " << time << " but profile was evaluated for " << profile[index].departureTime << "!");
-        AssertMsg((index == profile.size() - 1) || (profile[index + 1].departureTime < time), "Departure time is " << time << " but profile was not evaluated for " << profile[index + 1].departureTime << "!");
+        Assert(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
+        Assert(profile[index].departureTime >= time, "Departure time is " << time << " but profile was evaluated for " << profile[index].departureTime << "!");
+        Assert((index == profile.size() - 1) || (profile[index + 1].departureTime < time), "Departure time is " << time << " but profile was not evaluated for " << profile[index + 1].departureTime << "!");
     }
 
     inline void findIndexFast(const int time) noexcept {
         index = firstFalseIndex(0, profile.size() - 1, [&](const int i){return profile[i].departureTime >= time;}, 16) - 1;
-        AssertMsg(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
-        AssertMsg(profile[index].departureTime >= time, "Departure time is " << time << " but profile was evaluated for " << profile[index].departureTime << "!");
-        AssertMsg((index == profile.size() - 1) || (profile[index + 1].departureTime < time), "Departure time is " << time << " but profile was not evaluated for " << profile[index + 1].departureTime << "!");
+        Assert(index < profile.size(), "Index = " << index  << " is out of bounds (0, " << profile.size() << ")!");
+        Assert(profile[index].departureTime >= time, "Departure time is " << time << " but profile was evaluated for " << profile[index].departureTime << "!");
+        Assert((index == profile.size() - 1) || (profile[index + 1].departureTime < time), "Departure time is " << time << " but profile was not evaluated for " << profile[index + 1].departureTime << "!");
     }
 
     inline double evaluateIndex(const size_t j, const int time, const double waitingCosts) noexcept {
-        AssertMsg(j < profile.size(), "Index = " << j  << " is out of bounds (0, " << profile.size() << ")!");
-        AssertMsg(profile[j].departureTime >= time, "Departure time is " << time << " but profile was evaluated for " << profile[j].departureTime << "!");
-        AssertMsg((j == profile.size() - 1) || (profile[j + 1].departureTime < time), "Departure time is " << time << " but profile was not evaluated for " << profile[j + 1].departureTime << "!");
+        Assert(j < profile.size(), "Index = " << j  << " is out of bounds (0, " << profile.size() << ")!");
+        Assert(profile[j].departureTime >= time, "Departure time is " << time << " but profile was evaluated for " << profile[j].departureTime << "!");
+        Assert((j == profile.size() - 1) || (profile[j + 1].departureTime < time), "Departure time is " << time << " but profile was not evaluated for " << profile[j + 1].departureTime << "!");
         if (index == 0) {
             return Unreachable;
         } else {

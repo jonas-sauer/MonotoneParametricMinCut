@@ -64,8 +64,8 @@ public:
     }
 
     inline void run(const Vertex destinationVertex, std::vector<AccumulatedVertexDemand::Entry>& demand) noexcept {
-        AssertMsg(!demand.empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
-        AssertMsg(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
+        Assert(!demand.empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
+        Assert(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
         profiler.startAssignmentForDestination(destinationVertex);
 
         sort(demand, [](const AccumulatedVertexDemand::Entry& a, const AccumulatedVertexDemand::Entry& b){return a.earliestDepartureTime < b.earliestDepartureTime;});
@@ -147,19 +147,19 @@ private:
     inline void walkToInitialStops(const std::vector<AccumulatedVertexDemand::Entry>& demand) noexcept {
         const std::vector<int> targetDistance = bucketQuery.getBackwardDistance();
         for (const AccumulatedVertexDemand::Entry& demandEntry : demand) {
-            AssertMsg(demandEntry.originVertex != demandEntry.destinationVertex, "Origin and destination vertex of demand are identical (" << demandEntry.originVertex << ")!");
-            AssertMsg(settings.allowDepartureStops || !data.isStop(demandEntry.originVertex), "Demand is originating from a stop (" << demandEntry.originVertex << ")!");
-            AssertMsg(data.isStop(demandEntry.originVertex) || data.transferGraph.outDegree(demandEntry.originVertex) > 0, "Origin vertex " << demandEntry.originVertex << " of demand is isolated!");
+            Assert(demandEntry.originVertex != demandEntry.destinationVertex, "Origin and destination vertex of demand are identical (" << demandEntry.originVertex << ")!");
+            Assert(settings.allowDepartureStops || !data.isStop(demandEntry.originVertex), "Demand is originating from a stop (" << demandEntry.originVertex << ")!");
+            Assert(data.isStop(demandEntry.originVertex) || data.transferGraph.outDegree(demandEntry.originVertex) > 0, "Origin vertex " << demandEntry.originVertex << " of demand is isolated!");
             ChoiceSet choiceSet;
             int minPAT;
             if (targetDistance[demandEntry.originVertex] < INFTY) {
                 const int pat = targetDistance[demandEntry.originVertex] * (settings.walkingCosts + 1);
                 choiceSet.addChoice(StopId(demandEntry.destinationVertex), demandEntry.earliestDepartureTime, pat);
-                AssertMsg(targetDistance[demandEntry.originVertex] <= pat, "Overflow!");
+                Assert(targetDistance[demandEntry.originVertex] <= pat, "Overflow!");
             }
             for (const DistanceLabel& label : zoneToStop[demandEntry.originVertex]) {
                 const int walkingPTT = label.distance * (settings.walkingCosts + 1);
-                AssertMsg(label.distance <= walkingPTT, "Overflow!");
+                Assert(label.distance <= walkingPTT, "Overflow!");
                 if (walkingPTT - settings.delayTolerance > minPAT) break;
                 if (walkingPTT + patComputation.getProfile(label.stop).getMinimumPTT() - settings.delayTolerance > minPAT) continue;
                 evaluateInitialStop<DEPARTURE_TIME_CHOICE>(demandEntry, label.stop, label.distance, choiceSet, minPAT);
@@ -171,7 +171,7 @@ private:
                 if (data.isStop(Vertex(choiceSet.options[0]))) {
                     groupTrackingData.groupsOriginatingAtStop[choiceSet.options[0]].emplace_back(originalGroup, choiceSet.departureTimes[0]);
                 } else {
-                    AssertMsg(Vertex(choiceSet.options[0]) == demandEntry.destinationVertex, "Passengers a walking to a vertex that is not their destination!");
+                    Assert(Vertex(choiceSet.options[0]) == demandEntry.destinationVertex, "Passengers a walking to a vertex that is not their destination!");
                     assignmentData.directWalkingGroups.emplace_back(originalGroup);
                 }
             } else {
@@ -198,12 +198,12 @@ private:
                     if (data.isStop(Vertex(choiceSet.options[i]))) {
                         groupTrackingData.groupsOriginatingAtStop[choiceSet.options[i]].emplace_back(group, choiceSet.departureTimes[i]);
                     } else {
-                        AssertMsg(Vertex(choiceSet.options[i]) == demandEntry.destinationVertex, "Passengers a walking to a vertex that is not their destination!");
+                        Assert(Vertex(choiceSet.options[i]) == demandEntry.destinationVertex, "Passengers a walking to a vertex that is not their destination!");
                         assignmentData.directWalkingGroups.emplace_back(group);
                     }
                 }
-                AssertMsg(originalGroupIndex < choiceSet.size(), "No groups have been assigned!");
-                AssertMsg(assignmentData.groups[originalGroup].groupSize == groupSizes[originalGroupIndex], "Original group has wrong size (size should be: " << groupSizes[originalGroupIndex] << ", size is: " << assignmentData.groups[originalGroup].groupSize << ")!");
+                Assert(originalGroupIndex < choiceSet.size(), "No groups have been assigned!");
+                Assert(assignmentData.groups[originalGroup].groupSize == groupSizes[originalGroupIndex], "Original group has wrong size (size should be: " << groupSizes[originalGroupIndex] << ", size is: " << assignmentData.groups[originalGroup].groupSize << ")!");
             }
         }
     }
@@ -211,7 +211,7 @@ private:
     template<int DEPARTURE_TIME_CHOICE>
     inline void evaluateInitialStop(const AccumulatedVertexDemand::Entry& demandEntry, const StopId stop, const int transferTime, ChoiceSet& choiceSet, int& minPAT) noexcept {
         int departureTime = demandEntry.earliestDepartureTime - getMaxAdaptationTime<DEPARTURE_TIME_CHOICE>() + transferTime;
-        AssertMsg(demandEntry.earliestDepartureTime <= departureTime, "Overflow!");
+        Assert(demandEntry.earliestDepartureTime <= departureTime, "Overflow!");
         const int latestDepartureTime = demandEntry.latestDepartureTime + getMaxAdaptationTime<DEPARTURE_TIME_CHOICE>() + transferTime;
         patComputation.getProfile(stop).findIndexFast(departureTime);
         while (departureTime <= latestDepartureTime) {
@@ -262,10 +262,10 @@ private:
         const double targetPAT = patComputation.targetPAT(connection);
         const double hopOffPAT = std::min(targetPAT, label.transferPAT);
         const double hopOnPAT = std::min(hopOffPAT, label.tripPAT);
-        AssertMsg(hopOnPAT >= connection.arrivalTime, "TripPAT is to low (Connection: " << i << ", Trip: " << connection.tripId << ", PAT: " << label.tripPAT << ", ArrivalTime: " << connection.arrivalTime << ")!");
+        Assert(hopOnPAT >= connection.arrivalTime, "TripPAT is to low (Connection: " << i << ", Trip: " << connection.tripId << ", PAT: " << label.tripPAT << ", ArrivalTime: " << connection.arrivalTime << ")!");
         moveGroups(groupTrackingData.groupsWaitingAtStop[connection.departureStopId], groupTrackingData.groupsInTrip[connection.tripId], label.skipPAT, hopOnPAT, "skip", "board");
         for (const GroupId group : groupTrackingData.groupsInTrip[connection.tripId]) {
-            AssertMsg(group < assignmentData.connectionsPerGroup.size(), "Group " << group << " is out of bounds (0, " << assignmentData.connectionsPerGroup.size() << ")");
+            Assert(group < assignmentData.connectionsPerGroup.size(), "Group " << group << " is out of bounds (0, " << assignmentData.connectionsPerGroup.size() << ")");
             assignmentData.connectionsPerGroup[group].emplace_back(i);
         }
         GroupList groupsHoppingOff;
@@ -273,7 +273,7 @@ private:
         if (groupsHoppingOff.empty()) return;
         moveGroups(groupsHoppingOff, groupTrackingData.groupsAtTarget, label.transferPAT, targetPAT, "walk", "target");
         if (groupsHoppingOff.empty()) return;
-        AssertMsg(label.transferPAT - targetPAT <= settings.delayTolerance, "Groups are not walking straight to the target (transferPAT = " << label.transferPAT << ", targetPAT= " << targetPAT << ")!");
+        Assert(label.transferPAT - targetPAT <= settings.delayTolerance, "Groups are not walking straight to the target (transferPAT = " << label.transferPAT << ", targetPAT= " << targetPAT << ")!");
         distributePassengers(connection, groupsHoppingOff);
     }
 
@@ -307,7 +307,7 @@ private:
     }
 
     inline void walkToNextStop(const StopId from, GroupList& groupList, const int time) noexcept {
-        AssertMsg(data.transferGraph.outDegree(from) != 0, "Cannot walk to next stop from a vertex with out degree zero!");
+        Assert(data.transferGraph.outDegree(from) != 0, "Cannot walk to next stop from a vertex with out degree zero!");
         ChoiceSet choiceSet;
         for (const Edge edge : data.transferGraph.edgesFrom(from)) {
             const Vertex intermediateStop = data.transferGraph.get(ToVertex, edge);
@@ -317,7 +317,7 @@ private:
         if (data.isStop(from)) {
             evaluateIntermediateStop(StopId(from), time, 0, choiceSet);
         }
-        AssertMsg(!choiceSet.empty(), "" << groupList.size() << " groups arrived at stop " << from << " but have nowhere to go!");
+        Assert(!choiceSet.empty(), "" << groupList.size() << " groups arrived at stop " << from << " but have nowhere to go!");
         if (choiceSet.size() == 1) {
             groupTrackingData.groupsWalkingToStop[choiceSet.options[0]].emplace_back(groupList, choiceSet.departureTimes[0]);
         } else {
@@ -340,7 +340,7 @@ private:
                     }
                     groupListsByIndex[j].emplace_back(group);
                 }
-                AssertMsg(movedOriginalGroup, "Group has not moved to the next stop (Group: " << assignmentData.groups[groupList[i]] << ")");
+                Assert(movedOriginalGroup, "Group has not moved to the next stop (Group: " << assignmentData.groups[groupList[i]] << ")");
             }
             for (size_t i = 0; i < groupListsByIndex.size(); i++) {
                 if (groupListsByIndex[i].empty()) continue;

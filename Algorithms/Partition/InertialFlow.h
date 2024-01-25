@@ -53,7 +53,7 @@ inline void divideVerticesByQuantity(std::vector<Vertex>& vertices, std::vector<
 
 inline void divideVerticesByValue(std::vector<Vertex>& vertices, std::vector<Vertex>& sources, std::vector<Vertex>& targets, const VertexValue& vertexValue, const double fixedVertices) noexcept {
     const double vertexValueDifference = vertexValue(vertices.back()) - vertexValue(vertices.front());
-    AssertMsg(vertexValueDifference > 0, "Vertex value difference should be positive but is " << vertexValueDifference);
+    Assert(vertexValueDifference > 0, "Vertex value difference should be positive but is " << vertexValueDifference);
     const double sourceLimit = vertexValue(vertices.front()) + (vertexValueDifference * fixedVertices);
     for (size_t i = 0; vertexValue(vertices[i]) < sourceLimit; i++) {
         sources.emplace_back(vertices[i]);
@@ -66,7 +66,7 @@ inline void divideVerticesByValue(std::vector<Vertex>& vertices, std::vector<Ver
 
 inline void divideVerticesByQuantityAndValue(std::vector<Vertex>& vertices, std::vector<Vertex>& sources, std::vector<Vertex>& targets, const VertexValue& vertexValue, const double fixedVertices) noexcept {
     const double vertexValueDifference = vertexValue(vertices.back()) - vertexValue(vertices.front());
-    AssertMsg(vertexValueDifference > 0, "Vertex value difference should be positive but is " << vertexValueDifference);
+    Assert(vertexValueDifference > 0, "Vertex value difference should be positive but is " << vertexValueDifference);
     const size_t sizeLimit = vertices.size() * fixedVertices;
     const double sourceLimit = std::min(vertexValue(vertices.front()) + (vertexValueDifference * fixedVertices), vertexValue(vertices[vertices.size() - sizeLimit - 1]));
     for (size_t i = 0; ((vertexValue(vertices[i]) < sourceLimit) || (sources.size() <= sizeLimit)); i++) {
@@ -283,8 +283,8 @@ private:
         for (const Dinic::CutEdge edge : data.bestCut.edges) {
             cutEdges.emplace_back(edge);
         }
-        AssertMsg(data.bestCut.side.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << data.bestCut.side.size() << " vertices!");
-        AssertMsg(otherSide.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << otherSide.size() << " vertices!");
+        Assert(data.bestCut.side.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << data.bestCut.side.size() << " vertices!");
+        Assert(otherSide.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << otherSide.size() << " vertices!");
         vertexPartition.splitCell(cell, data.bestCut.side, otherSide);
         if constexpr (Debug) {
             std::cout << "   Cut weight: " << String::prettyInt(data.bestCutSize) << std::endl;
@@ -348,8 +348,8 @@ private:
         for (const Dinic::CutEdge edge : threadData[bestCutIndex].bestCut.edges) {
             cutEdges.emplace_back(edge);
         }
-        AssertMsg(threadData[bestCutIndex].bestCut.side.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << threadData[bestCutIndex].bestCut.side.size() << " vertices!");
-        AssertMsg(otherSide.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << otherSide.size() << " vertices!");
+        Assert(threadData[bestCutIndex].bestCut.side.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << threadData[bestCutIndex].bestCut.side.size() << " vertices!");
+        Assert(otherSide.size() >= ceil(vertices.size() * fixedVertices), "Side should have at least " << (vertices.size() * fixedVertices) << " vertices, but has only " << otherSide.size() << " vertices!");
         vertexPartition.splitCell(cell, threadData[bestCutIndex].bestCut.side, otherSide);
         if constexpr (Debug) {
             std::cout << "   Cut weight: " << String::prettyInt(threadData[bestCutIndex].bestCutSize) << std::endl;
@@ -469,7 +469,7 @@ private:
                 data.usedVertices.insert(vertex);
             }
             for (const Vertex vertex : data.sourceSide) {
-                AssertMsg(!data.usedVertices.contains(vertex), "Vertex " << vertex << " is part of the separator and the source side!");
+                Assert(!data.usedVertices.contains(vertex), "Vertex " << vertex << " is part of the separator and the source side!");
                 data.usedVertices.insert(vertex);
             }
             data.targetSide.clear();
@@ -520,7 +520,7 @@ private:
                     data.usedVertices.insert(vertex);
                 }
                 for (const Vertex vertex : data.sourceSide) {
-                    AssertMsg(!data.usedVertices.contains(vertex), "Vertex " << vertex << " is part of the separator and the source side!");
+                    Assert(!data.usedVertices.contains(vertex), "Vertex " << vertex << " is part of the separator and the source side!");
                     data.usedVertices.insert(vertex);
                 }
                 data.targetSide.clear();

@@ -58,10 +58,10 @@ public:
 
         inline const ProfileEntry& findEntry(const Vertex stop, const int time) noexcept {
             while (scanIndex[stop] + 1 < end(stop) && entries[scanIndex[stop] + 1].departureTime >= time) scanIndex[stop]++;
-            AssertMsg((scanIndex[stop] + 1 >= end(stop) || entries[scanIndex[stop] + 1].departureTime < time), "Profile is not scanned monotonously (current time: " << time << " previous time: " << entries[scanIndex[stop] + 1] << ")!");
+            Assert((scanIndex[stop] + 1 >= end(stop) || entries[scanIndex[stop] + 1].departureTime < time), "Profile is not scanned monotonously (current time: " << time << " previous time: " << entries[scanIndex[stop] + 1] << ")!");
             while (entries[scanIndex[stop]].departureTime < time) {
                 scanIndex[stop]--;
-                AssertMsg(scanIndex[stop] >= begin(stop), "There seems to be no profile entry for time = " << time << "!");
+                Assert(scanIndex[stop] >= begin(stop), "There seems to be no profile entry for time = " << time << "!");
             }
             return entries[scanIndex[stop]];
         }
@@ -126,7 +126,7 @@ public:
             const CSA::Connection& connection = data.connections[i];
             const ProfileEntry& skipEntry = stopLabels[connection.departureStopId].getSkipEntry();
 
-            AssertMsg(skipEntry.departureTime >= connection.departureTime, "Connections are scanned out of order (" << skipEntry.departureTime << " before " << connection.departureTime << ", index: " << i << ")!");
+            Assert(skipEntry.departureTime >= connection.departureTime, "Connections are scanned out of order (" << skipEntry.departureTime << " before " << connection.departureTime << ", index: " << i << ")!");
             ConnectionLabel& label = patData[patDataIndex].connectionLabels[i];
             label.loadFactor = computeLoadFactor(i);
             const int connectionTravelTime = connection.arrivalTime - connection.departureTime;
@@ -147,7 +147,7 @@ public:
             tripPAT[connection.tripId] = (pat >= Unreachable) ? Unreachable : pat - hopOnLoadCost;
             if (pat >= label.skipPAT) continue;
 
-            AssertMsg(pat < Unreachable, "Adding infinity PAT = " << pat << "!");
+            Assert(pat < Unreachable, "Adding infinity PAT = " << pat << "!");
             stopLabels[connection.departureStopId].addWaitingEntry(ProfileEntry(connection.departureTime, i, pat, settings.waitingCosts));
             profiler.addToProfile();
             const int bufferTime = data.minTransferTime(connection.departureStopId);

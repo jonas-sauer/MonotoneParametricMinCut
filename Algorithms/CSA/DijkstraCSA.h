@@ -63,7 +63,7 @@ public:
         parentLabel(PathRetrieval ? data.numberOfStops() + 1 : 0),
         dijkstraLabels(data.transferGraph.numVertices()),
         profiler(profilerTemplate) {
-        AssertMsg(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
+        Assert(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
         profiler.registerPhases({PHASE_CLEAR, PHASE_INITIALIZATION, PHASE_CONNECTION_SCAN});
         profiler.registerMetrics({METRIC_CONNECTIONS, METRIC_EDGES, METRIC_STOPS_BY_TRIP, METRIC_STOPS_BY_TRANSFER});
         profiler.initialize();
@@ -228,8 +228,8 @@ private:
     inline void runInitialTransfers() noexcept {
         initialTransfers.run(sourceVertex, targetVertex);
         for (const Vertex stop : initialTransfers.getForwardPOIs()) {
-            AssertMsg(data.isStop(stop), "Reached POI " << stop << " is not a stop!");
-            AssertMsg(initialTransfers.getForwardDistance(stop) != INFTY, "Vertex " << stop << " was not reached!");
+            Assert(data.isStop(stop), "Reached POI " << stop << " is not a stop!");
+            Assert(initialTransfers.getForwardDistance(stop) != INFTY, "Vertex " << stop << " was not reached!");
             profiler.countMetric(METRIC_EDGES);
             const int newArrivalTime = sourceDepartureTime + initialTransfers.getForwardDistance(stop);
             arrivalByTransfer(StopId(stop), newArrivalTime, sourceVertex);

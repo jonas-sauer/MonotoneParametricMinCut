@@ -120,8 +120,8 @@ public:
 
         for (size_t i = 0; i < demandByDestination.size(); i++) {
             const Vertex destinationVertex = demandByDestination.vertexAtIndex(i);
-            AssertMsg(!demandByDestination[destinationVertex].empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
-            AssertMsg(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
+            Assert(!demandByDestination[destinationVertex].empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
+            Assert(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
             profiler.startAssignmentForDestination(destinationVertex);
 
             sort(demandByDestination[destinationVertex], [](const IdVertexDemand::Entry& a, const IdVertexDemand::Entry& b){return a.departureTime < b.departureTime;});
@@ -182,7 +182,7 @@ public:
         {
             int threadId = omp_get_thread_num();
             pinThreadToCoreId((threadId * pinMultiplier) % numCores);
-            AssertMsg(omp_get_num_threads() == numberOfThreads, "Number of threads is " << omp_get_num_threads() << ", but should be " << numberOfThreads << "!");
+            Assert(omp_get_num_threads() == numberOfThreads, "Number of threads is " << omp_get_num_threads() << ", but should be " << numberOfThreads << "!");
 
             AlgorithmData algorithmData(data, reverseGraph, settings, demand.numIds);
 
@@ -304,9 +304,9 @@ private:
     template<int DEPARTURE_TIME_CHOICE>
     inline void walkToInitialStop(AlgorithmData& algorithmData, const std::vector<IdVertexDemand::Entry>& demand, const int destinationVertex) const noexcept {
         for (const IdVertexDemand::Entry& passengers : demand) {
-            AssertMsg(passengers.originVertex != passengers.destinationVertex, "Origin and destination vertex of p are identical (" << passengers.originVertex << ")!");
-            AssertMsg(settings.allowDepartureStops || !data.isStop(passengers.originVertex), "Demand is originating from a stop (" << passengers.originVertex << ")!");
-            AssertMsg(data.isStop(passengers.originVertex) || data.transferGraph.outDegree(passengers.originVertex) > 0, "Origin vertex " << passengers.originVertex << " of demand is isolated!");
+            Assert(passengers.originVertex != passengers.destinationVertex, "Origin and destination vertex of p are identical (" << passengers.originVertex << ")!");
+            Assert(settings.allowDepartureStops || !data.isStop(passengers.originVertex), "Demand is originating from a stop (" << passengers.originVertex << ")!");
+            Assert(data.isStop(passengers.originVertex) || data.transferGraph.outDegree(passengers.originVertex) > 0, "Origin vertex " << passengers.originVertex << " of demand is isolated!");
             ParentSample parents;
             if (DEPARTURE_TIME_CHOICE == DecisionModelWithAdaption) {
                 parents = algorithmData.patComputation.getProfile(passengers.originVertex).evaluate(passengers.departureTime, passengers.departureTime, settings.maxAdaptationTime, settings.adaptationCost);
@@ -346,12 +346,12 @@ private:
             }
             size_t usedConnectionsCount = 0;
             for (size_t i = connections.size() - 1; i < connections.size(); i--) {
-                AssertMsg(algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1 <= i, "Increasing path index at arrival stop from " << i << " to " << (algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1) << "!");
+                Assert(algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1 <= i, "Increasing path index at arrival stop from " << i << " to " << (algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1) << "!");
                 i = algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1;
                 //if (i < 0) break;
                 algorithmData.passengersInConnection[connections[i]].emplace_back(getGlobalPassengerId(destinationVertex, passenger));
                 usedConnectionsCount++;
-                AssertMsg(algorithmData.stops[data.connections[connections[i]].departureStopId] <= i, "Increasing path index at departure stop from " << i << " to " << (algorithmData.stops[data.connections[connections[i]].departureStopId]) << "!");
+                Assert(algorithmData.stops[data.connections[connections[i]].departureStopId] <= i, "Increasing path index at departure stop from " << i << " to " << (algorithmData.stops[data.connections[connections[i]].departureStopId]) << "!");
                 i = algorithmData.stops[data.connections[connections[i]].departureStopId];
             }
             if (usedConnectionsCount == 0) {
@@ -368,7 +368,7 @@ private:
     inline void removeStationCycles(AlgorithmData& algorithmData, const int destinationVertex) const noexcept {
         std::vector<int> path;
         for (const size_t passenger : indices(algorithmData.connectionsByPassenger)) {
-            AssertMsg(path.empty(), "Path contains stations from a previous iteration!");
+            Assert(path.empty(), "Path contains stations from a previous iteration!");
             std::vector<int>& connections = algorithmData.connectionsByPassenger[passenger];
             if (connections.empty()) continue;
             PathLabel label(data.connections[connections.front()], stationByStop);

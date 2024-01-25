@@ -101,8 +101,8 @@ private:
 
         for (size_t bikeOperator = 1; bikeOperator < input.numberOfOperators(); bikeOperator++) {
             for (const Vertex vertex : input.verticesOfOperator[bikeOperator]) {
-                AssertMsg(oldToNewVertexOfOperator[0][vertex] != noVertex, "Vertex " << vertex << " is not part of the walking network!");
-                AssertMsg(oldToNewVertexOfOperator[bikeOperator][vertex] != noVertex, "Vertex " << vertex << " is not part of the cycling network for operator " << bikeOperator << "!");
+                Assert(oldToNewVertexOfOperator[0][vertex] != noVertex, "Vertex " << vertex << " is not part of the walking network!");
+                Assert(oldToNewVertexOfOperator[bikeOperator][vertex] != noVertex, "Vertex " << vertex << " is not part of the cycling network for operator " << bikeOperator << "!");
                 inter.transferGraph.addEdge(oldToNewVertexOfOperator[0][vertex], oldToNewVertexOfOperator[bikeOperator][vertex]).set(TravelTime, input.pickUpTimeOfVertex[vertex]);
                 inter.transferGraph.addEdge(oldToNewVertexOfOperator[bikeOperator][vertex], oldToNewVertexOfOperator[0][vertex]).set(TravelTime, input.dropOffTimeOfVertex[vertex]);
             }

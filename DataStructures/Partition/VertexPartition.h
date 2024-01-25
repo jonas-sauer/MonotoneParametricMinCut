@@ -73,7 +73,7 @@ public:
     }
 
     inline const std::vector<Vertex>& getCellOfVertex(const Vertex vertex) const noexcept {
-        AssertMsg(hasCell(vertex), "Vertex " << vertex << " is not assigned to any cell!");
+        Assert(hasCell(vertex), "Vertex " << vertex << " is not assigned to any cell!");
         return cells[cellOfVertex[vertex]];
     }
 
@@ -82,7 +82,7 @@ public:
     }
 
     inline void splitCell(const int cell, const std::vector<Vertex> oldCell, const std::vector<Vertex> newCell) noexcept {
-        AssertMsg(getCell(cell).size() == oldCell.size() + newCell.size(), "The union of the sub cells does not match with the original cell (Size of cell " << cell << " is " << getCell(cell).size()  << ", size of union is " << (oldCell.size() + newCell.size()) << ")!");
+        Assert(getCell(cell).size() == oldCell.size() + newCell.size(), "The union of the sub cells does not match with the original cell (Size of cell " << cell << " is " << getCell(cell).size()  << ", size of union is " << (oldCell.size() + newCell.size()) << ")!");
         for (const Vertex vertex : newCell) {
             cellOfVertex[vertex] = cells.size();
         }
@@ -157,8 +157,8 @@ public:
 
     inline void writeCSV(const std::string& fileName) const noexcept {
         std::ofstream file(fileName);
-        Assert(file);
-        Assert(file.is_open());
+        Assert(file, "cannot open file: " << fileName);
+        Assert(file.is_open(), "cannot open file: " << fileName);
         file << "vertexId,CellId\n";
         for (const Vertex vertex : vertices()) {
             file << vertex << ",";

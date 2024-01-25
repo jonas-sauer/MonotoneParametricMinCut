@@ -39,7 +39,7 @@ public:
         profiles(data.numberOfStops()),
         transferDistanceToTarget(data.numberOfStops(), never),
         profiler(profilerTemplate) {
-        AssertMsg(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
+        Assert(Vector::isSorted(data.connections), "Connections must be sorted in ascending order!");
         profiler.registerPhases({PHASE_CLEAR, PHASE_INITIALIZATION, PHASE_CONNECTION_SCAN});
         profiler.registerMetrics({METRIC_CONNECTIONS, METRIC_EDGES, METRIC_STOPS_BY_TRIP, METRIC_STOPS_BY_TRANSFER});
         profiler.initialize();

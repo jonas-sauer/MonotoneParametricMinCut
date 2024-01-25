@@ -35,11 +35,11 @@ public:
         if (heap != NULL) delete[] heap;
     }
 
-    inline int size() const {return numberOfElements;}
-    inline bool empty() const {return size() == 0;}
+    inline int size() const noexcept {return numberOfElements;}
+    inline bool empty() const noexcept {return size() == 0;}
 
-    inline void extractMin(int &element, KeyType &key) {
-        Assert(!empty());
+    inline void extractMin(int &element, KeyType &key) noexcept {
+        Assert(!empty(), "Trying to extract element from an empty heap!");
         HeapElement &front = heap[0];
         element = front.element;
         key = front.key;
@@ -52,8 +52,8 @@ public:
         }
     }
 
-    inline void popMin() {
-        Assert(!empty());
+    inline void popMin() noexcept {
+        Assert(!empty(), "Trying to extract element from an empty heap!");
         HeapElement &front = heap[0];
         int element = front.element;
         position[element] = NULLINDEX;
@@ -65,7 +65,7 @@ public:
         }
     }
 
-    inline void deleteElement(const int element) {
+    inline void deleteElement(const int element) noexcept {
         if (!contains(element)) return;
         int elementPosition = position[element];
         HeapElement &heapElement = heap[elementPosition];
@@ -83,7 +83,7 @@ public:
         }
     }
 
-    inline void update(const int element, const KeyType key) {
+    inline void update(const int element, const KeyType key) noexcept {
         if (position[element] == NULLINDEX) {
             HeapElement &back = heap[numberOfElements];
             back.key = key;
@@ -103,41 +103,41 @@ public:
         }
     }
 
-    inline KeyType minKey() const {
-        Assert(!empty());
+    inline KeyType minKey() const noexcept {
+        Assert(!empty(), "Heap is empty!");
         return heap[0].key;
     }
 
-    inline int minElement() const {
-        Assert(!empty());
+    inline int minElement() const noexcept {
+        Assert(!empty(), "Heap is empty!");
         return heap[0].element;
     }
 
-    inline void min(int &element, KeyType &key) {
-        Assert(!empty());
+    inline void min(int &element, KeyType &key) noexcept {
+        Assert(!empty(), "Heap is empty!");
         key = heap[0].key;
         element = heap[0].element;
     }
 
-    inline KeyType key(const int element) const {
-        Assert(contains(element));
+    inline KeyType key(const int element) const noexcept {
+        Assert(contains(element), "Element " << element << " is not contained!");
         return heap[position[element]].key;
     }
 
-    inline void reset() {initialize();}
+    inline void reset() noexcept {initialize();}
 
-    inline void clear() {
+    inline void clear() noexcept {
         for (int i = 0; i < numberOfElements; ++i) {
             position[heap[i].element] = NULLINDEX;
         }
         numberOfElements = 0;
     }
 
-    inline bool contains(const int element) const {
+    inline bool contains(const int element) const noexcept {
         return position[element] != NULLINDEX;
     }
 
-    void dump(std::ostream& os) const {
+    void dump(std::ostream& os) const noexcept {
         os << "Heap: ";
         for (int i = 0; i < size(); ++i) {
             std::cout << "[" << i << ":" << heap[i].key << "] " << std::flush;
@@ -153,7 +153,7 @@ public:
     }
 
 protected:
-    inline void initialize() {
+    inline void initialize() noexcept {
         numberOfElements = 0;
         memset(position, 0xFF, sizeof(int) * maxNumberOfElements);
         for (int i = 0; i < maxNumberOfElements; ++i) {
@@ -161,7 +161,7 @@ protected:
         }
     }
 
-    inline void siftUp(int i) {
+    inline void siftUp(int i) noexcept {
         assert(i < numberOfElements);
         int cur_i = i;
         while (cur_i > 0) {
@@ -175,7 +175,7 @@ protected:
         }
     }
 
-    inline void siftDown(int i) {
+    inline void siftDown(int i) noexcept {
         assert(i < numberOfElements);
         while (true) {
             int min_ind = i;
@@ -197,7 +197,7 @@ protected:
         }
     }
 
-    inline void swap(const int i, const int j) {
+    inline void swap(const int i, const int j) noexcept {
         HeapElement &el_i = heap[i];
         HeapElement &el_j = heap[j];
         position[el_i.element] = j;

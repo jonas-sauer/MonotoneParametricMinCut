@@ -207,7 +207,7 @@ private:
     }
 
     inline std::vector<Geometry::Point> constructArrivalTimeFunction(const Profile& profile) const noexcept {
-        AssertMsg(!profile.empty(), "Cannot construct Function from empty profile!");
+        Assert(!profile.empty(), "Cannot construct Function from empty profile!");
         Function function;
         function.emplace_back(minDepartureTime, std::min(profile.front().arrivalTime, minDepartureTime + walkingTime));
         for (size_t i = 0; i < profile.size(); i++) {
@@ -228,7 +228,7 @@ private:
     }
 
     inline std::vector<Geometry::Point> constructTravelTimeFunction(const Profile& profile) const noexcept {
-        AssertMsg(!profile.empty(), "Cannot construct Function from empty profile!");
+        Assert(!profile.empty(), "Cannot construct Function from empty profile!");
         Function function;
         function.emplace_back(minDepartureTime, std::min(profile.front().arrivalTime - minDepartureTime, walkingTime));
         for (size_t i = 0; i < profile.size(); i++) {

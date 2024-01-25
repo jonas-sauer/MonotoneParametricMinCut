@@ -30,13 +30,13 @@ struct ContiguousProfileVector {
                 return entries[i].arrivalTime;
             }
         }
-        AssertMsg(false, "Could not find a breakpoint after " << departureTime << "!");
+        Assert(false, "Could not find a breakpoint after " << departureTime << "!");
         return entry(vertex, 0).arrivalTime;
     }
 
     inline bool pushEntry(const size_t vertex, const int departureTime, const int arrivalTime) noexcept {
         ProfileEntry& lastEntry = entries[profileEnd(vertex) - 1];
-        AssertMsg(departureTime <= lastEntry.departureTime, "Entry does not belong at the end of the profile!");
+        Assert(departureTime <= lastEntry.departureTime, "Entry does not belong at the end of the profile!");
         if (arrivalTime >= lastEntry.arrivalTime) return false;
         if (departureTime == lastEntry.departureTime) {
             lastEntry.arrivalTime = arrivalTime;

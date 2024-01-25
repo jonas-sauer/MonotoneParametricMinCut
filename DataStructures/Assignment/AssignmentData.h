@@ -25,8 +25,8 @@ struct AssignmentData {
     }
 
     inline GroupId splitGroup(const GroupId parentGroup, const double numberOfPassengers) noexcept {
-        AssertMsg(numberOfPassengers > 0, "Cannot create an empty group!");
-        AssertMsg(groups[parentGroup].groupSize > numberOfPassengers, "Cannot split off " << numberOfPassengers << " passengers from group of size " << groups[parentGroup].groupSize << ")!");
+        Assert(numberOfPassengers > 0, "Cannot create an empty group!");
+        Assert(groups[parentGroup].groupSize > numberOfPassengers, "Cannot split off " << numberOfPassengers << " passengers from group of size " << groups[parentGroup].groupSize << ")!");
         const GroupId id = groups.size();
         groups.emplace_back(id, groups[parentGroup].demandIndex, numberOfPassengers);
         connectionsPerGroup.emplace_back(connectionsPerGroup[parentGroup]);
@@ -108,7 +108,7 @@ struct AssignmentData {
     inline AssignmentData& operator+=(const AssignmentData& other) noexcept {
         const size_t groupOffset = groups.size();
         for (const GroupData& group : other.groups) {
-            AssertMsg(group.groupId + groupOffset == groups.size(), "Current group id is " << (group.groupId + groupOffset) << ", but should be " << groups.size() << "!");
+            Assert(group.groupId + groupOffset == groups.size(), "Current group id is " << (group.groupId + groupOffset) << ", but should be " << groups.size() << "!");
             groups.emplace_back(groups.size(), group.demandIndex, group.groupSize);
             connectionsPerGroup.emplace_back(other.connectionsPerGroup[group.groupId]);
         }

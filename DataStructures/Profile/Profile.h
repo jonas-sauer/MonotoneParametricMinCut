@@ -109,12 +109,12 @@ public:
     }
 
     inline int key() const noexcept {
-        AssertMsg(hasUnsettledEntries(), "Profile key is compared, but Profile has no unsettled entry");
+        Assert(hasUnsettledEntries(), "Profile key is compared, but Profile has no unsettled entry");
         return departureTimes[lastUnsettledIndex];
     }
 
     inline const EntryType& lastUnsettledEntry() const noexcept {
-        AssertMsg(hasUnsettledEntries(), "Unsettled entry is requested, but Profile has no unsettled entry");
+        Assert(hasUnsettledEntries(), "Unsettled entry is requested, but Profile has no unsettled entry");
         return arrivalTimes[lastUnsettledIndex];
     }
 
@@ -143,7 +143,7 @@ public:
     }
 
     inline void insert(const int departureTime, const EntryType& arrivalTime) noexcept {
-        AssertMsg(isImprovedBy(departureTime, arrivalTime), "Cannot insert an entry that does not improve the profile!");
+        Assert(isImprovedBy(departureTime, arrivalTime), "Cannot insert an entry that does not improve the profile!");
         insertIfImprovement(departureTime, arrivalTime);
     }
 
@@ -180,12 +180,12 @@ public:
             }
             return true;
         }
-        AssertMsg(false, "Departure time " << departureTime << " did not evaluate the sentinel entry!");
+        Assert(false, "Departure time " << departureTime << " did not evaluate the sentinel entry!");
         return false;
     }
 
     inline void append(const int departureTime, const EntryType& arrivalTime) noexcept {
-        AssertMsg(departureTimes.back() >= departureTime, "Adding profile entries in increasing order (last Entry: " << String::secToTime(departureTimes.back()) << ", new Entry: " << String::secToTime(departureTime) << ")!");
+        Assert(departureTimes.back() >= departureTime, "Adding profile entries in increasing order (last Entry: " << String::secToTime(departureTimes.back()) << ", new Entry: " << String::secToTime(departureTime) << ")!");
         if (!(arrivalTime < arrivalTimes.back())) return;
         if (departureTimes.back() == departureTime) {
             arrivalTimes.back().minimize(arrivalTime);
@@ -201,9 +201,9 @@ public:
 
     inline const EntryType& evaluateBinary(int departureTime) const {
         const int i = lastTrueIndex(departureTimes.size(), [&](const int i){return departureTimes[i] >= departureTime;}, 4);
-        AssertMsg(i >= 0, "Departure time " << departureTime << " did not evaluate the sentinel entry!");
-        AssertMsg(i < arrivalTimes.size(), "Index i = " << i << " is out of bounds (" << 0 << ", " << arrivalTimes.size() << ")!");
-        AssertMsg(departureTimes[i] >= departureTime, "Departure time " << departureTime << " evaluated at " << departureTimes[i] << "!");
+        Assert(i >= 0, "Departure time " << departureTime << " did not evaluate the sentinel entry!");
+        Assert(i < arrivalTimes.size(), "Index i = " << i << " is out of bounds (" << 0 << ", " << arrivalTimes.size() << ")!");
+        Assert(departureTimes[i] >= departureTime, "Departure time " << departureTime << " evaluated at " << departureTimes[i] << "!");
         return arrivalTimes[i];
     }
 
@@ -211,7 +211,7 @@ public:
         for (int i = departureTimes.size() - 1; i >= 0; i--) {
             if (departureTimes[i] >= departureTime) return arrivalTimes[i];
         }
-        AssertMsg(false, "Departure time " << departureTime << " did not evaluate the sentinel entry!");
+        Assert(false, "Departure time " << departureTime << " did not evaluate the sentinel entry!");
         return arrivalTimes.front();
     }
 

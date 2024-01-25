@@ -67,7 +67,7 @@ public:
             Label& departureProfile = profileWithoutInitialTransfers[connection.departureStopId];
             Label& departureLabel = labels[connection.departureStopId];
             const Label& arrivalLabel = labels[connection.arrivalStopId];
-            AssertMsg(departureProfile.earliestDeparture() >= connection.departureTime, "Connections are scanned out of order (" << departureProfile.earliestDeparture() << " before " << connection.departureTime << ")!\nTry: data.sortConnectionsAscendingByDepartureTime();");
+            Assert(departureProfile.earliestDeparture() >= connection.departureTime, "Connections are scanned out of order (" << departureProfile.earliestDeparture() << " before " << connection.departureTime << ")!\nTry: data.sortConnectionsAscendingByDepartureTime();");
 
             ArrivalEntry arrival = arrivalByTrip[connection.tripId];
             if (arrivalLabel.isConnectedToTarget()) arrival.minimize(connection.arrivalTime + arrivalLabel.getWalkingTime());

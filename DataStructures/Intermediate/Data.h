@@ -63,8 +63,8 @@ public:
 private:
     inline void writeMap(const std::string& fileName, const Map<std::string, int>& map, const std::string& indexHeader, const std::string& valueHeader) const noexcept {
         std::ofstream file(fileName);
-        AssertMsg(file, "Cannot open file " << fileName << '!');
-        AssertMsg(file.is_open(), "Cannot open file " << fileName << '!');
+        Assert(file, "Cannot open file " << fileName << '!');
+        Assert(file.is_open(), "Cannot open file " << fileName << '!');
         file << indexHeader << ',' << valueHeader << '\n';
         for (const auto& entry : map) {
             file << '\"' << entry.first << "\"," << entry.second << '\n';
@@ -74,8 +74,8 @@ private:
 
     inline void writeVector(const std::string& fileName, const std::vector<Map<int, int>>& vector, const std::string& indexHeader, const std::string& valueHeader) const noexcept {
         std::ofstream file(fileName);
-        AssertMsg(file, "Cannot open file " << fileName << '!');
-        AssertMsg(file.is_open(), "Cannot open file " << fileName << '!');
+        Assert(file, "Cannot open file " << fileName << '!');
+        Assert(file.is_open(), "Cannot open file " << fileName << '!');
         file << "intermediate_trip_id," << indexHeader << ',' << valueHeader << '\n';
         for (size_t i = 0; i < vector.size(); i++) {
             for (const auto& entry : vector[i]) {
@@ -339,7 +339,7 @@ public:
             for (const Vertex other : ct.getNeighbors(transferGraph.get(Coordinates, stop), maxConnectingDistanceInCM)) {
                 if (other == stop) continue;
                 const double distance = std::max(1.0, Geometry::geoDistanceInCM(transferGraph.get(Coordinates, stop), transferGraph.get(Coordinates, other)));
-                AssertMsg(distance <= maxConnectingDistanceInCM, "CoordinateTree returned a neighbor with distance " << distance << " > " << maxConnectingDistanceInCM << "!");
+                Assert(distance <= maxConnectingDistanceInCM, "CoordinateTree returned a neighbor with distance " << distance << " > " << maxConnectingDistanceInCM << "!");
                 const double travelTime = (distance / speedInKMH) * 0.036;
                 transferGraph.addEdge(other, stop).set(TravelTime, travelTime);
                 transferGraph.addEdge(stop, other).set(TravelTime, travelTime);
@@ -700,7 +700,7 @@ public:
         }
         transferGraph.packEdges();
         for (const StopId stop : stopIds()) {
-            AssertMsg(stops[stop].coordinates == transferGraph.get(Coordinates, stop), "Transit stop " << stop << " does no match with its transfer vertex!");
+            Assert(stops[stop].coordinates == transferGraph.get(Coordinates, stop), "Transit stop " << stop << " does no match with its transfer vertex!");
         }
     }
 
@@ -778,10 +778,10 @@ public:
     inline std::vector<std::vector<Intermediate::Trip>> frequencyRoutes() const noexcept {
         std::vector<std::vector<Intermediate::Trip>> routes;
         for (const std::vector<Intermediate::Trip>& route : offsetRoutes()) {
-            AssertMsg(!route.empty(), "Every route has to contain at least one trip!");
+            Assert(!route.empty(), "Every route has to contain at least one trip!");
             std::vector<int> departureTimes;
             for (const Intermediate::Trip& trip : route) {
-                AssertMsg(!trip.stopEvents.empty(), "Trips have to contain at least one stop event!");
+                Assert(!trip.stopEvents.empty(), "Trips have to contain at least one stop event!");
                 departureTimes.emplace_back(trip.stopEvents.front().departureTime);
             }
             CoverByArithmeticProgressions cover(departureTimes);
@@ -932,7 +932,7 @@ public:
         std::vector<size_t> stopEventsPerStop(numberOfStops(), 0);
         std::vector<size_t> stopEventsPerDay;
         for (const Trip& trip : trips) {
-            AssertMsg(trip.stopEvents.size() >= 2, "Trip contains an insufficient number of stops!");
+            Assert(trip.stopEvents.size() >= 2, "Trip contains an insufficient number of stops!");
             numberOfStopEvents += trip.stopEvents.size();
             if (firstDay > trip.stopEvents.front().departureTime) firstDay = trip.stopEvents.front().departureTime;
             if (lastDay < trip.stopEvents.back().arrivalTime) lastDay = trip.stopEvents.back().arrivalTime;
@@ -993,7 +993,7 @@ public:
     }
 
     inline void printTrip(const TripId trip) const noexcept {
-        AssertMsg(trip < trips.size(), "Trip id = " << trip << "is out of bounds (0, " << trips.size() << ")!");
+        Assert(trip < trips.size(), "Trip id = " << trip << "is out of bounds (0, " << trips.size() << ")!");
         std::cout << trips[trip] << std::endl;
         for (const StopEvent& stopEvent : trips[trip].stopEvents) {
             std::cout << "   " << stopEvent << std::endl;
@@ -1025,8 +1025,8 @@ protected:
     template<typename TYPE>
     inline void writeVectorCSV(const std::string& fileName, const std::vector<TYPE>& data, const std::string& idHeader = "id") const noexcept {
         std::ofstream file(fileName);
-        AssertMsg(file, "Cannot open file " << fileName << "!");
-        AssertMsg(file.is_open(), "Cannot open file " << fileName << "!");
+        Assert(file, "Cannot open file " << fileName << "!");
+        Assert(file.is_open(), "Cannot open file " << fileName << "!");
         file << idHeader << "," << TYPE::CSV_HEADER << "\n";
         for (size_t i = 0; i < data.size(); i++) {
             file << i << "," << data[i].toCSV() << "\n";
@@ -1037,8 +1037,8 @@ protected:
     template<typename TRIPS_IDS>
     inline void writeStopEventCSV(const std::string& fileName, const TRIPS_IDS& tripIds) const noexcept {
         std::ofstream file(fileName);
-        AssertMsg(file, "Cannot open file " << fileName << "!");
-        AssertMsg(file.is_open(), "Cannot open file " << fileName << "!");
+        Assert(file, "Cannot open file " << fileName << "!");
+        Assert(file.is_open(), "Cannot open file " << fileName << "!");
         file << "trip_id,stop_event_index," << StopEvent::CSV_HEADER << "\n";
         for (size_t i : tripIds) {
             for (size_t j = 0; j < trips[i].stopEvents.size(); j++) {
@@ -1050,8 +1050,8 @@ protected:
 
     inline void writeTransferCSV(const std::string& fileName) const noexcept {
         std::ofstream file(fileName);
-        AssertMsg(file, "Cannot open file " << fileName << "!");
-        AssertMsg(file.is_open(), "Cannot open file " << fileName << "!");
+        Assert(file, "Cannot open file " << fileName << "!");
+        Assert(file.is_open(), "Cannot open file " << fileName << "!");
         file << "transfer_id,dep_stop,arr_stop,duration\n";
         for (const Vertex vertex : transferGraph.vertices()) {
             if (!isStop(vertex)) continue;
@@ -1141,8 +1141,8 @@ protected:
 
 private:
     inline void permutate(const Permutation& fullPermutation, const Permutation& stopPermutation) noexcept {
-        AssertMsg(fullPermutation.size() == transferGraph.numVertices(), "Full permutation size (" << fullPermutation.size() << ") must be the same as number of vertices (" << transferGraph.numVertices() << ")!");
-        AssertMsg(stopPermutation.size() == numberOfStops(), "Stop permutation size (" << stopPermutation.size() << ") must be the same as number of stops (" << numberOfStops() << ")!");
+        Assert(fullPermutation.size() == transferGraph.numVertices(), "Full permutation size (" << fullPermutation.size() << ") must be the same as number of vertices (" << transferGraph.numVertices() << ")!");
+        Assert(stopPermutation.size() == numberOfStops(), "Stop permutation size (" << stopPermutation.size() << ") must be the same as number of stops (" << numberOfStops() << ")!");
 
         stopPermutation.permutate(stops);
         for (Trip& trip : trips) {

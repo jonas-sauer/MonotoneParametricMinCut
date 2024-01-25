@@ -190,7 +190,7 @@ public:
         progress.SetCheckTimeStep(1000);
         for (const IdVertexDemand::Entry& entry : demand.entries) {
             const Vertex destinationVertex = entry.destinationVertex;
-            AssertMsg((destinationVertex < connectionsByPassengerByDestination.size()), "There is no data for destination vertex " << destinationVertex << " (last destination: " << (connectionsByPassengerByDestination.size() - 1) << ")!");
+            Assert((destinationVertex < connectionsByPassengerByDestination.size()), "There is no data for destination vertex " << destinationVertex << " (last destination: " << (connectionsByPassengerByDestination.size() - 1) << ")!");
             std::vector<std::vector<ConnectionId>>& connectionsByPassenger = connectionsByPassengerByDestination[destinationVertex];
             for (const DestinationSpecificPassengerId passenger : entry.ids) {
                 Entry<> newEntry;
@@ -200,7 +200,7 @@ public:
                 newEntry.destinationVertex = destinationVertex;
                 newEntry.beelineDistanceOD = Geometry::geoDistanceInCM(data.transferGraph.get(Coordinates, entry.originVertex), data.transferGraph.get(Coordinates, destinationVertex)) / 100.0;
                 if ((passenger >= connectionsByPassenger.size()) || (connectionsByPassenger[passenger].empty())) {
-                    AssertMsg(passengersWithoutConnection.contains(getGlobalPassengerId(destinationVertex, passenger)), "Passenger (destination vertex: " << destinationVertex << ", passenger id: " << passenger << ", global id: " << getGlobalPassengerId(destinationVertex, passenger) << ") is neither unassigned nor does he use any connections!");
+                    Assert(passengersWithoutConnection.contains(getGlobalPassengerId(destinationVertex, passenger)), "Passenger (destination vertex: " << destinationVertex << ", passenger id: " << passenger << ", global id: " << getGlobalPassengerId(destinationVertex, passenger) << ") is neither unassigned nor does he use any connections!");
                     newEntry.numberOfConnections = 0;
                     newEntry.departureTime = entry.departureTime;
                     newEntry.arrivalTime = entry.departureTime + getTravelTime<false>(data, dijkstra, entry.originVertex, destinationVertex);
@@ -213,8 +213,8 @@ public:
                     path.data.emplace_back(destinationVertex);
                     paths.insert(path);
                 } else {
-                    if (checkPaths) AssertMsg(result.isValidPath(data, connectionsByPassenger[passenger], entry, allowEarlyDeparture), "Passenger (destination vertex: " << destinationVertex << ", passenger id: " << passenger << ", global id: " << getGlobalPassengerId(destinationVertex, passenger) << ") has a path that does not comply with his demand!");
-                    AssertMsg(!passengersWithoutConnection.contains(getGlobalPassengerId(destinationVertex, passenger)), "Passenger (destination vertex: " << destinationVertex << ", passenger id: " << passenger << ", global id: " << getGlobalPassengerId(destinationVertex, passenger) << ") is unassigned and uses some connections!");
+                    if (checkPaths) Assert(result.isValidPath(data, connectionsByPassenger[passenger], entry, allowEarlyDeparture), "Passenger (destination vertex: " << destinationVertex << ", passenger id: " << passenger << ", global id: " << getGlobalPassengerId(destinationVertex, passenger) << ") has a path that does not comply with his demand!");
+                    Assert(!passengersWithoutConnection.contains(getGlobalPassengerId(destinationVertex, passenger)), "Passenger (destination vertex: " << destinationVertex << ", passenger id: " << passenger << ", global id: " << getGlobalPassengerId(destinationVertex, passenger) << ") is unassigned and uses some connections!");
                     std::vector<ConnectionId>& connections = connectionsByPassenger[passenger];
                     newEntry.firstStop = data.connections[connections.front()].departureStopId;
                     newEntry.lastStop = data.connections[connections.back()].arrivalStopId;
@@ -240,9 +240,9 @@ public:
                     paths.insert(path);
                     newEntry.numberOfTrips = trips.size();
                 }
-                AssertMsg(newEntry.arrivalTime >= newEntry.departureTime, "newEntry.arrivalTime >= newEntry.departureTime (" << newEntry.arrivalTime << " >= " << newEntry.departureTime << ")!");
+                Assert(newEntry.arrivalTime >= newEntry.departureTime, "newEntry.arrivalTime >= newEntry.departureTime (" << newEntry.arrivalTime << " >= " << newEntry.departureTime << ")!");
                 newEntry.travelTimeWithoutInitialWaiting = newEntry.arrivalTime - newEntry.departureTime;
-                AssertMsg(newEntry.arrivalTime >= entry.departureTime, "newEntry.arrivalTime >= entry.departureTime (" << newEntry.arrivalTime << " >= " << entry.departureTime << ")!");
+                Assert(newEntry.arrivalTime >= entry.departureTime, "newEntry.arrivalTime >= entry.departureTime (" << newEntry.arrivalTime << " >= " << entry.departureTime << ")!");
                 newEntry.travelTimeWithInitialWaiting = newEntry.arrivalTime - entry.departureTime;
                 result.min.minimize(newEntry);
                 result.max.maximize(newEntry);
@@ -265,14 +265,14 @@ public:
 private:
     template<bool ENSURE_EDGE_EXISTS>
     inline static int getTravelTime(const CSA::Data& data, const Vertex from, const Vertex to) noexcept {
-        AssertMsg(data.transferGraph.isVertex(from), "Invalid vertex id: " << from << "!");
-        AssertMsg(data.transferGraph.isVertex(to), "Invalid vertex id: " << to << "!");
+        Assert(data.transferGraph.isVertex(from), "Invalid vertex id: " << from << "!");
+        Assert(data.transferGraph.isVertex(to), "Invalid vertex id: " << to << "!");
         if (from == to) {
             return 0;
         } else {
             const Edge edge = data.transferGraph.findEdge(from, to);
             if (ENSURE_EDGE_EXISTS) {
-                AssertMsg(data.transferGraph.isEdge(edge), "The edge from " << from << " to " << to << " is missing!");
+                Assert(data.transferGraph.isEdge(edge), "The edge from " << from << " to " << to << " is missing!");
                 return data.transferGraph.get(TravelTime, edge);
             } else if (data.transferGraph.isEdge(edge)) {
                 return data.transferGraph.get(TravelTime, edge);
@@ -285,8 +285,8 @@ private:
     template<bool ENSURE_EDGE_EXISTS>
     inline static int getTravelTime(const CSA::Data& data, Dijkstra<TransferGraph>& dijkstra, const Vertex from, const Vertex to) noexcept {
         suppressUnusedParameterWarning(dijkstra);
-        AssertMsg(data.transferGraph.isVertex(from), "Invalid vertex id: " << from << "!");
-        AssertMsg(data.transferGraph.isVertex(to), "Invalid vertex id: " << to << "!");
+        Assert(data.transferGraph.isVertex(from), "Invalid vertex id: " << from << "!");
+        Assert(data.transferGraph.isVertex(to), "Invalid vertex id: " << to << "!");
         if (from == to) {
             return 0;
         } else {
@@ -296,7 +296,7 @@ private:
             } else {
                 dijkstra.run(from, to);
                 if constexpr (ENSURE_EDGE_EXISTS) {
-                    AssertMsg(dijkstra.reachable(to), "The path from " << from << " to " << to << " is missing!");
+                    Assert(dijkstra.reachable(to), "The path from " << from << " to " << to << " is missing!");
                     return dijkstra.getDistance(to);
                 } else {
                     if (dijkstra.reachable(to)) {
@@ -348,13 +348,13 @@ public:
         if (path.empty()) {
             return true;
         } else {
-            AssertMsg(data.isConnection(path.front()), "First connection id " << path.front() << " does not represent a connection!");
-            AssertMsg(data.isConnection(path.back()), "Last connection id " << path.back() << " does not represent a connection!");
+            Assert(data.isConnection(path.front()), "First connection id " << path.front() << " does not represent a connection!");
+            Assert(data.isConnection(path.back()), "Last connection id " << path.back() << " does not represent a connection!");
             if (!data.isCombinable(demand.originVertex, ((allowEarlyDeparture) ? (-intMax) : (demand.departureTime)), data.connections[path.front()])) return false;
             if (!data.isCombinable(data.connections[path.back()], demand.destinationVertex)) return false;
             for (const size_t i : range(path.size() - 1)) {
-                AssertMsg(data.isConnection(path[i]), "" << i << "th connection id " << path[i] << " does not represent a connection!");
-                AssertMsg(data.isConnection(path[i + 1]), "" << i << "th connection id " << path[i] << " does not represent a connection!");
+                Assert(data.isConnection(path[i]), "" << i << "th connection id " << path[i] << " does not represent a connection!");
+                Assert(data.isConnection(path[i + 1]), "" << i << "th connection id " << path[i] << " does not represent a connection!");
                 if (!data.isCombinable(data.connections[path[i]], data.connections[path[i + 1]])) return false;
             }
             return true;
@@ -477,8 +477,8 @@ public:
 
     inline void writePassengerConnectionPairs(const CSA::Data& data, const IdVertexDemand& demand, const std::string& fileName) const noexcept {
         std::ofstream os(fileName);
-        AssertMsg(os, "cannot open file: " << fileName);
-        AssertMsg(os.is_open(), "cannot open file: " << fileName);
+        Assert(os, "cannot open file: " << fileName);
+        Assert(os.is_open(), "cannot open file: " << fileName);
         os << "connection_id,passenger_id\n";
         int passengerId = 0;
         std::vector<std::vector<std::vector<ConnectionId>>> connectionsByPassengerByDestination = getConnectionsByPassengerByDestination(data);
@@ -506,8 +506,8 @@ public:
             }
         }
         std::ofstream os(fileName);
-        AssertMsg(os, "cannot open file: " << fileName);
-        AssertMsg(os.is_open(), "cannot open file: " << fileName);
+        Assert(os, "cannot open file: " << fileName);
+        Assert(os.is_open(), "cannot open file: " << fileName);
         os << "sourceId,targetId,sourceLat,sourceLon,targeLat,targeLon,passengerCount\n";
         for (const StopId source : data.stops()) {
             for (std::pair<StopId, size_t> entry : demandBySourceStop[source]) {
@@ -531,8 +531,8 @@ public:
 
     inline void toCSV(const std::string& fileName) const {
         std::ofstream os(fileName);
-        AssertMsg(os, "cannot open file: " << fileName);
-        AssertMsg(os.is_open(), "cannot open file: " << fileName);
+        Assert(os, "cannot open file: " << fileName);
+        Assert(os.is_open(), "cannot open file: " << fileName);
         toCSV(os);
     }
 

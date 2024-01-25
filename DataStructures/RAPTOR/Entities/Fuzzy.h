@@ -108,7 +108,7 @@ public:
         const double lt = counts.lt();
         const double eq = counts.eq();
         const double gt = counts.gt();
-        AssertMsg(std::abs(lt + eq + gt - M) < 0.001, "Fuzzy sum (" << lt + eq + gt << ") does not match number of criteria (" << M << ")!");
+        Assert(std::abs(lt + eq + gt - M) < 0.001, "Fuzzy sum (" << lt + eq + gt << ") does not match number of criteria (" << M << ")!");
         if (eq == M) return 0; //To simplify fuzzy scoring, exactly equal labels don't dominate each other
         if (lt < gt) return 0;
         return 1 - gt/lt;

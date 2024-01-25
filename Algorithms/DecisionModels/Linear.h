@@ -21,7 +21,7 @@ public:
     Linear(const int delayTolerance, const int delayValue) :
         delayTolerance(delayTolerance),
         delayValue(delayValue) {
-        AssertMsg(delayValue >= delayTolerance, "The delayValue has to be greater or equal to delayTolerance!");
+        Assert(delayValue >= delayTolerance, "The delayValue has to be greater or equal to delayTolerance!");
     }
     Linear(const Assignment::Settings& settings) :
         Linear(settings.delayTolerance, settings.delayValue) {
@@ -40,10 +40,10 @@ public:
             result[0] = gain(values[0], minValues);
             for (size_t i = 1; i < values.size(); i++) {
                 result[i] = result[i - 1] + gain(values[i], minValues);
-                AssertMsg(result[i] >= result[i - 1], "Accumulated values are decreasing from " << String::prettyInt(result[i - 1]) << " to " << String::prettyInt(result[i]) << "!");
+                Assert(result[i] >= result[i - 1], "Accumulated values are decreasing from " << String::prettyInt(result[i - 1]) << " to " << String::prettyInt(result[i]) << "!");
             }
         }
-        AssertMsg(result.back() > 0, "Probability of all options cannot be zero!");
+        Assert(result.back() > 0, "Probability of all options cannot be zero!");
     }
 
     inline std::vector<int> cumulativeDistribution(const std::vector<int>& values) const noexcept {
@@ -75,11 +75,11 @@ public:
         } else {
             for (size_t i = 0; i < values.size(); i++) {
                 result[i] = gain(values[i], minValues);
-                AssertMsg(result[i] >= 0, "Gain is negative ( " << String::prettyInt(result[i]) << ")!");
+                Assert(result[i] >= 0, "Gain is negative ( " << String::prettyInt(result[i]) << ")!");
                 result.back() += result[i];
             }
         }
-        AssertMsg(result.back() > 0, "Probability of all options cannot be zero!");
+        Assert(result.back() > 0, "Probability of all options cannot be zero!");
     }
 
     inline std::vector<int> distribution(const std::vector<int>& values) const noexcept {

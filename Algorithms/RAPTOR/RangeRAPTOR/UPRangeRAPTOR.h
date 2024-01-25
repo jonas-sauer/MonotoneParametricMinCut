@@ -112,7 +112,7 @@ private:
     class SegmentedProfile : public std::vector<ProfileSegment> {
     public:
         inline bool add(const ArrivalLabel arrival, const int departureTime) noexcept {
-            AssertMsg(arrival.numberOfTrips != size_t(-1), "Arrival label has invalid number of trips!");
+            Assert(arrival.numberOfTrips != size_t(-1), "Arrival label has invalid number of trips!");
             if (arrival.numberOfTrips >= this->size()) this->resize(arrival.numberOfTrips + 1);
             return (*this)[arrival.numberOfTrips].add(departureTime, arrival.arrivalTime);
         }
@@ -235,7 +235,7 @@ public:
     }
 
     inline Profile getProfile(const Vertex vertex) const noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         return profileByVertex[vertex].getDesegmentedProfile();
     }
 

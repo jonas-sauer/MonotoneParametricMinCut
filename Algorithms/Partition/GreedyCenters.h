@@ -111,7 +111,7 @@ public:
         {
             const int threadId = omp_get_thread_num();
             pinThreadToCoreId(threadId);
-            AssertMsg(omp_get_num_threads() == 4, "Number of threads is " << omp_get_num_threads() << ", but should be " << 4 << "!");
+            Assert(omp_get_num_threads() == 4, "Number of threads is " << omp_get_num_threads() << ", but should be " << 4 << "!");
 
             #pragma omp for
             for (size_t stopId = 0; stopId < numberOfStops; stopId++) {

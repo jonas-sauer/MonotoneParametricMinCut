@@ -80,7 +80,7 @@ public:
         std::vector<std::string> values;
 
         std::ifstream mapFile(mapFileName);
-        AssertMsg(mapFile.is_open(), "Could not open file " << mapFileName << "!");
+        Assert(mapFile.is_open(), "Could not open file " << mapFileName << "!");
         while (!mapFile.eof()) {
             getline(mapFile, inputLineA);
             if (mapFile.eof()) break;
@@ -91,9 +91,9 @@ public:
         mapFile.close();
 
         std::ifstream bssFile(bssFileName);
-        AssertMsg(bssFile.is_open(), "Could not open file " << bssFileName << "!");
+        Assert(bssFile.is_open(), "Could not open file " << bssFileName << "!");
         std::ofstream outputFile(outputFileName);
-        AssertMsg(outputFile.is_open(), "Could not open file " << outputFileName << "!");
+        Assert(outputFile.is_open(), "Could not open file " << outputFileName << "!");
         while (!bssFile.eof()) {
             getline(bssFile, inputLineA);
             std::vector<std::string> tokens = String::split(inputLineA, ' ');
@@ -115,7 +115,7 @@ public:
         outputFile.close();
 
         std::ofstream newMapFile(mapFileName);
-        AssertMsg(newMapFile.is_open(), "Could not open file " << mapFileName << "!");
+        Assert(newMapFile.is_open(), "Could not open file " << mapFileName << "!");
         for (auto [key, value] : map) {
             newMapFile << key << "\n" << value << "\n";
         }
@@ -378,7 +378,7 @@ public:
         }
 
         std::ofstream resultFile(resultFileName);
-        AssertMsg(resultFile.is_open(), "Could not open file " << resultFileName << "!");
+        Assert(resultFile.is_open(), "Could not open file " << resultFileName << "!");
         resultFile << "Source,Target,DepTime,ArrTime,Trips,QueryTime\n";
         for (BikeSharing::Query& query : queries) {
             resultFile << query << "\n";

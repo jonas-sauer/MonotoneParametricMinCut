@@ -34,7 +34,7 @@ public:
     }
 
     inline Value operator()(const size_t i = 0) const noexcept {
-        AssertMsg(i == 0, "Index i = " << i << " out of bounds (0, 0)!");
+        Assert(i == 0, "Index i = " << i << " out of bounds (0, 0)!");
         return value;
     }
 
@@ -78,7 +78,7 @@ public:
     }
 
     inline Value min(const int i = Size - 1) const noexcept {
-        AssertMsg(i == 0, "Index i = " << i << " out of bounds (0, 0)!");
+        Assert(i == 0, "Index i = " << i << " out of bounds (0, 0)!");
         return value;
     }
 

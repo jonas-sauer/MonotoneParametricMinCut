@@ -40,8 +40,8 @@ public:
     inline void setGraphs(const GraphA& graphA, const GraphB& graphB) noexcept {
         this->graphA = &graphA;
         this->graphB = &graphB;
-        AssertMsg(checkGraph(graphA), "Edges of graphA are not sorted!");
-        AssertMsg(checkGraph(graphB), "Edges of graphB are not sorted!");
+        Assert(checkGraph(graphA), "Edges of graphA are not sorted!");
+        Assert(checkGraph(graphB), "Edges of graphB are not sorted!");
         if constexpr (Meta::Equals<GraphA, GraphB>()) {
             if (graphA.numVertices() > graphB.numVertices()) {
                 std::swap(this->graphA, this->graphB);
@@ -74,7 +74,7 @@ public:
     }
 
     inline EdgeIntersectionRange<GraphA, GraphB> edgesFrom(const Vertex vertex) const noexcept {
-        AssertMsg(isVertex(vertex), vertex << " is not a valid vertex!");
+        Assert(isVertex(vertex), vertex << " is not a valid vertex!");
         return EdgeIntersectionRange<GraphA, GraphB>(graphA, graphB, vertex);
     }
 
@@ -112,7 +112,7 @@ private:
             Vertex current = Vertex(0);
             for (const Edge edge : graph.edgesFrom(vertex)) {
                 if (current > graph.get(ToVertex, edge)) {
-                    AssertMsg(false, "Edges at vertex " << vertex << " are not sorted!");
+                    Assert(false, "Edges at vertex " << vertex << " are not sorted!");
                     return false;
                 }
                 current = graph.get(ToVertex, edge);

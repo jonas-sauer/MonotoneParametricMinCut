@@ -41,7 +41,7 @@ public:
     }
 
     inline Parent parent(const size_t i = 0) const noexcept {
-        AssertMsg(i < Size, "Index i = " << i << " out of bounds (0, " << Size << ")!");
+        Assert(i < Size, "Index i = " << i << " out of bounds (0, " << Size << ")!");
         return parents[i];
     }
 
@@ -66,7 +66,7 @@ public:
     }
 
     inline Value operator()(const size_t i = 0) const noexcept {
-        AssertMsg(i < Size, "Index i = " << i << " out of bounds (0, " << Size << ")!");
+        Assert(i < Size, "Index i = " << i << " out of bounds (0, " << Size << ")!");
         return values[i];
     }
 
@@ -128,7 +128,7 @@ public:
     }
 
     inline Value min(const size_t i = Size - 1) const noexcept {
-        AssertMsg(i < Size, "Index i = " << i << " out of bounds (0, " << Size << ")!");
+        Assert(i < Size, "Index i = " << i << " out of bounds (0, " << Size << ")!");
         Value minValue = values[0];
         for (size_t j = 1; j <= i; j++) {
             if (minValue > values[i]) {

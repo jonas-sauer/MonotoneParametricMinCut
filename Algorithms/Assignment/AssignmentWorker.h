@@ -50,7 +50,7 @@ public:
 
         inline const ProfileEntry& findEntry(const int time) noexcept {
             while (i + 1 < data->size() && (*data)[i + 1].departureTime >= time) i++;
-            AssertMsg((i + 1 >= data->size()) || ((*data)[i + 1].departureTime < time), "Profile is not scanned monotonously (current time: " << time << " previous time: " << (*data)[i + 1].departureTime << ")!");
+            Assert((i + 1 >= data->size()) || ((*data)[i + 1].departureTime < time), "Profile is not scanned monotonously (current time: " << time << " previous time: " << (*data)[i + 1].departureTime << ")!");
             while ((*data)[i].departureTime < time) {
                 i--;
             }
@@ -77,8 +77,8 @@ public:
     }
 
     inline void run(const Vertex destinationVertex, std::vector<AccumulatedVertexDemand::Entry>& demand) noexcept {
-        AssertMsg(!demand.empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
-        AssertMsg(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
+        Assert(!demand.empty(), "Demand for destination vertex " << destinationVertex << " is empty!");
+        Assert(data.isStop(destinationVertex) || reverseGraph.outDegree(destinationVertex) > 0, "Destination vertex " << destinationVertex << " is isolated!");
         profiler.startAssignmentForDestination(destinationVertex);
 
         sort(demand, [](const AccumulatedVertexDemand::Entry& a, const AccumulatedVertexDemand::Entry& b){return a.earliestDepartureTime < b.earliestDepartureTime;});
@@ -158,9 +158,9 @@ private:
     template<int DEPARTURE_TIME_CHOICE>
     inline void walkToInitialStops(const std::vector<AccumulatedVertexDemand::Entry>& demand) noexcept {
         for (const AccumulatedVertexDemand::Entry& demandEntry : demand) {
-            AssertMsg(demandEntry.originVertex != demandEntry.destinationVertex, "Origin and destination vertex of demand are identical (" << demandEntry.originVertex << ")!");
-            AssertMsg(settings.allowDepartureStops || !data.isStop(demandEntry.originVertex), "Demand is originating from a stop (" << demandEntry.originVertex << ")!");
-            AssertMsg(data.isStop(demandEntry.originVertex) || data.transferGraph.outDegree(demandEntry.originVertex) > 0, "Origin vertex " << demandEntry.originVertex << " of demand is isolated!");
+            Assert(demandEntry.originVertex != demandEntry.destinationVertex, "Origin and destination vertex of demand are identical (" << demandEntry.originVertex << ")!");
+            Assert(settings.allowDepartureStops || !data.isStop(demandEntry.originVertex), "Demand is originating from a stop (" << demandEntry.originVertex << ")!");
+            Assert(data.isStop(demandEntry.originVertex) || data.transferGraph.outDegree(demandEntry.originVertex) > 0, "Origin vertex " << demandEntry.originVertex << " of demand is isolated!");
             ChoiceSet choiceSet = collectInitialWalkingChoices<DEPARTURE_TIME_CHOICE>(demandEntry);
             const GroupId originalGroup = assignmentData.createNewGroup(demandEntry, settings.passengerMultiplier);
             if (choiceSet.empty()) {
@@ -193,8 +193,8 @@ private:
                         assignmentData.directWalkingGroups.emplace_back(group);
                     }
                 }
-                AssertMsg(originalGroupIndex < choiceSet.size(), "No groups have been assigned!");
-                AssertMsg(assignmentData.groups[originalGroup].groupSize == groupSizes[originalGroupIndex], "Original group has wrong size (size should be: " << groupSizes[originalGroupIndex] << ", size is: " << assignmentData.groups[originalGroup].groupSize << ")!");
+                Assert(originalGroupIndex < choiceSet.size(), "No groups have been assigned!");
+                Assert(assignmentData.groups[originalGroup].groupSize == groupSizes[originalGroupIndex], "Original group has wrong size (size should be: " << groupSizes[originalGroupIndex] << ", size is: " << assignmentData.groups[originalGroup].groupSize << ")!");
             }
         }
     }
@@ -213,7 +213,7 @@ private:
             evaluateInitialStop<DEPARTURE_TIME_CHOICE>(demandEntry, demandEntry.originVertex, 0, choiceSet);
             foundInitialStop = true;
         }
-        AssertMsg(foundInitialStop, "Demand is originating from a vertex that is not connected to a stop (" << demandEntry.originVertex << ")!");
+        Assert(foundInitialStop, "Demand is originating from a vertex that is not connected to a stop (" << demandEntry.originVertex << ")!");
         return choiceSet;
     }
 
@@ -270,7 +270,7 @@ private:
         const double hopOnPAT = std::min(hopOffPAT, label.tripPAT);
         moveGroups(groupTrackingData.groupsWaitingAtStop[connection.departureStopId], groupTrackingData.groupsInTrip[connection.tripId], label.skipPAT, hopOnPAT, "skip", "board");
         for (const GroupId group : groupTrackingData.groupsInTrip[connection.tripId]) {
-            AssertMsg(group < assignmentData.connectionsPerGroup.size(), "Group " << group << " is out of bounds (0, " << assignmentData.connectionsPerGroup.size() << ")");
+            Assert(group < assignmentData.connectionsPerGroup.size(), "Group " << group << " is out of bounds (0, " << assignmentData.connectionsPerGroup.size() << ")");
             assignmentData.connectionsPerGroup[group].emplace_back(i);
         }
         GroupList groupsHoppingOff;
@@ -278,7 +278,7 @@ private:
         if (groupsHoppingOff.empty()) return;
         moveGroups(groupsHoppingOff, groupTrackingData.groupsAtTarget, label.transferPAT, targetPAT, "walk", "target");
         if (groupsHoppingOff.empty()) return;
-        AssertMsg(label.transferPAT - targetPAT <= settings.delayTolerance, "Groups are not walking straight to the target (transferPAT = " << label.transferPAT << ", targetPAT = " << targetPAT << ")!");
+        Assert(label.transferPAT - targetPAT <= settings.delayTolerance, "Groups are not walking straight to the target (transferPAT = " << label.transferPAT << ", targetPAT = " << targetPAT << ")!");
         walkToNextStop(connection.arrivalStopId, groupsHoppingOff, connection.arrivalTime);
     }
 
@@ -309,7 +309,7 @@ private:
             return;
         }
         ChoiceSet choiceSet = collectIntermediateWalkingChoices(from, time);
-        AssertMsg(!choiceSet.empty(), "" << groupList.size() << " groups arrived at stop " << from << " but have nowhere to go!");
+        Assert(!choiceSet.empty(), "" << groupList.size() << " groups arrived at stop " << from << " but have nowhere to go!");
         if (choiceSet.size() == 1) {
             groupTrackingData.groupsWalkingToStop[choiceSet.options[0]].emplace_back(groupList, choiceSet.departureTimes[0]);
         } else {
@@ -332,7 +332,7 @@ private:
                     }
                     groupListsByIndex[j].emplace_back(group);
                 }
-                AssertMsg(movedOriginalGroup, "Group has not moved to the next stop (Group: " << assignmentData.groups[groupList[i]] << ")");
+                Assert(movedOriginalGroup, "Group has not moved to the next stop (Group: " << assignmentData.groups[groupList[i]] << ")");
             }
             for (size_t i = 0; i < groupListsByIndex.size(); i++) {
                 if (groupListsByIndex[i].empty()) continue;

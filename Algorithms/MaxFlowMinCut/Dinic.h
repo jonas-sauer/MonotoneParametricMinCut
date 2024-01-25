@@ -241,11 +241,11 @@ private:
                 openVertices.emplace_back(to);
             }
         }
-        AssertMsg(usedEdges.empty() || targetVertices.contains(graph.get(ToVertex, usedEdges.back())), "The blocking path does not end with a target vertex!");
+        Assert(usedEdges.empty() || targetVertices.contains(graph.get(ToVertex, usedEdges.back())), "The blocking path does not end with a target vertex!");
         if (usedEdges.empty()) return 0;
         size_t newFlow = residualFlows[usedEdges.back()];
         for (const Edge edge : usedEdges) {
-            AssertMsg(residualFlows[edge] > 0, "An edge with residual flow " << residualFlows[edge] << " was used!");
+            Assert(residualFlows[edge] > 0, "An edge with residual flow " << residualFlows[edge] << " was used!");
             newFlow = std::min<size_t>(newFlow, residualFlows[edge]);
         }
         for (const Edge edge : usedEdges) {
@@ -275,11 +275,11 @@ private:
                     cut.edges.pop_back();
                 } else {
                     cutSize += graph.get(Capacity, cut.edges.back().edge);
-                    AssertMsg(residualFlows[cut.edges.back().edge] == 0, "Non saturated edge " << cut.edges.back().edge << " from " << cut.edges.back().from << " to " << cut.edges.back().to << " is part of the cut!");
+                    Assert(residualFlows[cut.edges.back().edge] == 0, "Non saturated edge " << cut.edges.back().edge << " from " << cut.edges.back().from << " to " << cut.edges.back().to << " is part of the cut!");
                 }
             }
         }
-        AssertMsg(cutSize == flow, "Maximum flow is " << flow << " but cut size is " << cutSize << "!");
+        Assert(cutSize == flow, "Maximum flow is " << flow << " but cut size is " << cutSize << "!");
         return cut;
     }
 

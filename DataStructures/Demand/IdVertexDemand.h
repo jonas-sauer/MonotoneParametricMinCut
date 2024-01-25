@@ -133,8 +133,8 @@ public:
 
     inline void toCSV(const std::string& fileName) const {
         std::ofstream os(fileName);
-        AssertMsg(os, "cannot open file: " << fileName);
-        AssertMsg(os.is_open(), "cannot open file: " << fileName);
+        Assert(os, "cannot open file: " << fileName);
+        Assert(os.is_open(), "cannot open file: " << fileName);
         toCSV(os);
     }
 

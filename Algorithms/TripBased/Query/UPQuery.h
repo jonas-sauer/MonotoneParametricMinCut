@@ -304,7 +304,7 @@ private:
         const StopEventId firstEvent = data.firstStopEventOfTrip[trip];
         queue[queueSize] = TripLabel(StopEventId(firstEvent + index), StopEventId(firstEvent + reachedIndex(trip)));
         queueSize++;
-        AssertMsg(queueSize <= queue.size(), "Queue is overfull!");
+        Assert(queueSize <= queue.size(), "Queue is overfull!");
         reachedIndex.update(trip, index);
     }
 
@@ -314,7 +314,7 @@ private:
         if (reachedIndex.alreadyReached(label.trip, label.stopEvent - label.firstEvent)) return;
         queue[queueSize] = TripLabel(label.stopEvent, StopEventId(label.firstEvent + reachedIndex(label.trip)), parent);
         queueSize++;
-        AssertMsg(queueSize <= queue.size(), "Queue is overfull!");
+        Assert(queueSize <= queue.size(), "Queue is overfull!");
         reachedIndex.update(label.trip, StopIndex(label.stopEvent - label.firstEvent));
     }
 

@@ -137,8 +137,8 @@ public:
         distance {std::vector<int>(numVertices, INFTY), std::vector<int>(numVertices, INFTY)},
         reachedPOIs{IndexedSet<false, Vertex>(endOfPOIs), IndexedSet<false, Vertex>(endOfPOIs)},
         targetDistance(INFTY) {
-        AssertMsg(initialTransfers.size() == NumTransferModes, "Wrong number of modes");
-        AssertMsg(modes.size() == NumTransferModes, "Wrong number of modes");
+        Assert(initialTransfers.size() == NumTransferModes, "Wrong number of modes");
+        Assert(modes.size() == NumTransferModes, "Wrong number of modes");
     }
 
     template<bool TARGET_PRUNING = true>

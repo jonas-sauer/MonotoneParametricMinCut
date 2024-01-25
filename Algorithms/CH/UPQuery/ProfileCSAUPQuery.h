@@ -166,7 +166,7 @@ private:
     inline void addSourceInternal(const Vertex vertex, const int time) noexcept {
         if (time >= departureTime[vertex]) return;
         departureTime[vertex] = time;
-        AssertMsg(upwardSweepGraph.externalToInternal(vertex) < upwardSweepGraph.graph.numVertices(), "Vertex is not in sweep graph! (original: "<< internalToOriginal(vertex) << ", CH: " << vertex << ", sweep: " << upwardSweepGraph.externalToInternal(vertex) << ")");
+        Assert(upwardSweepGraph.externalToInternal(vertex) < upwardSweepGraph.graph.numVertices(), "Vertex is not in sweep graph! (original: "<< internalToOriginal(vertex) << ", CH: " << vertex << ", sweep: " << upwardSweepGraph.externalToInternal(vertex) << ")");
         sweepStart = std::min(sweepStart, upwardSweepGraph.externalToInternal(vertex));
         if constexpr (UseTargetBuckets) {
             bucketSources.insert(vertex);
@@ -191,7 +191,7 @@ private:
 
     inline void settle() noexcept {
         const Vertex u = Vertex(Q.extractFront() - &(dijkstraLabel[0]));
-        AssertMsg(u < graph[FORWARD].numVertices(), u << " is not a valid vertex!");
+        Assert(u < graph[FORWARD].numVertices(), u << " is not a valid vertex!");
         if constexpr (StallOnDemand) {
             for (Edge edge : graph[BACKWARD].edgesFrom(u)) {
                 const Vertex v = graph[BACKWARD].get(ToVertex, edge);

@@ -37,10 +37,10 @@ public:
             result[0] = relativeLogitValue(values[0], minValues);
             for (size_t i = 1; i < values.size(); i++) {
                 result[i] = result[i - 1] + relativeLogitValue(values[i], minValues);
-                AssertMsg(result[i] >= result[i - 1], "Accumulated values are decreasing from " << String::prettyInt(result[i - 1]) << " to " << String::prettyInt(result[i]) << "!");
+                Assert(result[i] >= result[i - 1], "Accumulated values are decreasing from " << String::prettyInt(result[i - 1]) << " to " << String::prettyInt(result[i]) << "!");
             }
         }
-        AssertMsg(result.back() > 0, "Probability of all options cannot be zero!");
+        Assert(result.back() > 0, "Probability of all options cannot be zero!");
     }
 
     inline std::vector<int> cumulativeDistribution(const std::vector<int>& values) const noexcept {
@@ -57,7 +57,7 @@ public:
         } else {
             const int valueA = relativeLogitValue(a, b);
             const int valueB = relativeLogitValue(b, a);
-            AssertMsg(valueA + valueB > 0, "Probability of all options cannot be zero (" << a << ", " << b << ")!");
+            Assert(valueA + valueB > 0, "Probability of all options cannot be zero (" << a << ", " << b << ")!");
             return std::array<int, 2>{valueA, valueA + valueB};
         }
     }
@@ -75,11 +75,11 @@ public:
         } else {
             for (size_t i = 0; i < values.size(); i++) {
                 result[i] = relativeLogitValue(values[i], minValues[0]);
-                AssertMsg(result[i] >= 0, "Relative logit value is negative ( " << String::prettyInt(result[i]) << ")!");
+                Assert(result[i] >= 0, "Relative logit value is negative ( " << String::prettyInt(result[i]) << ")!");
                 result.back() += result[i];
             }
         }
-        AssertMsg(result.back() > 0, "Probability of all options cannot be zero!");
+        Assert(result.back() > 0, "Probability of all options cannot be zero!");
     }
 
     inline std::vector<int> distribution(const std::vector<int>& values) const noexcept {
@@ -96,7 +96,7 @@ public:
         } else {
             const int valueA = relativeLogitValue(a, b);
             const int valueB = relativeLogitValue(b, a);
-            AssertMsg(valueA + valueB > 0, "Probability of all options cannot be zero (" << a << ", " << b << ")!");
+            Assert(valueA + valueB > 0, "Probability of all options cannot be zero (" << a << ", " << b << ")!");
             return std::array<int, 3>{valueA, valueB, valueA + valueB};
         }
     }

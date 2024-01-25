@@ -37,7 +37,7 @@ public:
     }
 
     inline PerceivedTime evaluate(const int time, const double waitingCosts) const noexcept {
-        AssertMsg(time <= departureTime, "Evaluation time lies after departureTime!");
+        Assert(time <= departureTime, "Evaluation time lies after departureTime!");
         if (normalizedPAT == Unreachable) return Unreachable;
         return normalizedPAT - time * waitingCosts;
     }

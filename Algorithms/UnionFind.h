@@ -33,9 +33,9 @@ public:
 
 protected:
     inline void link(const int i, const int j) noexcept {
-        Assert(parent[i] >= n);
-        Assert(parent[j] >= n);
-        Assert(i != j);
+        Assert(parent[i] >= n, "Element " << i << " is not the representative of its component!");
+        Assert(parent[j] >= n, "Element " << j << " is not the representative of its component!");
+        Assert(i != j, "Cannot link an element to itself!");
         if (parent[i] < parent[j]) {
             parent[i] = j;
         } else if (parent[j] < parent[i]) {

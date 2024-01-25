@@ -57,7 +57,7 @@ public:
             const CSA::Connection& connection = data.connections[i];
             if (connection.departureTime < minDepartureTime) break;
 
-            AssertMsg(tripPAT[connection.tripId] >= connection.arrivalTime, "TripPAT is to low (Connection: " << i << ", Trip: " << connection.tripId << ", PAT: " << tripPAT[connection.tripId] << ", ArrivalTime: " << connection.arrivalTime << ", Target: " << target << ")!");
+            Assert(tripPAT[connection.tripId] >= connection.arrivalTime, "TripPAT is to low (Connection: " << i << ", Trip: " << connection.tripId << ", PAT: " << tripPAT[connection.tripId] << ", ArrivalTime: " << connection.arrivalTime << ", Target: " << target << ")!");
             connectionLabels[i].tripPAT = tripPAT[connection.tripId];
 
             StopLabel& arrivalStop = stopLabels[connection.arrivalStopId];

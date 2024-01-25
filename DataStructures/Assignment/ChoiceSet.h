@@ -34,14 +34,14 @@ struct ParameterizedChoiceSet {
     }
 
     inline bool empty() const noexcept {
-        AssertMsg(options.size() == pats.size(), "options and pats have different size!");
-        AssertMsg(departureTimes.size() == pats.size(), "departureTimes and pats have different size!");
+        Assert(options.size() == pats.size(), "options and pats have different size!");
+        Assert(departureTimes.size() == pats.size(), "departureTimes and pats have different size!");
         return pats.empty();
     }
 
     inline size_t size() const noexcept {
-        AssertMsg(options.size() == pats.size(), "options and pats have different size!");
-        AssertMsg(departureTimes.size() == pats.size(), "departureTimes and pats have different size!");
+        Assert(options.size() == pats.size(), "options and pats have different size!");
+        Assert(departureTimes.size() == pats.size(), "departureTimes and pats have different size!");
         return pats.size();
     }
 
@@ -126,12 +126,12 @@ struct SequentialChoiceSet {
     }
 
     inline bool empty() const noexcept {
-        AssertMsg(options.size() == pats.size(), "options and pats have different size!");
+        Assert(options.size() == pats.size(), "options and pats have different size!");
         return pats.empty();
     }
 
     inline size_t size() const noexcept {
-        AssertMsg(options.size() == pats.size(), "options and pats have different size!");
+        Assert(options.size() == pats.size(), "options and pats have different size!");
         return pats.size();
     }
 

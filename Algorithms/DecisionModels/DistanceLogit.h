@@ -42,7 +42,7 @@ public:
         const double scalingFactor = getScalingFactor(result.arrivalTime - departureTime);
         PerceivedTime skew = 0;
         for (const NodeData& option : options) {
-            AssertMsg(option.expectedPAT < Unreachable, "Invalid option!");
+            Assert(option.expectedPAT < Unreachable, "Invalid option!");
             if (option.expectedPAT - minExpectedPAT > scalingFactor * probabilityFactor) continue;
             skew += std::exp((minExpectedPAT - option.expectedPAT)/scalingFactor);
         }
@@ -74,7 +74,7 @@ public:
 
     inline std::vector<int> distribution(const std::vector<PerceivedTime> pats, const int travelTime) const noexcept {
         const PerceivedTime minPAT = Vector::min(pats);
-        AssertMsg(minPAT < Unreachable, "All options are invalid!");
+        Assert(minPAT < Unreachable, "All options are invalid!");
         std::vector<int> result(pats.size() + 1, 0);
         if (travelTime == 0) {
             for (size_t i = 0; i < pats.size(); i++) {
@@ -89,11 +89,11 @@ public:
                 if (pats[i] >= Unreachable) continue;
                 if (pats[i] - minPAT > scalingFactor * probabilityFactor) continue;
                 result[i] = logitValue(pats[i], minPAT, scalingFactor);
-                AssertMsg(result[i] >= 0, "Logit value is negative ( " << String::prettyInt(result[i]) << ")!");
+                Assert(result[i] >= 0, "Logit value is negative ( " << String::prettyInt(result[i]) << ")!");
                 result.back() += result[i];
             }
         }
-        AssertMsg(result.back() > 0, "Probability of all options cannot be zero!");
+        Assert(result.back() > 0, "Probability of all options cannot be zero!");
         return result;
     }
 
@@ -103,14 +103,14 @@ public:
             else if (a < b) return std::array<int, 3>{1, 0, 1};
             else return std::array<int, 3>{0, 1, 1};
         }
-        AssertMsg(a < Unreachable || b < Unreachable, "Both options are invalid!");
+        Assert(a < Unreachable || b < Unreachable, "Both options are invalid!");
         const PerceivedTime minPAT = std::min(a, b);
         const double scalingFactor = getScalingFactor(travelTime);
         if (b > a + scalingFactor * probabilityFactor) return std::array<int, 3>{ 1, 0, 1 };
         if (a > b + scalingFactor * probabilityFactor) return std::array<int, 3>{ 0, 1, 1 };
         const int valueA = logitValue(a, minPAT, scalingFactor);
         const int valueB = logitValue(b, minPAT, scalingFactor);
-        AssertMsg(valueA + valueB > 0, "Probability of all options cannot be zero (" << a << ", " << b << ")!");
+        Assert(valueA + valueB > 0, "Probability of all options cannot be zero (" << a << ", " << b << ")!");
         return std::array<int, 3>{valueA, valueB, valueA + valueB};
     }
 

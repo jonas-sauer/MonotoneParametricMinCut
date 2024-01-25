@@ -365,8 +365,8 @@ private:
     }
 
     inline int minTimeOfBlock(const uint32_t block) const noexcept {
-        AssertMsg(block < connectionsOfBlock.size(), "The block id " << block << " is out of bounds (0, " << connectionsOfBlock.size() << ")!");
-        AssertMsg(!connectionsOfBlock[block].empty(), "The block " << block << " is empty!");
+        Assert(block < connectionsOfBlock.size(), "The block id " << block << " is out of bounds (0, " << connectionsOfBlock.size() << ")!");
+        Assert(!connectionsOfBlock[block].empty(), "The block " << block << " is empty!");
         return csa.connections[connectionsOfBlock[block][0]].departureTime;
     }
 

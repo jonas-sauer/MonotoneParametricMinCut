@@ -1617,8 +1617,8 @@ public:
         ConnectionId connection_id;
         size_t passenger_id;
         while (in.readRow(connection_id, passenger_id)) {
-            AssertMsg(connection_id < connectionData.size(), "connection_id < connectionData.size()" << connection_id);
-            AssertMsg(passenger_id < passengerData.size(), "passenger_id < passengerData.size()" << passenger_id);
+            Assert(connection_id < connectionData.size(), "connection_id < connectionData.size()" << connection_id);
+            Assert(passenger_id < passengerData.size(), "passenger_id < passengerData.size()" << passenger_id);
             passengerData[passenger_id].connections.emplace_back(connection_id);
             connectionData[connection_id].passengerCount++;
         }
@@ -1749,8 +1749,8 @@ private:
     inline void write(const std::string& filename, const std::vector<PassengerData>& data) const noexcept {
         std::string file = filename + "passenger.csv";
         std::ofstream os(file);
-        AssertMsg(os, "cannot open file: " << file);
-        AssertMsg(os.is_open(), "cannot open file: " << file);
+        Assert(os, "cannot open file: " << file);
+        Assert(os.is_open(), "cannot open file: " << file);
         os << "id,traveltimeDemand,traveltimeJourney,vehicleTime,walkingTime,waitingTime,numConnections,trips\n";
         for (const size_t i : indices(data)) {
             if (data[i].origin < 1) continue;
@@ -1761,8 +1761,8 @@ private:
     inline void write(const std::string& filename, const std::vector<ConnectionData>& data) const noexcept {
         std::string file = filename + "_connections.csv";
         std::ofstream os(file);
-        AssertMsg(os, "cannot open file: " << file);
-        AssertMsg(os.is_open(), "cannot open file: " << file);
+        Assert(os, "cannot open file: " << file);
+        Assert(os.is_open(), "cannot open file: " << file);
         os << "connection,numPassengers\n";
         for (const size_t i : indices(data)) {
             os << i << "," << data[i].passengerCount << "\n";

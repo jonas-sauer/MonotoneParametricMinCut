@@ -56,7 +56,7 @@ public:
     }
 
     inline double evaluateInverse(const double y) const noexcept {
-        AssertMsg((a != 0), "No inverse value for " << y << " does exist!");
+        Assert((a != 0), "No inverse value for " << y << " does exist!");
         return (y - b) / a;
     }
 
@@ -74,7 +74,7 @@ class Exponential {
 
 public:
     Exponential(const double a, const double b, const double c, const double d, const double e) : a(a), b(b), c(c), d(d), e(e) {
-        AssertMsg(c != 0.0, "Invalid function");
+        Assert(c != 0.0, "Invalid function");
     }
     Exponential(const Point& p, const Point& q, const Point& r) :
         a(Linear((p.y - r.y) / (p.x - r.x), q)((p.x + r.x) / 2.0) - p.y),
@@ -82,9 +82,9 @@ public:
         c((r.x - p.x) / 2.0),
         d(p.x),
         e(p.y) {
-        AssertMsg(c != 0.0, "Invalid function");
-        AssertMsg((p.x < q.x) && (q.x < r.x), "Points are not sorted by their x coordinate!");
-        AssertMsg(((p.y < q.y) ? (q.y < r.y) : (q.y > r.y)), "Points are not sorted by their y coordinate!");
+        Assert(c != 0.0, "Invalid function");
+        Assert((p.x < q.x) && (q.x < r.x), "Points are not sorted by their x coordinate!");
+        Assert(((p.y < q.y) ? (q.y < r.y) : (q.y > r.y)), "Points are not sorted by their y coordinate!");
         // std::cout << p << ", " << q << ", " << r << "\na: " << a << ", b: " << b << ", c: " << c << "\n" << (*this) << std::endl;
     }
 
@@ -108,7 +108,7 @@ public:
         if (b == 1.0) {
             return ((y - e) / (a / c)) + d;
         } else {
-            AssertMsg(((b < 1.0) ? (y < limit()) : (y > limit())), "No inverse value for " << y << " does exist!");
+            Assert(((b < 1.0) ? (y < limit()) : (y > limit())), "No inverse value for " << y << " does exist!");
             return ((c * std::log1p(((b - 1.0) * (y - e)) / a)) / std::log(b)) + d;
         }
     }
@@ -154,7 +154,7 @@ public:
         const double yqr = q.y - r.y;
         const double ypr = p.y - r.y;
         const double y = ypq * yqr * ypr;
-        AssertMsg(y != 0, "Invalid function");
+        Assert(y != 0, "Invalid function");
         a = ((r.x * ypq) + (p.x * yqr) - (q.x * ypr)) / y;
         b = ((r.x * q.y * q.y) - (r.x * p.y * p.y) + (q.x * p.y * p.y) - (q.x * r.y * r.y) + (p.x * r.y * r.y) - (p.x * q.y * q.y)) / y;
         c = ((r.x * p.y * q.y * ypq) + (p.x * q.y * r.y * yqr) - (q.x * p.y * r.y * ypr)) / y;
@@ -245,7 +245,7 @@ public:
     }
 
     inline Linear extrapolateLinear(const size_t minIndex, const size_t maxIndex) const noexcept {
-        AssertMsg(data.size() >= 2, "To few data points for extrapolation!");
+        Assert(data.size() >= 2, "To few data points for extrapolation!");
         const size_t i = std::min(data.size() - 2, minIndex);
         const size_t j = std::max(i + 1, std::min(data.size() - 1, maxIndex));
         return Linear(data[i], data[j]);
@@ -256,7 +256,7 @@ public:
     }
 
     inline Exponential extrapolateExponential(const size_t minIndex, const size_t maxIndex) const noexcept {
-        AssertMsg(data.size() >= 3, "To few data points for extrapolation!");
+        Assert(data.size() >= 3, "To few data points for extrapolation!");
         const size_t i = std::min(data.size() - 3, minIndex);
         const size_t j = std::max(i + 1, std::min(data.size() - 2, (minIndex + maxIndex) / 2));
         const size_t k = std::max(j + 1, std::min(data.size() - 1, maxIndex));
@@ -268,7 +268,7 @@ public:
     }
 
     inline Root extrapolateRoot(const size_t minIndex, const size_t maxIndex) const noexcept {
-        AssertMsg(data.size() >= 3, "To few data points for extrapolation!");
+        Assert(data.size() >= 3, "To few data points for extrapolation!");
         const size_t i = std::min(data.size() - 3, minIndex);
         const size_t j = std::max(i + 1, std::min(data.size() - 2, (minIndex + maxIndex) / 2));
         const size_t k = std::max(j + 1, std::min(data.size() - 1, maxIndex));
@@ -280,12 +280,12 @@ public:
     }
 
     inline void append(const Point& p) noexcept {
-        AssertMsg(((data.empty()) || (data.back().x <= p.x)), "The function is already defined for " << p.x << "!");
+        Assert(((data.empty()) || (data.back().x <= p.x)), "The function is already defined for " << p.x << "!");
         data.emplace_back(p);
     }
 
     inline void append(const double x, const double y) noexcept {
-        AssertMsg(((data.empty()) || (data.back().x <= x)), "The function is already defined for " << x << "!");
+        Assert(((data.empty()) || (data.back().x <= x)), "The function is already defined for " << x << "!");
         data.emplace_back(Point(Construct::XY, x, y));
     }
 

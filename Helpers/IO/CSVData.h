@@ -60,7 +60,7 @@ public:
     }
 
     inline void appendRow(const std::vector<DataType>& row) noexcept {
-        AssertMsg(row.size() == numColumns(), "Cannot append a row of length " << row.size() << " to a table of width " << numColumns() << "!");
+        Assert(row.size() == numColumns(), "Cannot append a row of length " << row.size() << " to a table of width " << numColumns() << "!");
         for (size_t i = 0; i < row.size(); i++) {
             columnData[i].emplace_back(row[i]);
         }
@@ -93,7 +93,7 @@ public:
     }
 
     inline void write(std::ostream& os) const noexcept {
-        AssertMsg(os, "cannot write to stream");
+        Assert(os, "cannot write to stream");
         if (!columnNames.empty()) {
             os << columnNames.front();
             for (size_t i = 1; i < columnNames.size(); i++) {
@@ -116,8 +116,8 @@ public:
 
     inline void write(const std::string& fileName) const noexcept {
         std::ofstream os(fileName);
-        AssertMsg(os, "cannot open file: " << fileName);
-        AssertMsg(os.is_open(), "cannot open file: " << fileName);
+        Assert(os, "cannot open file: " << fileName);
+        Assert(os.is_open(), "cannot open file: " << fileName);
         write(os);
     }
 

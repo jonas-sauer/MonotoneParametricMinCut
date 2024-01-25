@@ -50,7 +50,7 @@ private:
 
     struct ProfileWrapper {
         inline void add(const ArrivalLabel arrival, const int departureTime) noexcept {
-            AssertMsg(arrival.numberOfTrips != size_t(-1), "Arrival label has invalid number of trips!");
+            Assert(arrival.numberOfTrips != size_t(-1), "Arrival label has invalid number of trips!");
             if (arrival.numberOfTrips >= arrivalTimeByNumberOfTrips.size()) {
                 arrivalTimeByNumberOfTrips.resize(arrival.numberOfTrips + 1, never);
             }
@@ -230,7 +230,7 @@ public:
 
     template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
     inline const Profile& getProfile(const Vertex vertex) const noexcept {
-        AssertMsg(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
+        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         return profileByVertex[vertex].getProfile();
     }
 
@@ -379,7 +379,7 @@ private:
                 if constexpr (OneToOne && Debug) std::cout << arrivals[i] << std::endl;
                 backwardRaptor.template run<true>(target, -arrivals[i].arrivalTime, sourceVertex, arrivals[i].numberOfTrips);
                 const int realDepartureTime = -backwardRaptor.getArrivalTime(sourceVertex, arrivals[i].numberOfTrips);
-                AssertMsg(realDepartureTime >= departureTime, "Backward query found an earlier departure time! Original: " << departureTime << ", New: " << realDepartureTime);
+                Assert(realDepartureTime >= departureTime, "Backward query found an earlier departure time! Original: " << departureTime << ", New: " << realDepartureTime);
                 profile.add(arrivals[i], realDepartureTime);
             }
             profile.sort();

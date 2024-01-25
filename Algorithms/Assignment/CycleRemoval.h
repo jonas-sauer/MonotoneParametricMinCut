@@ -99,12 +99,12 @@ private:
             } // stopCycleIndex[x] holds the index of the first connection used after visiting x <=> (stopCycleIndex[x] - 1) is the index of the first connection reaching x
             std::vector<ConnectionId> usedConnections;
             for (size_t i = connections.size() - 1; i < size; i--) {
-                AssertMsg(stopCycleIndex[data.connections[connections[i]].arrivalStopId] - 1 <= i, "Increasing path index at arrival stop from " << i << " to " << (stopCycleIndex[data.connections[connections[i]].arrivalStopId] - 1) << "!");
+                Assert(stopCycleIndex[data.connections[connections[i]].arrivalStopId] - 1 <= i, "Increasing path index at arrival stop from " << i << " to " << (stopCycleIndex[data.connections[connections[i]].arrivalStopId] - 1) << "!");
                 i = stopCycleIndex[data.connections[connections[i]].arrivalStopId] - 1;
                 if (i >= size) break;
                 assignmentData.groupsPerConnection[connections[i]].emplace_back(group);
                 usedConnections.emplace_back(connections[i]);
-                AssertMsg(stopCycleIndex[data.connections[connections[i]].departureStopId] <= i, "Increasing path index at departure stop from " << i << " to " << (stopCycleIndex[data.connections[connections[i]].departureStopId]) << "!");
+                Assert(stopCycleIndex[data.connections[connections[i]].departureStopId] <= i, "Increasing path index at departure stop from " << i << " to " << (stopCycleIndex[data.connections[connections[i]].departureStopId]) << "!");
                 i = stopCycleIndex[data.connections[connections[i]].departureStopId];
             }
             Vector::reverse(usedConnections);
@@ -122,7 +122,7 @@ private:
     inline void removeStationCycles() noexcept {
         std::vector<StopId> path;
         for (GroupId group = 0; group < assignmentData.connectionsPerGroup.size(); group++) {
-            AssertMsg(path.empty(), "Path contains stations from a previous iteration!");
+            Assert(path.empty(), "Path contains stations from a previous iteration!");
             std::vector<ConnectionId>& connections = assignmentData.connectionsPerGroup[group];
             if (connections.empty()) continue;
             PathLabel label(data.connections[connections.front()], stationByStop);

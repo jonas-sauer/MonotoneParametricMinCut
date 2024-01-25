@@ -52,7 +52,7 @@ public:
     }
 
     virtual std::vector<Result> run(const Vertex source, const Vertex) noexcept {
-        AssertMsg(data.isStop(source), "The vertex " << source << " does not represent a stop!");
+        Assert(data.isStop(source), "The vertex " << source << " does not represent a stop!");
         std::vector<Result> results;
         for (const RAPTOR::RouteSegment route : data.routesContainingStop(StopId(source))) {
             data.printRoute(route.routeId);

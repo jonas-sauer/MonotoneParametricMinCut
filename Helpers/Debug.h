@@ -15,8 +15,8 @@
 #include "Types.h"
 #include "String/String.h"
 
-#undef AssertMsg
-#define AssertMsg(assumption, msg) assert((assumption) || (std::cout << "\n\033[31mASSERTION FAILED: " << msg << "\033[0m\nFile: " << __FILE__ << "\nLine: " << __LINE__ << "\n" << std::flush && printStackTrace()))
+#undef Assert
+#define Assert(assumption, msg) assert((assumption) || (std::cout << "\n\033[31mASSERTION FAILED: " << msg << "\033[0m\nFile: " << __FILE__ << "\nLine: " << __LINE__ << "\n" << std::flush && printStackTrace()))
 
 #define __Print_Here__ std::cout << "\033[1;36mFile: " << __FILE__ << ", Line: " << __LINE__ << "\033[0m" << std::endl
 

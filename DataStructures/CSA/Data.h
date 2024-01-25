@@ -64,7 +64,7 @@ public:
             data.stopData.emplace_back(stop);
         }
         for (const Intermediate::Trip& trip : inter.trips) {
-            AssertMsg(!trip.stopEvents.empty(), "Intermediate data contains trip without any stop event!");
+            Assert(!trip.stopEvents.empty(), "Intermediate data contains trip without any stop event!");
             for (size_t i = 1; i < trip.stopEvents.size(); i++) {
                 const Intermediate::StopEvent& from = trip.stopEvents[i - 1];
                 const Intermediate::StopEvent& to = trip.stopEvents[i];
@@ -335,7 +335,7 @@ public:
 
     template<bool MAKE_BIDIRECTIONAL = true, typename GRAPH_TYPE>
     inline static Data FromInput(const std::vector<Stop>& stops, const std::vector<Connection>& connections, const std::vector<Trip>& trips, GRAPH_TYPE transferGraph) noexcept {
-        AssertMsg(transferGraph.numVertices() >= stops.size(), "Network containes " << stops.size() << " stops, but transfer graph has only " << transferGraph.numVertices() << " vertices!");
+        Assert(transferGraph.numVertices() >= stops.size(), "Network containes " << stops.size() << " stops, but transfer graph has only " << transferGraph.numVertices() << " vertices!");
         Data data;
         data.stopData = stops;
         data.tripData = trips;
@@ -528,7 +528,7 @@ protected:
             tripData.resize(tripCount);
             for (Connection& con : connections) {
                 con.tripId = permutation.permutate(con.tripId);
-                AssertMsg(con.tripId < tripCount, "Connection belongs to trip without trip data! (" << con << ", number of trips: " << tripCount << ")");
+                Assert(con.tripId < tripCount, "Connection belongs to trip without trip data! (" << con << ", number of trips: " << tripCount << ")");
             }
         }
     }
@@ -722,8 +722,8 @@ public:
     }
 
     inline bool isCombinable(const Vertex source, const int departureTime, const Vertex target, const int arrivalTime = intMax) const noexcept {
-        AssertMsg(transferGraph.isVertex(source), "Source vertex id " << source << " does not represent a vertex!");
-        AssertMsg(transferGraph.isVertex(target), "Target vertex id " << target << " does not represent a vertex!");
+        Assert(transferGraph.isVertex(source), "Source vertex id " << source << " does not represent a vertex!");
+        Assert(transferGraph.isVertex(target), "Target vertex id " << target << " does not represent a vertex!");
         if (source == target) {
             return departureTime <= arrivalTime;
         } else {
@@ -735,8 +735,8 @@ public:
 
     template<bool APPLY_MIN_TRANSFER_TIME>
     inline bool isCombinable(const StopId source, const int departureTime, const StopId target, const int arrivalTime = intMax) const noexcept {
-        AssertMsg(isStop(source), "Source vertex id " << source << " does not represent a stop!");
-        AssertMsg(isStop(target), "Target vertex id " << target << " does not represent a stop!");
+        Assert(isStop(source), "Source vertex id " << source << " does not represent a stop!");
+        Assert(isStop(target), "Target vertex id " << target << " does not represent a stop!");
         if constexpr (APPLY_MIN_TRANSFER_TIME) {
             if (source == target) {
                 return departureTime + minTransferTime(source) <= arrivalTime;
@@ -1087,8 +1087,8 @@ protected:
     template<typename TYPE>
     inline void writeVectorCSV(const std::string& fileName, const std::vector<TYPE>& data, const std::string& idHeader = "id") const noexcept {
         std::ofstream file(fileName);
-        Assert(file);
-        Assert(file.is_open());
+        Assert(file, "cannot open file: " << fileName);
+        Assert(file.is_open(), "cannot open file: " << fileName);
         file << idHeader << "," << TYPE::CSV_HEADER << "\n";
         for (size_t i = 0; i < data.size(); i++) {
             file << i << "," << data[i].toCSV() << "\n";
@@ -1098,8 +1098,8 @@ protected:
 
     inline void writeTransferCSV(const std::string& fileName) const noexcept {
         std::ofstream file(fileName);
-        Assert(file);
-        Assert(file.is_open());
+        Assert(file, "cannot open file: " << fileName);
+        Assert(file.is_open(), "cannot open file: " << fileName);
         file << "transfer_id,dep_stop,arr_stop,duration\n";
         for (const Vertex vertex : transferGraph.vertices()) {
             if (!isStop(vertex)) continue;
@@ -1113,8 +1113,8 @@ protected:
 
     inline void writeExchangeFormatConnections(const std::string& fileName) const noexcept {
         std::ofstream file(fileName);
-        Assert(file);
-        Assert(file.is_open());
+        Assert(file, "cannot open file: " << fileName);
+        Assert(file.is_open(), "cannot open file: " << fileName);
         file << "connection_id,departure_vertex,arrival_vertex,departure_time,arrival_time,trip_id";
         for (size_t i = 0; i < connections.size(); i++) {
             const Connection& connection = connections[i];
@@ -1125,13 +1125,13 @@ protected:
 
     inline void writeExchangeFormatTrips(const std::string& fileName) const noexcept {
         std::ofstream file(fileName);
-        Assert(file);
-        Assert(file.is_open());
+        Assert(file, "cannot open file: " << fileName);
+        Assert(file.is_open(), "cannot open file: " << fileName);
         file << "trip_id,gtfs_trip_short_name,gtfs_route_type,gtfs_route_short_name,gtfs_route_long_name";
         for (size_t i = 0; i < tripData.size(); i++) {
             const Trip& trip = tripData[i];
             const std::vector<std::string> routeName = String::split(trip.routeName, ']');
-            AssertMsg(routeName.size() == 1 || routeName.size() == 2, "Route name consists of " << routeName.size() << " parts!");
+            Assert(routeName.size() == 1 || routeName.size() == 2, "Route name consists of " << routeName.size() << " parts!");
             if (routeName.size() == 1) {
                 file << "\n" << (i + 1) << "," << String::replaceAll(trip.tripName, ',', "") << "," << trip.type << "," << String::replaceAll(trip.routeName, ',', "") << "," << String::replaceAll(trip.routeName, ',', "");
             } else {
@@ -1143,8 +1143,8 @@ protected:
 
     inline void writeExchangeFormatStops(const std::string& fileName) const noexcept {
         std::ofstream file(fileName);
-        Assert(file);
-        Assert(file.is_open());
+        Assert(file, "cannot open file: " << fileName);
+        Assert(file.is_open(), "cannot open file: " << fileName);
         file << "vertex_id,gtfs_stop_name,minimum_change_time";
         for (size_t i = 0; i < stopData.size(); i++) {
             const Stop& stop = stopData[i];
@@ -1155,8 +1155,8 @@ protected:
 
 private:
     inline void permutate(const Permutation& fullPermutation, const Permutation& stopPermutation) noexcept {
-        AssertMsg(fullPermutation.size() == transferGraph.numVertices(), "Full permutation size (" << fullPermutation.size() << ") must be the same as number of vertices (" << transferGraph.numVertices() << ")!");
-        AssertMsg(stopPermutation.size() == numberOfStops(), "Stop permutation size (" << stopPermutation.size() << ") must be the same as number of stops (" << numberOfStops() << ")!");
+        Assert(fullPermutation.size() == transferGraph.numVertices(), "Full permutation size (" << fullPermutation.size() << ") must be the same as number of vertices (" << transferGraph.numVertices() << ")!");
+        Assert(stopPermutation.size() == numberOfStops(), "Stop permutation size (" << stopPermutation.size() << ") must be the same as number of stops (" << numberOfStops() << ")!");
 
         for (Connection& connection : connections) {
             connection.applyStopPermutation(stopPermutation);

@@ -18,12 +18,12 @@ struct Profile {
                 return entries[i].arrivalTime;
             }
         }
-        AssertMsg(false, "Could not find a breakpoint after " << departureTime << "!");
+        Assert(false, "Could not find a breakpoint after " << departureTime << "!");
         return entries[0].arrivalTime;
     }
 
     inline bool pushEntry(const int departureTime, const int arrivalTime) noexcept {
-        AssertMsg(departureTime <= entries.back().departureTime, "Entry does not belong at the end of the profile!");
+        Assert(departureTime <= entries.back().departureTime, "Entry does not belong at the end of the profile!");
         if (arrivalTime >= entries.back().arrivalTime) return false;
         if (departureTime == entries.back().departureTime) {
             entries.back().arrivalTime = arrivalTime;

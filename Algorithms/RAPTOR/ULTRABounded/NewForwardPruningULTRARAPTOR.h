@@ -47,7 +47,7 @@ public:
         sourceDepartureTime(never),
         arrivalSlack(INFTY),
         profiler(profiler) {
-        AssertMsg(data.hasImplicitBufferTimes(), "Departure buffer times have to be implicit!");
+        Assert(data.hasImplicitBufferTimes(), "Departure buffer times have to be implicit!");
     }
 
     inline void run(const Vertex source, const int departureTime, const Vertex target, const double arrivalFactor, const double) noexcept {
@@ -112,12 +112,12 @@ private:
 
     inline void collectRoutesServingUpdatedStops() noexcept {
         for (const StopId stop : stopsUpdatedByTransfer) {
-            AssertMsg(data.isStop(stop), "Stop " << stop << " is out of range!");
+            Assert(data.isStop(stop), "Stop " << stop << " is out of range!");
             const int arrivalTime = previousRound()[stop].arrivalTime;
-            AssertMsg(arrivalTime < never, "Updated stop has arrival time = never!");
+            Assert(arrivalTime < never, "Updated stop has arrival time = never!");
             for (const RouteSegment& route : data.routesContainingStop(stop)) {
-                AssertMsg(data.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
-                AssertMsg(data.stopIds[data.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR data contains invalid route segments!");
+                Assert(data.isRoute(route.routeId), "Route " << route.routeId << " is out of range!");
+                Assert(data.stopIds[data.firstStopIdOfRoute[route.routeId] + route.stopIndex] == stop, "RAPTOR data contains invalid route segments!");
                 if (route.stopIndex + 1 == data.numberOfStopsInRoute(route.routeId)) continue;
                 if (data.lastTripOfRoute(route.routeId)[route.stopIndex].departureTime < arrivalTime) continue;
                 if (routesServingUpdatedStops.contains(route.routeId)) {
@@ -135,12 +135,12 @@ private:
             profiler.countMetric(METRIC_ROUTES);
             StopIndex stopIndex = routesServingUpdatedStops[route];
             const size_t tripSize = data.numberOfStopsInRoute(route);
-            AssertMsg(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ")!");
+            Assert(stopIndex < tripSize - 1, "Cannot scan a route starting at/after the last stop (Route: " << route << ", StopIndex: " << stopIndex << ", TripSize: " << tripSize << ")!");
 
             const StopId* stops = data.stopArrayOfRoute(route);
             const StopEvent* trip = data.lastTripOfRoute(route);
             StopId stop = stops[stopIndex];
-            AssertMsg(trip[stopIndex].departureTime >= previousRound()[stop].arrivalTime, "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousRound()[stop].arrivalTime << ", LastDeparture: " << trip[stopIndex].departureTime << ")!");
+            Assert(trip[stopIndex].departureTime >= previousRound()[stop].arrivalTime, "Cannot scan a route after the last trip has departed (Route: " << route << ", Stop: " << stop << ", StopIndex: " << stopIndex << ", Time: " << previousRound()[stop].arrivalTime << ", LastDeparture: " << trip[stopIndex].departureTime << ")!");
             int walkingDistance = previousRound()[stop].walkingDistance;
 
             StopIndex parentIndex = stopIndex;
@@ -163,9 +163,9 @@ private:
         initialTransfers.template run(sourceVertex, targetVertex, arrivalSlack);
         for (const Vertex stop : initialTransfers.getForwardPOIs()) {
             if (stop == targetStop) continue;
-            AssertMsg(data.isStop(stop), "Reached POI " << stop << " is not a stop!");
+            Assert(data.isStop(stop), "Reached POI " << stop << " is not a stop!");
             const int walkingDistance = initialTransfers.getForwardDistance(stop);
-            AssertMsg(walkingDistance != INFTY, "Vertex " << stop << " was not reached!");
+            Assert(walkingDistance != INFTY, "Vertex " << stop << " was not reached!");
             const int arrivalTime = sourceDepartureTime + walkingDistance;
             arrivalByTransfer(StopId(stop), arrivalTime, walkingDistance);
         }
@@ -199,7 +199,7 @@ private:
     inline void relaxShortcuts(const StopId stop, const RoundLabel& parentLabel) noexcept {
         for (const Edge edge : data.transferGraph.edgesFrom(stop)) {
             profiler.countMetric(METRIC_EDGES);
-            AssertMsg(data.isStop(data.transferGraph.get(ToVertex, edge)), "Graph contains edges to non stop vertices!");
+            Assert(data.isStop(data.transferGraph.get(ToVertex, edge)), "Graph contains edges to non stop vertices!");
             const StopId toStop = StopId(data.transferGraph.get(ToVertex, edge));
             const int edgeWeight = data.transferGraph.get(TravelTime, edge);
             const int arrivalTime = parentLabel.arrivalTime + edgeWeight;
@@ -209,12 +209,12 @@ private:
     }
 
     inline Round& currentRound() noexcept {
-        AssertMsg(!rounds.empty(), "Cannot return current round, because no round exists!");
+        Assert(!rounds.empty(), "Cannot return current round, because no round exists!");
         return rounds.back();
     }
 
     inline Round& previousRound() noexcept {
-        AssertMsg(rounds.size() >= 2, "Cannot return previous round, because less than two rounds exist!");
+        Assert(rounds.size() >= 2, "Cannot return previous round, because less than two rounds exist!");
         return rounds[rounds.size() - 2];
     }
 

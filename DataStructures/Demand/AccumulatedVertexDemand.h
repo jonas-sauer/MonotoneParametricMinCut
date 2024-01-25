@@ -333,7 +333,7 @@ public:
             int timeOffset = 0;
             for (size_t i = 0; i < oldEntry.numberOfPassengers; i++) {
                 if (firstIndex + timeOffset >= newEntries.size()) {
-                    AssertMsg(newEntries.size() == firstIndex + timeOffset, "Index does not match number of items (Index: " << (firstIndex + timeOffset) << ", number of items: " << newEntries.size() << ")!");
+                    Assert(newEntries.size() == firstIndex + timeOffset, "Index does not match number of items (Index: " << (firstIndex + timeOffset) << ", number of items: " << newEntries.size() << ")!");
                     const int earliestDepartureTime = oldEntry.earliestDepartureTime + (timeOffset * timeStep);
                     const int latestDepartureTime = (keepIntervals) ? (std::min(earliestDepartureTime + timeStep, oldEntry.latestDepartureTime)) : (earliestDepartureTime);
                     newEntries.emplace_back(oldEntry, earliestDepartureTime, latestDepartureTime);
@@ -407,8 +407,8 @@ public:
 
     inline void toCSV(const std::string& fileName) const {
         std::ofstream os(fileName);
-        AssertMsg(os, "cannot open file: " << fileName);
-        AssertMsg(os.is_open(), "cannot open file: " << fileName);
+        Assert(os, "cannot open file: " << fileName);
+        Assert(os.is_open(), "cannot open file: " << fileName);
         toCSV(os);
     }
 

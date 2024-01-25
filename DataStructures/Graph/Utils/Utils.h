@@ -70,7 +70,7 @@ namespace Graph {
                 graphA.addVertex(graphB.vertexRecord(vertex));
             }
             if constexpr (GRAPH_A::HasVertexAttribute(Coordinates) && GRAPH_B::HasVertexAttribute(Coordinates)) {
-                AssertMsg(graphA.get(Coordinates, vertex) == graphB.get(Coordinates, vertex), "Vertex " << vertex << " cannot be merged, because the coordinates differ!");
+                Assert(graphA.get(Coordinates, vertex) == graphB.get(Coordinates, vertex), "Vertex " << vertex << " cannot be merged, because the coordinates differ!");
             }
         }
         for (const auto [edge, from] : graphB.edgesWithFromVertex()) {
@@ -191,7 +191,7 @@ namespace Graph {
 
     template<typename GRAPH>
     inline std::string vertexToString(const GRAPH& graph, const Vertex vertex) noexcept {
-        AssertMsg(graph.isVertex(vertex), vertex << " is not a valid vertex!");
+        Assert(graph.isVertex(vertex), vertex << " is not a valid vertex!");
         std::stringstream result;
         result << "id: " << vertex;
         const std::string attributeString = graph.vertexRecord(vertex).toString();
@@ -203,7 +203,7 @@ namespace Graph {
 
     template<typename GRAPH>
     inline std::string edgeToString(const GRAPH& graph, const Edge edge) noexcept {
-        AssertMsg(graph.isEdge(edge), edge << " is not a valid edge!");
+        Assert(graph.isEdge(edge), edge << " is not a valid edge!");
         std::stringstream result;
         result << "id: " << edge << ", to: " << graph.get(ToVertex, edge);
         const std::string attributeString = graph.edgeRecord(edge).toString();
@@ -229,8 +229,8 @@ namespace Graph {
     inline void writeStatisticsFile(const GRAPH& graph, const std::string& fileNameBase, const std::string& separator = ".") noexcept {
         const std::string fileName = fileNameBase + separator + "statistics.txt";
         std::ofstream statistics(fileName);
-        AssertMsg(statistics, "Cannot create output stream for: " << fileName);
-        AssertMsg(statistics.is_open(), "Cannot open output stream for: " << fileName);
+        Assert(statistics, "Cannot create output stream for: " << fileName);
+        Assert(statistics.is_open(), "Cannot open output stream for: " << fileName);
         printInfo(graph, statistics);
         graph.printAnalysis(statistics);
         statistics.close();
