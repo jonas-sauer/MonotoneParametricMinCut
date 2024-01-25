@@ -17,8 +17,6 @@ int main(int argc, char** argv) {
     new DrawVertexPartition(shell);
     new DrawNestedDissection(shell);
     new ComputeSampleGraph(shell);
-    new WritePartitionGraph(shell);
-    new ReadHMetisPartition(shell);
     shell.run();
     return 0;
 }

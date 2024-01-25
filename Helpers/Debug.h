@@ -30,7 +30,6 @@ inline std::string shortType(const std::string& input) noexcept {
     cleanType = String::replaceAll(cleanType, Meta::type<TripId>(), "TripId");
     cleanType = String::replaceAll(cleanType, Meta::type<StopIndex>(), "StopIndex");
     cleanType = String::replaceAll(cleanType, Meta::type<ConnectionId>(), "ConnectionId");
-    cleanType = String::replaceAll(cleanType, Meta::type<HyperVertexId>(), "HyperVertexId");
     cleanType = String::replaceAll(cleanType, "basic_string<char, std::char_traits<char>, std::allocator<char> >", "string");
     cleanType = String::replaceAll(cleanType, " >", ">");
     cleanType = String::replaceAll(cleanType, "Meta::", "");

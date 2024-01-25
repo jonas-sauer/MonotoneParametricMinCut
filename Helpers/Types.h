@@ -30,9 +30,6 @@ constexpr StopIndex noStopIndex(StopIndex::InvalidValue);
 using ConnectionId = TaggedInteger<6, u_int32_t, -u_int32_t(1)>;
 constexpr ConnectionId noConnection(ConnectionId::InvalidValue);
 
-using HyperVertexId = TaggedInteger<7, u_int32_t, -u_int32_t(1)>;
-constexpr HyperVertexId noHyperVertex(HyperVertexId::InvalidValue);
-
 using StopEventId = TaggedInteger<8, u_int32_t, -u_int32_t(1)>;
 constexpr StopEventId noStopEvent(StopEventId::InvalidValue);
 
@@ -49,9 +46,6 @@ inline constexpr int never = INFTY;
 
 inline constexpr int FORWARD = 0;
 inline constexpr int BACKWARD = 1;
-
-inline constexpr int DEPARTURE = 0;
-inline constexpr int ARRIVAL = 1;
 
 using PerceivedTime = double;
 inline constexpr PerceivedTime Unreachable = INFTY;
