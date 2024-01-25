@@ -14,9 +14,9 @@ allDebug: ShellsDebug MapServersDebug UnitTestsDebug
 allRelease: ShellsRelease MapServersRelease UnitTestsRelease
 
 #Shells
-ShellsDebug: AssignmentDebug BenchmarkShellDebug BikeSharingDebug CHDebug DelayExperimentsShellDebug EvaluationShellDebug IsochroneShellDebug MultimodalCoverageShellDebug NetworkBuilderDebug NetworkOrderShellDebug PartitionShellDebug QueriesShellDebug RouteFlagsExperimentsShellDebug TestDebug ULTRADebug UltraAssignmentDebug ULTRAExperimentsShellDebug UnrestrictedWalkingShellDebug ValidationShellDebug
+ShellsDebug: AssignmentDebug BenchmarkShellDebug BikeSharingDebug CHDebug DelayExperimentsShellDebug EvaluationShellDebug IsochroneShellDebug MultimodalCoverageShellDebug NetworkBuilderDebug NetworkOrderShellDebug PartitionShellDebug QueriesShellDebug TestDebug ULTRADebug UltraAssignmentDebug ULTRAExperimentsShellDebug UnrestrictedWalkingShellDebug ValidationShellDebug
 
-ShellsRelease: AssignmentRelease BenchmarkShellRelease BikeSharingRelease CHRelease DelayExperimentsShellRelease EvaluationShellRelease IsochroneShellRelease MultimodalCoverageShellRelease NetworkBuilderRelease NetworkOrderShellRelease PartitionShellRelease QueriesShellRelease RouteFlagsExperimentsShellRelease TestRelease ULTRARelease UltraAssignmentRelease ULTRAExperimentsShellRelease UnrestrictedWalkingShellRelease ValidationShellRelease
+ShellsRelease: AssignmentRelease BenchmarkShellRelease BikeSharingRelease CHRelease DelayExperimentsShellRelease EvaluationShellRelease IsochroneShellRelease MultimodalCoverageShellRelease NetworkBuilderRelease NetworkOrderShellRelease PartitionShellRelease QueriesShellRelease TestRelease ULTRARelease UltraAssignmentRelease ULTRAExperimentsShellRelease UnrestrictedWalkingShellRelease ValidationShellRelease
 
 AssignmentDebug:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o Assignment Assignment.cpp $(DYN_LIBRARIES)
@@ -89,12 +89,6 @@ QueriesShellDebug:
 
 QueriesShellRelease:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o QueriesShell QueriesShell.cpp $(DYN_LIBRARIES)
-
-RouteFlagsExperimentsShellDebug:
-	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o RouteFlagsExperimentsShell RouteFlagsExperimentsShell.cpp $(DYN_LIBRARIES)
-
-RouteFlagsExperimentsShellRelease:
-	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o RouteFlagsExperimentsShell RouteFlagsExperimentsShell.cpp $(DYN_LIBRARIES)
 
 ULTRADebug:
 	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o ULTRA ULTRA.cpp $(DYN_LIBRARIES)

@@ -43,8 +43,6 @@
 #include "../Algorithms/CSA/OldProfileCSA.h"
 #include "../Algorithms/RAPTOR/AlternatingRAPTOR.h"
 #include "../Algorithms/RAPTOR/RangeRAPTOR/RangeRAPTOR.h"
-#include "../UnitTests/RouteFlags/RouteFlagsPreprocessing.h"
-#include "../UnitTests/RouteFlags/RouteFlagsQuery.h"
 
 #include "../UnitTests/ULTRA/ULTRATests.h"
 
@@ -93,12 +91,6 @@ int main(int, char**) {
     UnitTests::NestedDissection().check();
     UnitTests::Dinic().check();
     UnitTests::MinimumBipartiteVertexCover().check();
-
-    UnitTests::RouteFlagsPreprocessing().check();
-
-    UnitTests::RouteFlagsQuery<RAPTOR::RouteFlags::StopEventFlags>().check();
-    UnitTests::RouteFlagsQuery<RAPTOR::RouteFlags::TripFlags>().check();
-    UnitTests::RouteFlagsQuery<RAPTOR::RouteFlags::RouteFlags>().check();
 
     UnitTests::ULTRATests().checkWeakDominationStopToStop();
     UnitTests::ULTRATests().checkWeakDominationEventToEvent();

@@ -44,7 +44,6 @@ Runnables/NetworkOrderShell
 Runnables/PartitionShell
 Runnables/QueriesShell
 Runnables/RaptorMapServer
-Runnables/RouteFlagsExperimentsShell
 Runnables/ULTRA
 Runnables/UltraAssignment
 Runnables/ULTRAExperimentsShell
