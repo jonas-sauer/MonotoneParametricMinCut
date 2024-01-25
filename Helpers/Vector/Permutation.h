@@ -5,10 +5,10 @@
 #include <vector>
 #include <string>
 #include <random>
+#include <concepts>
 
 #include "Vector.h"
 
-#include "../Meta.h"
 #include "../Assert.h"
 #include "../ConstructorTags.h"
 #include "../IO/Serialization.h"
@@ -37,7 +37,7 @@ protected:
     IdMapping(const std::string& fileName) {this->deserialize(fileName);}
     IdMapping(IO::Deserialization& deserialize) {this->deserialize(deserialize);}
 
-    template<typename T, typename = std::enable_if_t<!Meta::Equals<T, size_t>()>>
+    template<typename T> requires (!std::same_as<T, size_t>)
     IdMapping(const std::vector<T>& data) {
         reserve(data.size());
         for (const size_t i : data) {
@@ -150,7 +150,7 @@ public:
     Permutation(const std::string& fileName) {this->deserialize(fileName);}
     Permutation(IO::Deserialization& deserialize) {this->deserialize(deserialize);}
 
-    template<typename T, typename = std::enable_if_t<!Meta::Equals<T, size_t>()>>
+    template<typename T> requires (!std::same_as<T, size_t>)
     explicit Permutation(const std::vector<T>& data) : IdMapping(data) {}
 
     Permutation(const Construct::IdTag, const size_t n) :
@@ -238,7 +238,7 @@ public:
     Order(const std::string& fileName) {this->deserialize(fileName);}
     Order(IO::Deserialization& deserialize) {this->deserialize(deserialize);}
 
-    template<typename T, typename = std::enable_if_t<!Meta::Equals<T, size_t>()>>
+    template<typename T> requires (!std::same_as<T, size_t>)
     explicit Order(const std::vector<T>& data) : IdMapping(data) {}
 
     Order(const Construct::IdTag, const size_t n) :

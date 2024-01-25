@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../RAPTOR/InitialTransfers.h"
 
@@ -30,7 +32,7 @@ public:
     constexpr static bool SourcePruning = SOURCE_PRUNING;
     using Profiler = PROFILER;
     constexpr static bool ContiguousProfiles = CONTIGUOUS_PROFILES;
-    using ProfileVectorType = Meta::IF<ContiguousProfiles, ContiguousProfileVector, ProfileVectorWrapper>;
+    using ProfileVectorType = std::conditional_t<ContiguousProfiles, ContiguousProfileVector, ProfileVectorWrapper>;
     using Type = DijkstraProfileCSA<InitialTransferType, SourcePruning, Profiler, ContiguousProfiles>;
 
 public:
@@ -54,13 +56,11 @@ public:
         profiler.initialize();
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraProfileCSA(const Data& data, const TransferGraph& reverseGraph, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraProfileCSA(const Data& data, const TransferGraph& reverseGraph, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, CHGraph> :
         DijkstraProfileCSA(data, reverseGraph, chData.forward, chData.backward, Weight, profilerTemplate) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraProfileCSA(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph,  const Profiler& profilerTemplate = Profiler()) :
+    DijkstraProfileCSA(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph,  const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, TransferGraph> :
         DijkstraProfileCSA(data, backwardGraph, forwardGraph, backwardGraph, TravelTime, profilerTemplate) {
     }
 

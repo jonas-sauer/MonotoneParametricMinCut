@@ -31,7 +31,7 @@ public:
 
     constexpr inline operator const ValueType&() const noexcept {return internalValue;}
 
-    template<typename T, typename = typename std::enable_if_t<Meta::Contains<T, AdditionalCasts>()>>
+    template<typename T> requires Meta::Contains<T, AdditionalCasts>
     constexpr inline operator T() const noexcept {return T(internalValue);}
 
     constexpr inline const ValueType& value() const noexcept {return internalValue;}

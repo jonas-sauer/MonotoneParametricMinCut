@@ -3,10 +3,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "../Dijkstra/Dijkstra.h"
 
-#include "../../Helpers/Meta.h"
 #include "../../Helpers/Assert.h"
 #include "../../Helpers/Console/Progress.h"
 
@@ -29,7 +29,7 @@ public:
     constexpr static bool TargetPruning = TARGET_PRUNING;
     constexpr static bool Debug = DEBUG;
     using Type = OldProfileCSA<MaxNumberOfTrips, AllowMultiHopTransfers, TargetPruning, Debug>;
-    using ArrivalEntry = Meta::IF<AllowMultiHopTransfers, ArrivalAndParentArrayEntry<MaxNumberOfTrips, int>, ArrivalArrayEntry<MaxNumberOfTrips, int>>;
+    using ArrivalEntry = std::conditional_t<AllowMultiHopTransfers, ArrivalAndParentArrayEntry<MaxNumberOfTrips, int>, ArrivalArrayEntry<MaxNumberOfTrips, int>>;
     using Label = Profile<ArrivalEntry>;
 
 public:

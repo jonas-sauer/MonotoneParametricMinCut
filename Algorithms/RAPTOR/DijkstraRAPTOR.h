@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <concepts>
 
 #include "../../Helpers/Vector/Vector.h"
 
@@ -86,13 +87,11 @@ public:
         DijkstraRAPTOR(data, InitialTransferType(forwardGraph, backwardGraph, data.numberOfStops(), weight), profilerTemplate) {
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraRAPTOR(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraRAPTOR(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, CHGraph> :
         DijkstraRAPTOR(data, chData.forward, chData.backward, Weight, profilerTemplate) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraRAPTOR(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraRAPTOR(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, TransferGraph> :
         DijkstraRAPTOR(data, forwardGraph, backwardGraph, TravelTime, profilerTemplate) {
     }
 

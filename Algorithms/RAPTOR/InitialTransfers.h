@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 #include "../CH/Query/BucketQuery.h"
 #include "../CH/Query/CHQuery.h"
 #include "../../DataStructures/RAPTOR/TransferModes.h"
@@ -22,7 +24,7 @@ using SeparatedParetoInitialAndFinalTransfers = CH::SeparatedParetoUPQuery<true,
 template<bool DEBUG, size_t MAX_TRIPS>
 using GroupedParetoInitialAndFinalTransfers = CH::GroupedParetoUPQuery<true, DEBUG, MAX_TRIPS>;
 template<bool DEBUG, size_t GROUPED_ROUNDS>
-using ParetoInitialAndFinalTransfers = Meta::IF<GROUPED_ROUNDS != 0, GroupedParetoInitialAndFinalTransfers<DEBUG, GROUPED_ROUNDS>, SeparatedParetoInitialAndFinalTransfers<DEBUG>>;
+using ParetoInitialAndFinalTransfers = std::conditional_t<GROUPED_ROUNDS != 0, GroupedParetoInitialAndFinalTransfers<DEBUG, GROUPED_ROUNDS>, SeparatedParetoInitialAndFinalTransfers<DEBUG>>;
 template<bool DEBUG, bool USE_TARGET_BUCKETS>
 using ProfileInitialAndFinalTransfers = CH::ProfileUPQuery<USE_TARGET_BUCKETS, true, DEBUG, 16>;
 template<bool DEBUG, bool USE_TARGET_BUCKETS>

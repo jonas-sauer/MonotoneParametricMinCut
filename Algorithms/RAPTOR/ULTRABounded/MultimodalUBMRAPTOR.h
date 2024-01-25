@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <concepts>
 
 #include "../../../Helpers/Vector/Vector.h"
 
@@ -211,8 +212,7 @@ private:
     }
 
 public:
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    MultimodalUBMRAPTOR(const MultimodalData& data, const Data& forwardPruningData, const Data& backwardPruningData, const TransferGraph& backwardTransitiveGraph, const std::vector<CH::CH>& chData, const Profiler& profilerTemplate = Profiler()) :
+    MultimodalUBMRAPTOR(const MultimodalData& data, const Data& forwardPruningData, const Data& backwardPruningData, const TransferGraph& backwardTransitiveGraph, const std::vector<CH::CH>& chData, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, CHGraph> :
         MultimodalUBMRAPTOR(data, forwardPruningData, backwardPruningData, backwardTransitiveGraph, chData[0].forward.numVertices(), profilerTemplate) {
         Assert(chData.size() == NumTransferModes, "Wrong number of modes");
         for (size_t i = 0; i < chData.size(); i++) {
@@ -220,8 +220,7 @@ public:
         }
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    MultimodalUBMRAPTOR(const MultimodalData& data, const Data& forwardPruningData, const Data& backwardPruningData, const TransferGraph& backwardTransitiveGraph, const std::vector<TransferGraph>& backwardGraphs, const Profiler& profilerTemplate = Profiler()) :
+    MultimodalUBMRAPTOR(const MultimodalData& data, const Data& forwardPruningData, const Data& backwardPruningData, const TransferGraph& backwardTransitiveGraph, const std::vector<TransferGraph>& backwardGraphs, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, TransferGraph> :
         MultimodalUBMRAPTOR(data, forwardPruningData, backwardPruningData, backwardTransitiveGraph, backwardGraphs[0].numVertices(), profilerTemplate) {
         Assert(backwardGraphs.size() == NumTransferModes, "Wrong number of modes");
         for (size_t i = 0; i < backwardGraphs.size(); i++) {

@@ -11,6 +11,7 @@
 #include <future>
 #include <cassert>
 #include <cerrno>
+#include <concepts>
 
 #include "File.h"
 #include "../Timer.h"
@@ -118,7 +119,7 @@ private:
         if (dataEnd >= 3 && buffer[0] == '\xEF' && buffer[1] == '\xBB' && buffer[2] == '\xBF') dataBegin = 3;
 
         if (dataEnd == 2 * BLOCK_LENGTH) {
-            bytesRead = std::async(std::launch::async, [=]()->int {return std::fread(buffer + 2 * BLOCK_LENGTH, 1, BLOCK_LENGTH, file);});
+            bytesRead = std::async(std::launch::async, [=, this]()->int {return std::fread(buffer + 2 * BLOCK_LENGTH, 1, BLOCK_LENGTH, file);});
         }
     }
 
@@ -183,7 +184,7 @@ public:
             if (bytesRead.valid()) {
                 dataEnd += bytesRead.get();
                 std::memcpy(buffer + BLOCK_LENGTH, buffer + 2 * BLOCK_LENGTH, BLOCK_LENGTH);
-                bytesRead = std::async(std::launch::async, [=]()->int {return std::fread(buffer + 2 * BLOCK_LENGTH, 1, BLOCK_LENGTH, file);});
+                bytesRead = std::async(std::launch::async, [=, this]()->int {return std::fread(buffer + 2 * BLOCK_LENGTH, 1, BLOCK_LENGTH, file);});
             }
         }
 
@@ -826,13 +827,13 @@ public:
         init();
     }
 
-    template<typename... T, typename = std::enable_if_t<sizeof...(T) == COLUMN_COUNT>>
+    template<typename... T> requires (sizeof...(T) == COLUMN_COUNT)
     void readHeader(const T&... columnNames) {
         columnNameAliases = std::array<std::vector<std::string>, COLUMN_COUNT>{std::vector<std::string>{columnNames}...};
         readHeader(IGNORE_EXTRA_COLUMN);
     }
 
-    template<typename... T, typename = std::enable_if_t<sizeof...(T) == COLUMN_COUNT>>
+    template<typename... T> requires (sizeof...(T) == COLUMN_COUNT)
     void readHeader(const IgnoreColumn ignorePolicy, const T&... columnNames) {
         columnNameAliases = std::array<std::vector<std::string>, COLUMN_COUNT>{std::vector<std::string>{columnNames}...};
         readHeader(ignorePolicy);

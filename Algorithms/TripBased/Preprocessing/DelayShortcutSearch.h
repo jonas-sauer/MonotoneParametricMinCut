@@ -7,7 +7,6 @@
 #include "../../Dijkstra/Dijkstra.h"
 #include "../Query/ReachedIndex.h"
 
-#include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Helpers.h"
 #include "../../../Helpers/Vector/Vector.h"
 

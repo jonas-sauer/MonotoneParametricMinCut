@@ -118,8 +118,7 @@ public:
         return distance[vertex];
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline std::vector<Vertex> getPath(Vertex vertex) const noexcept {
+    inline std::vector<Vertex> getPath(Vertex vertex) const noexcept requires PathRetrieval {
         std::vector<Vertex> path{vertex};
         while (parent[vertex] != noVertex) {
             vertex = Vertex(parent[vertex]);

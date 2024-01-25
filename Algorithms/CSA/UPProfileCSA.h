@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "../../Helpers/Assert.h"
 #include "../../Helpers/Timer.h"
@@ -27,7 +28,7 @@ public:
     static constexpr bool UseDFSOrder = USE_DFS_ORDER;
     using Profiler = PROFILER;
     constexpr static bool ContiguousProfiles = CONTIGUOUS_PROFILES;
-    using ProfileVectorType = Meta::IF<ContiguousProfiles, ContiguousProfileVector, ProfileVectorWrapper>;
+    using ProfileVectorType = std::conditional_t<ContiguousProfiles, ContiguousProfileVector, ProfileVectorWrapper>;
     using InitialAndFinalTransfers = RAPTOR::ProfileCSAInitialAndFinalTransfers<false, UseTargetBuckets>;
     using Type = UPProfileCSA<UseTargetBuckets, UseDFSOrder, Profiler, ContiguousProfiles>;
 

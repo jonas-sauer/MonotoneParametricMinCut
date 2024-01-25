@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../CH/CH.h"
 #include "../RAPTOR/InitialTransfers.h"
@@ -26,7 +28,7 @@ public:
     constexpr static bool PathRetrieval = PATH_RETRIEVAL;
     using Profiler = PROFILER;
     using Type = ULTRACSA<PathRetrieval, Profiler>;
-    using TripFlag = Meta::IF<PathRetrieval, ConnectionId, bool>;
+    using TripFlag = std::conditional_t<PathRetrieval, ConnectionId, bool>;
 
 private:
     struct ParentLabel {
@@ -102,13 +104,11 @@ public:
         return arrivalTime[stop];
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney() noexcept {
+    inline Journey getJourney() noexcept requires PathRetrieval {
         return getJourney(targetStop);
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney(const Vertex vertex) noexcept {
+    inline Journey getJourney(const Vertex vertex) noexcept requires PathRetrieval {
         StopId stop = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
         Journey journey;
         if (!reachable(stop)) return journey;

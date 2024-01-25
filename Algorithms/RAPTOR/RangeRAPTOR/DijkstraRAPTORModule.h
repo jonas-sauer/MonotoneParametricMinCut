@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <concepts>
 
 #include "../../../Helpers/Vector/Vector.h"
 
@@ -86,13 +87,11 @@ public:
         profiler.initialize();
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraRAPTORModule(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraRAPTORModule(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, CHGraph> :
         DijkstraRAPTORModule(data, chData.forward, chData.backward, Weight, profilerTemplate) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraRAPTORModule(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraRAPTORModule(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, TransferGraph> :
         DijkstraRAPTORModule(data, forwardGraph, backwardGraph, TravelTime, profilerTemplate) {
     }
 
@@ -171,8 +170,7 @@ public:
         profiler.done();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<Journey> getJourneys() noexcept {
+    inline std::vector<Journey> getJourneys() noexcept requires OneToOne {
         return getJourneys(targetVertex);
     }
 
@@ -197,8 +195,7 @@ public:
         return journeys.empty() ? Journey() : journeys.back();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<ArrivalLabel> getArrivals() noexcept {
+    inline std::vector<ArrivalLabel> getArrivals() noexcept requires OneToOne {
         return getArrivals(targetVertex);
     }
 
@@ -228,8 +225,7 @@ public:
         }
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline int getWalkingArrivalTime() const noexcept {
+    inline int getWalkingArrivalTime() const noexcept requires OneToOne {
         return sourceDepartureTime + initialTransfers.getDistance();
     }
 
@@ -237,8 +233,7 @@ public:
         return sourceDepartureTime + initialTransfers.getForwardDistance(vertex);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline int getWalkingTravelTime() const noexcept {
+    inline int getWalkingTravelTime() const noexcept requires OneToOne {
         return initialTransfers.getDistance();
     }
 
@@ -308,8 +303,7 @@ public:
     }
 
 private:
-    template<bool T = TripPruning, typename = std::enable_if_t<T == TripPruning && T>>
-    inline void resetLastTrip() noexcept {
+    inline void resetLastTrip() noexcept requires TripPruning {
         std::vector<std::vector<std::vector<uint16_t>>>(1).swap(lastTrip);
         std::vector<std::vector<uint16_t>>(data.numberOfRoutes()).swap(lastTrip[0]);
         for (const RouteId route : data.routes()) {

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <concepts>
 
 #include "../../Helpers/Vector/Vector.h"
 
@@ -68,13 +69,11 @@ public:
         profiler.initialize();
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    OneToAllDijkstraRAPTOR(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) :
+    OneToAllDijkstraRAPTOR(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, CHGraph> :
         OneToAllDijkstraRAPTOR(data, chData.forward, chData.backward, Weight, profilerTemplate) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    OneToAllDijkstraRAPTOR(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) :
+    OneToAllDijkstraRAPTOR(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, TransferGraph> :
         OneToAllDijkstraRAPTOR(data, forwardGraph, backwardGraph, TravelTime, profilerTemplate) {
     }
 

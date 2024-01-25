@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../../Helpers/Assert.h"
 #include "../../Helpers/Timer.h"
@@ -22,7 +24,7 @@ public:
     constexpr static bool PathRetrieval = PATH_RETRIEVAL;
     using Profiler = PROFILER;
     using Type = CSA<PathRetrieval, Profiler>;
-    using TripFlag = Meta::IF<PathRetrieval, ConnectionId, bool>;
+    using TripFlag = std::conditional_t<PathRetrieval, ConnectionId, bool>;
 
 private:
     struct ParentLabel {
@@ -86,13 +88,11 @@ public:
         return arrivalTime[stop];
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney() const noexcept {
+    inline Journey getJourney() const noexcept requires PathRetrieval {
         return getJourney(targetStop);
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney(StopId stop) const noexcept {
+    inline Journey getJourney(StopId stop) const noexcept requires PathRetrieval {
         Journey journey;
         if (!reachable(stop)) return journey;
         while (stop != sourceStop) {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 #include "../../RAPTOR/InitialTransfers.h"
 
 #include "../../../DataStructures/RAPTOR/Entities/ArrivalLabel.h"
@@ -19,7 +21,7 @@ public:
     constexpr static size_t GroupedRounds = GROUPED_ROUNDS;
     constexpr static bool GroupSweeps = GroupedRounds != 0;
     using Profiler = PROFILER;
-    constexpr static bool Debug = !Meta::Equals<Profiler, NoProfiler>();
+    constexpr static bool Debug = !std::is_same_v<Profiler, NoProfiler>;
     using Type = UPQuery<GroupedRounds, Profiler>;
     using InitialAndFinalTransfers = RAPTOR::ParetoInitialAndFinalTransfers<false, GroupedRounds>;
 

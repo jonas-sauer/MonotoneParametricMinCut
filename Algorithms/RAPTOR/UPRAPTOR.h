@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "InitialTransfers.h"
 
@@ -20,7 +21,7 @@ public:
     constexpr static size_t GroupedRounds = GROUPED_ROUNDS;
     constexpr static bool GroupSweeps = GroupedRounds != 0;
     using Profiler = PROFILER;
-    constexpr static bool Debug = !Meta::Equals<Profiler, NoProfiler>();
+    constexpr static bool Debug = !std::is_same_v<Profiler, NoProfiler>;
     using Type = UPRAPTOR<GroupedRounds, Profiler>;
     using InitialAndFinalTransfers = ParetoInitialAndFinalTransfers<false, GroupedRounds>;
 

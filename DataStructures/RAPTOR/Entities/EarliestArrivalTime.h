@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../../../Helpers/Meta.h"
+#include <type_traits>
+
 #include "../../../Helpers/Types.h"
 
 namespace RAPTOR {
@@ -59,5 +60,5 @@ struct CombinedEarliestArrivalTime {
 };
 
 template<bool SEPARATE>
-using EarliestArrivalTime = Meta::IF<SEPARATE, SeparatedEarliestArrivalTime, CombinedEarliestArrivalTime>;
+using EarliestArrivalTime = std::conditional_t<SEPARATE, SeparatedEarliestArrivalTime, CombinedEarliestArrivalTime>;
 }

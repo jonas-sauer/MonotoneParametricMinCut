@@ -26,13 +26,13 @@
 
 template<typename LIST_OF_VERTEX_ATTRIBUTES, typename LIST_OF_EDGE_ATTRIBUTES>
 class DynamicGraphImplementation {
-    static_assert(Meta::Equals<Edge, Meta::FindAttributeType<BeginOut, LIST_OF_VERTEX_ATTRIBUTES>>(), "A dynamic graph requires a vertex attribute named BeginOut of type Edge!");
-    static_assert(Meta::Equals<size_t, Meta::FindAttributeType<OutDegree, LIST_OF_VERTEX_ATTRIBUTES>>(), "A dynamic graph requires a vertex attribute named OutDegree of type size_t!");
-    static_assert(Meta::Equals<std::vector<Edge>, Meta::FindAttributeType<IncomingEdges, LIST_OF_VERTEX_ATTRIBUTES>>(), "A dynamic graph requires a vertex attribute named IncomingEdges of type vector<Edge>!");
-    static_assert(Meta::Equals<bool, Meta::FindAttributeType<Valid, LIST_OF_EDGE_ATTRIBUTES>>(), "A dynamic graph requires an edge attribute named Valid of type bool!");
-    static_assert(Meta::Equals<size_t, Meta::FindAttributeType<IncomingEdgePointer, LIST_OF_EDGE_ATTRIBUTES>>(), "A dynamic graph requires an edge attribute named IncomingEdgePointer of type size_t!");
-    static_assert(Meta::Equals<Vertex, Meta::FindAttributeType<FromVertex, LIST_OF_EDGE_ATTRIBUTES>>(), "A dynamic graph requires an edge attribute named FromVertex of type Vertex!");
-    static_assert(Meta::Equals<Vertex, Meta::FindAttributeType<ToVertex, LIST_OF_EDGE_ATTRIBUTES>>(), "A dynamic graph requires an edge attribute named ToVertex of type Vertex!");
+    static_assert(std::is_same_v<Edge, Meta::FindAttributeType<BeginOut, LIST_OF_VERTEX_ATTRIBUTES>>, "A dynamic graph requires a vertex attribute named BeginOut of type Edge!");
+    static_assert(std::is_same_v<size_t, Meta::FindAttributeType<OutDegree, LIST_OF_VERTEX_ATTRIBUTES>>, "A dynamic graph requires a vertex attribute named OutDegree of type size_t!");
+    static_assert(std::is_same_v<std::vector<Edge>, Meta::FindAttributeType<IncomingEdges, LIST_OF_VERTEX_ATTRIBUTES>>, "A dynamic graph requires a vertex attribute named IncomingEdges of type vector<Edge>!");
+    static_assert(std::is_same_v<bool, Meta::FindAttributeType<Valid, LIST_OF_EDGE_ATTRIBUTES>>, "A dynamic graph requires an edge attribute named Valid of type bool!");
+    static_assert(std::is_same_v<size_t, Meta::FindAttributeType<IncomingEdgePointer, LIST_OF_EDGE_ATTRIBUTES>>, "A dynamic graph requires an edge attribute named IncomingEdgePointer of type size_t!");
+    static_assert(std::is_same_v<Vertex, Meta::FindAttributeType<FromVertex, LIST_OF_EDGE_ATTRIBUTES>>, "A dynamic graph requires an edge attribute named FromVertex of type Vertex!");
+    static_assert(std::is_same_v<Vertex, Meta::FindAttributeType<ToVertex, LIST_OF_EDGE_ATTRIBUTES>>, "A dynamic graph requires an edge attribute named ToVertex of type Vertex!");
 
 public:
     using ListOfVertexAttributes = LIST_OF_VERTEX_ATTRIBUTES;
@@ -890,9 +890,9 @@ public:
         out << "          #FromVertexErrors : " << std::setw(tabSize) << String::prettyInt(fromVertexErrorCount) << std::endl;
         edgeAttributes.forEach([&](const auto& values, const AttributeNameType attribute) {
             if (attribute == IncomingEdgePointer) return;
-            using ValueType = typename Meta::RemoveReference<decltype (values)>::value_type;
+            using ValueType = typename std::remove_reference_t<decltype (values)>;
             const std::string attributeName = attributeToString(attribute);
-            if constexpr (std::is_arithmetic<ValueType>::value && !Meta::Equals<ValueType, bool>()) {
+            if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {
                 ValueType minWeight = std::numeric_limits<ValueType>::max();
                 ValueType maxWeight = std::numeric_limits<ValueType>::lowest();
                 size_t negativeWeightCount = 0;

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <type_traits>
+
 #include "../../Attributes/Attributes.h"
 
-#include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Types.h"
 #include "../../../Helpers/Ranges/Range.h"
 #include "../../../Helpers/Ranges/EdgeUnionRange.h"
@@ -43,7 +44,7 @@ public:
         offset = Edge(graphA.edgeLimit());
         Assert(checkGraph(graphA), "Edges of graphA are not sorted!");
         Assert(checkGraph(graphB), "Edges of graphB are not sorted!");
-        if constexpr (Meta::Equals<GraphA, GraphB>()) {
+        if constexpr (std::is_same_v<GraphA, GraphB>) {
             if (graphA.numVertices() > graphB.numVertices()) {
                 std::swap(this->graphA, this->graphB);
                 offset = Edge(graphA.edgeLimit());
@@ -52,7 +53,7 @@ public:
     }
 
     inline size_t numVertices() const noexcept {
-        if constexpr (Meta::Equals<GraphA, GraphB>()) {
+        if constexpr (std::is_same_v<GraphA, GraphB>) {
             return graphA->numVertices();
         } else {
             return std::max(graphA->numVertices(), graphB->numVertices());
@@ -60,7 +61,7 @@ public:
     }
 
     inline size_t edgeLimit() const noexcept {
-        if constexpr (Meta::Equals<GraphA, GraphB>()) {
+        if constexpr (std::is_same_v<GraphA, GraphB>) {
             return graphA->edgeLimit();
         } else {
             return (graphA->numVertices() >= graphB->numVertices()) ? graphA->edgeLimit() : graphB->edgeLimit();
@@ -99,7 +100,7 @@ public:
 
     template<AttributeNameType ATTRIBUTE_NAME>
     inline AttributeConstReferenceType<ATTRIBUTE_NAME> get(const AttributeNameWrapper<ATTRIBUTE_NAME> attributeName, const Vertex vertex) const noexcept {
-        if constexpr (Meta::Equals<GraphA, GraphB>()) {
+        if constexpr (std::is_same_v<GraphA, GraphB>) {
             return graphA->get(attributeName, vertex);
         } else {
             return (graphA->numVertices() >= graphB->numVertices()) ? graphA->get(attributeName, vertex) : graphB->get(attributeName, vertex);

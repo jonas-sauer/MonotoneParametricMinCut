@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <concepts>
 
 #include "../../../Helpers/Vector/Vector.h"
 
@@ -255,8 +256,7 @@ public:
     }
 
 private:
-    template<bool T = TripPruning, typename = std::enable_if_t<T == TripPruning && T>>
-    inline void resetLastTrip() noexcept {
+    inline void resetLastTrip() noexcept requires TripPruning {
         std::vector<std::vector<std::vector<uint16_t>>>(1).swap(lastTrip);
         std::vector<std::vector<uint16_t>>(data.numberOfRoutes()).swap(lastTrip[0]);
         for (const RouteId route : data.routes()) {

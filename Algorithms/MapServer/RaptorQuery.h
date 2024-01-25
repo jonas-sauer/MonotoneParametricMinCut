@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "Algorithm.h"
 
@@ -13,8 +14,6 @@
 #include "../../Visualization/TimeTableVisualization.h"
 #include "../../Visualization/PDF.h"
 
-#include "../../Helpers/Meta.h"
-
 template<typename ALGORITHM, bool STOPS_ONLY = false>
 class RaptorQuery : public Algorithm {
 
@@ -22,7 +21,7 @@ public:
     using Algo = ALGORITHM;
     static constexpr bool StopsOnly = STOPS_ONLY;
     using Type = RaptorQuery<Algo, StopsOnly>;
-    using VertexType = Meta::IF<STOPS_ONLY, StopId, Vertex>;
+    using VertexType = std::conditional_t<STOPS_ONLY, StopId, Vertex>;
 
     RaptorQuery(Algo& algorithm, const RAPTOR::Data& data) :
         Algorithm(),

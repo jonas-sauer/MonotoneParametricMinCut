@@ -1,6 +1,6 @@
 CC=g++ -fopenmp
 #CC=clang++-6.0
-FLAGS=-std=c++17 -pipe
+FLAGS=-std=c++20 -pipe
 OPTIMIZATION=-march=native
 DEBUG=-rdynamic -Werror -Wpedantic -pedantic-errors -Wall -Wextra -Wparentheses -Wfatal-errors -D_GLIBCXX_DEBUG -g -fno-omit-frame-pointer -O0
 RELEASE=-ffast-math -ftree-vectorize -Wfatal-errors -DNDEBUG -O3

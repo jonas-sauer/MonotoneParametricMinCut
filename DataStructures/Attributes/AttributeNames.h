@@ -228,13 +228,13 @@ namespace ImplementationDetail {
     struct GetOldAttributeName<NAME, Meta::List<>> : AttributeNameWrapper<NAME> {};
 
     template<AttributeNameType NAME, AttributeNameType OLD_NAME, AttributeNameType NEW_NAME, typename... NAME_CHANGES>
-    struct GetOldAttributeName<NAME, Meta::List<NameChange<OLD_NAME, NEW_NAME>, NAME_CHANGES...>> : Meta::IF<(NAME == OLD_NAME),
+    struct GetOldAttributeName<NAME, Meta::List<NameChange<OLD_NAME, NEW_NAME>, NAME_CHANGES...>> : std::conditional_t<(NAME == OLD_NAME),
         UnknownType,
         GetOldAttributeName<NAME, Meta::List<NAME_CHANGES...>>> {
     };
 
     template<AttributeNameType NAME, AttributeNameType OLD_NAME, AttributeNameType NEW_NAME, typename... NAME_CHANGES, typename... LIST>
-    struct GetOldAttributeName<NAME, Meta::List<LIST...>, NameChange<OLD_NAME, NEW_NAME>, NAME_CHANGES...> : Meta::IF<(NAME == NEW_NAME),
+    struct GetOldAttributeName<NAME, Meta::List<LIST...>, NameChange<OLD_NAME, NEW_NAME>, NAME_CHANGES...> : std::conditional_t<(NAME == NEW_NAME),
         AttributeNameWrapper<OLD_NAME>,
         GetOldAttributeName<NAME, Meta::List<NameChange<OLD_NAME, NEW_NAME>, LIST...>, NAME_CHANGES...>> {
     };

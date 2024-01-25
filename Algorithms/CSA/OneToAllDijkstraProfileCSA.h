@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "../RAPTOR/InitialTransfers.h"
 
@@ -27,7 +28,7 @@ class OneToAllDijkstraProfileCSA {
 public:
     using Profiler = PROFILER;
     constexpr static bool ContiguousProfiles = CONTIGUOUS_PROFILES;
-    using ProfileVectorType = Meta::IF<ContiguousProfiles, ContiguousProfileVector, ProfileVectorWrapper>;
+    using ProfileVectorType = std::conditional_t<ContiguousProfiles, ContiguousProfileVector, ProfileVectorWrapper>;
     using Type = OneToAllDijkstraProfileCSA<Profiler, ContiguousProfiles>;
 
 private:

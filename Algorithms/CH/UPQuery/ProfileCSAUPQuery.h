@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../../../DataStructures/CH/UPGraphs.h"
 #include "../CH.h"
@@ -29,7 +31,7 @@ public:
     constexpr static bool UseTargetBuckets = USE_TARGET_BUCKETS;
     constexpr static bool StallOnDemand = STALL_ON_DEMAND;
     constexpr static bool Debug = DEBUG;
-    using TargetGraph = Meta::IF<UseTargetBuckets, BucketGraph, SweepGraph>;
+    using TargetGraph = std::conditional_t<UseTargetBuckets, BucketGraph, SweepGraph>;
     using Type = ProfileCSAUPQuery<UseTargetBuckets, StallOnDemand, Debug>;
     using BucketBuilderType = BucketBuilder<StallOnDemand, Debug>;
 
@@ -239,19 +241,17 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && !T>>
-    inline void initialDownwardSweep() noexcept {
+    inline void initialDownwardSweep() noexcept requires (!UseTargetBuckets) {
         downwardSweep<false>(initialDistance);
 
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && !T>>
-    inline void finalDownwardSweep() noexcept {
+    inline void finalDownwardSweep() noexcept requires (!UseTargetBuckets) {
         downwardSweep<true>(departureTime);
     }
 
-    template<bool FINAL, bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && !T>>
-    inline void downwardSweep(std::vector<int>& distance) noexcept {
+    template<bool FINAL>
+    inline void downwardSweep(std::vector<int>& distance) noexcept requires (!UseTargetBuckets) {
         if constexpr (Debug) {
             std::cout << "Running " << (FINAL ? "initial" : "final") << " downward sweep" << std::endl;
             timer.restart();
@@ -284,18 +284,16 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && T>>
-    inline void evaluateInitialTargetBuckets() noexcept {
+    inline void evaluateInitialTargetBuckets() noexcept requires UseTargetBuckets {
         evaluateTargetBuckets<false>(initialDistance);
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && T>>
-    inline void evaluateFinalTargetBuckets() noexcept {
+    inline void evaluateFinalTargetBuckets() noexcept requires UseTargetBuckets {
         evaluateTargetBuckets<true>(departureTime);
     }
 
-    template<bool FINAL, bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && T>>
-    inline void evaluateTargetBuckets(std::vector<int>& distance) noexcept {
+    template<bool FINAL>
+    inline void evaluateTargetBuckets(std::vector<int>& distance) noexcept requires UseTargetBuckets {
         if constexpr (Debug) {
             std::cout << "Evaluating " << (FINAL ? "initial" : "final") << " target buckets" << std::endl;
             timer.restart();

@@ -7,7 +7,6 @@
 
 #include "../../Algorithms/RAPTOR/DijkstraInitializedRAPTOR.h"
 #include "../../Algorithms/RAPTOR/Profiler.h"
-#include "../../Helpers/Meta.h"
 #include "../../Helpers/Console/Progress.h"
 #include "../../Helpers/MultiThreading.h"
 

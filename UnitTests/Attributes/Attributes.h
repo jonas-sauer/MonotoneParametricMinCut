@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <type_traits>
 
 #include "../UnitTests.h"
 
@@ -35,9 +36,9 @@ public:
 private:
     inline void checkAccess() {
         using AttributesType = ::Attributes<Meta::SortAttributes<List<IntWeight, VectorCapacity, DoubleWeight, BoolValid>>>;
-        UnitTests::check(Meta::Equals<AttributesType::AttributeType<Weight>, int>(), "Attribute Weight should have type int, but has type ", Meta::type<AttributesType::AttributeType<Weight>>());
-        UnitTests::check(Meta::Equals<AttributesType::AttributeType<Valid>, bool>(), "Attribute Valid should have type bool, but has type ", Meta::type<AttributesType::AttributeType<Valid>>());
-        UnitTests::check(Meta::Equals<AttributesType::AttributeType<Capacity>, std::vector<int>>(), "Attribute Capacity should have type std::vector<int>, but has type ", Meta::type<AttributesType::AttributeType<Capacity>>());
+        UnitTests::check(std::is_same_v<AttributesType::AttributeType<Weight>, int>, "Attribute Weight should have type int, but has type ", Meta::type<AttributesType::AttributeType<Weight>>());
+        UnitTests::check(std::is_same_v<AttributesType::AttributeType<Valid>, bool>, "Attribute Valid should have type bool, but has type ", Meta::type<AttributesType::AttributeType<Valid>>());
+        UnitTests::check(std::is_same_v<AttributesType::AttributeType<Capacity>, std::vector<int>>, "Attribute Capacity should have type std::vector<int>, but has type ", Meta::type<AttributesType::AttributeType<Capacity>>());
         AttributesType attributes;
         UnitTests::check(attributes.NumberOfAttributes == 3, "Attributes should have 3 attributes, but has ", attributes.NumberOfAttributes);
         attributes.resize(2);
@@ -118,7 +119,7 @@ private:
     inline void checkHandle() {
         using AttributesType = ::Attributes<Meta::SortAttributes<List<IntWeight, IntCapacity, DoubleWeight, DoubleValid>>>;
         using HandleType = AttributeHandle<AttributesType, uint32_t>;
-        UnitTests::check(Meta::Equals<HandleType::AttributeType<Weight>, int>(), "Attribute Weight should have type int, but has type ", Meta::type<HandleType::AttributeType<Weight>>());
+        UnitTests::check(std::is_same_v<HandleType::AttributeType<Weight>, int>, "Attribute Weight should have type int, but has type ", Meta::type<HandleType::AttributeType<Weight>>());
         AttributesType attributes(4);
         UnitTests::check(attributes.size() == 4, "Attributes should have size 4, but has size ", attributes.size());
         HandleType handle(attributes, 1);
@@ -162,9 +163,9 @@ private:
         using AttributesTypeB = ::Attributes<ListB>;
         using AttributeRecordA = AttributeRecord<ListA>;
         UnitTests::check(AttributeRecordA::NumberOfAttributes == 3, "AttributeRecordA should have 3 attributes, but has ", AttributeRecordA::NumberOfAttributes);
-        UnitTests::check(Meta::Equals<AttributeRecordA::AttributeType<Weight>, double>(), "AttributeRecordA Weight should have type double, but has type ", Meta::type<AttributeRecordA::AttributeType<Weight>>());
-        UnitTests::check(Meta::Equals<AttributeRecordA::AttributeType<Valid>, double>(), "AttributeRecordA Valid should have type double, but has type ", Meta::type<AttributeRecordA::AttributeType<Valid>>());
-        UnitTests::check(Meta::Equals<AttributeRecordA::AttributeType<Capacity>, int>(), "AttributeRecordA Capacity should have type int, but has type ", Meta::type<AttributeRecordA::AttributeType<Capacity>>());
+        UnitTests::check(std::is_same_v<AttributeRecordA::AttributeType<Weight>, double>, "AttributeRecordA Weight should have type double, but has type ", Meta::type<AttributeRecordA::AttributeType<Weight>>());
+        UnitTests::check(std::is_same_v<AttributeRecordA::AttributeType<Valid>, double>, "AttributeRecordA Valid should have type double, but has type ", Meta::type<AttributeRecordA::AttributeType<Valid>>());
+        UnitTests::check(std::is_same_v<AttributeRecordA::AttributeType<Capacity>, int>, "AttributeRecordA Capacity should have type int, but has type ", Meta::type<AttributeRecordA::AttributeType<Capacity>>());
         AttributesTypeA attributesA(4);
         attributesA[Weight][1] = 42.5;
         attributesA[Capacity][2] = 13;

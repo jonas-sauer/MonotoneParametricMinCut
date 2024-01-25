@@ -3,10 +3,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <concepts>
 
 #include "../../Dijkstra/Dijkstra.h"
 
-#include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Helpers.h"
 #include "../../../Helpers/Vector/Vector.h"
 
@@ -113,8 +113,7 @@ public:
         }
     }
 
-    template<bool T = CountOptimalCandidates, typename = std::enable_if_t<T == CountOptimalCandidates && T>>
-    inline size_t getNumberOfOptimalCandidates() const noexcept {
+    inline size_t getNumberOfOptimalCandidates() const noexcept requires CountOptimalCandidates {
         return optimalCandidates;
     }
 

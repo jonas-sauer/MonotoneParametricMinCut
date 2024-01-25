@@ -3,11 +3,11 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "../InitialTransfers.h"
 #include "../../Dijkstra/Dijkstra.h"
 
-#include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Helpers.h"
 #include "../../../Helpers/Vector/Vector.h"
 #include "../../../Helpers/Vector/Permutation.h"
@@ -29,7 +29,7 @@ public:
     static constexpr bool UseTargetBuckets = USE_TARGET_BUCKETS;
     static constexpr bool UseDFSOrder = USE_DFS_ORDER;
     static constexpr bool Debug = DEBUG;
-    using Profiler = Meta::IF<Debug, SimpleProfiler, NoProfiler>;
+    using Profiler = std::conditional_t<Debug, SimpleProfiler, NoProfiler>;
     static constexpr bool TripPruning = TRIP_PRUNING;
     using RaptorModule = UPRAPTORModule<UseTargetBuckets, UseDFSOrder, Profiler, TripPruning>;
     using InitialAndFinalTransfers = typename RaptorModule::InitialAndFinalTransfers;

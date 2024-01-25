@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "../Assert.h"
-#include "../Meta.h"
 #include "../Types.h"
 
 #include "../../DataStructures/Attributes/Attributes.h"

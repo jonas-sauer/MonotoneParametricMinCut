@@ -3,6 +3,7 @@
 #include <cmath>
 #include <random>
 #include <vector>
+#include <type_traits>
 
 #include "../../../DataStructures/Assignment/AssignmentData.h"
 #include "../../../DataStructures/Assignment/ChoiceSet.h"
@@ -31,7 +32,7 @@ public:
     using DecisionModel = DECISION_MODEL;
     using Profiler = PROFILER;
     constexpr static inline bool UseConnectionProfiler = USE_CONNECTION_PROFILER;
-    using ConnectionProfilerType = Meta::IF<UseConnectionProfiler, ConnectionProfiler, NoConnectionProfiler>;
+    using ConnectionProfilerType = std::conditional_t<UseConnectionProfiler, ConnectionProfiler, NoConnectionProfiler>;
     constexpr static inline bool UseTransferBufferTimes = USE_TRANSFER_BUFFER_TIMES;
     using Type = LockstepAssignment<DecisionModel, Profiler, UseConnectionProfiler, UseTransferBufferTimes>;
 

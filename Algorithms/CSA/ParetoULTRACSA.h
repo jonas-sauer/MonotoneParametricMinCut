@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../CH/CH.h"
 #include "../RAPTOR/InitialTransfers.h"
@@ -27,7 +29,7 @@ public:
     using Profiler = PROFILER;
     constexpr static size_t MaxTrips = MAX_TRIPS;
     using Type = ParetoULTRACSA<PathRetrieval, Profiler, MaxTrips>;
-    using TripFlag = Meta::IF<PathRetrieval, ConnectionId, bool>;
+    using TripFlag = std::conditional_t<PathRetrieval, ConnectionId, bool>;
 
 private:
     struct ParentLabel {
@@ -111,13 +113,11 @@ public:
         return never;
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline std::vector<Journey> getJourneys() const noexcept {
+    inline std::vector<Journey> getJourneys() const noexcept requires PathRetrieval {
         return getJourneys(targetStop);
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline std::vector<Journey> getJourneys(const Vertex vertex) const noexcept {
+    inline std::vector<Journey> getJourneys(const Vertex vertex) const noexcept requires PathRetrieval {
         std::vector<Journey> journeys;
         for (size_t i = 0; i < MaxTrips; i++) {
             getJourney(journeys, i, vertex);
@@ -125,8 +125,7 @@ public:
         return journeys;
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getEarliestJourney(const Vertex vertex) const noexcept {
+    inline Journey getEarliestJourney(const Vertex vertex) const noexcept requires PathRetrieval {
         std::vector<Journey> journeys = getJourneys(vertex);
         return journeys.empty() ? Journey() : journeys.back();
     }
@@ -266,8 +265,7 @@ private:
         }
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline void getJourney(std::vector<Journey>& journeys, size_t numTrips, Vertex vertex) const noexcept {
+    inline void getJourney(std::vector<Journey>& journeys, size_t numTrips, Vertex vertex) const noexcept requires PathRetrieval {
         StopId stop = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
         if (arrivalTime[stop * MaxTrips + numTrips] >= (journeys.empty() ? never : journeys.back().back().arrivalTime)) return;
         Journey journey;

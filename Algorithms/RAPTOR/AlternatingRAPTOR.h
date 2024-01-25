@@ -3,9 +3,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../../Helpers/Helpers.h"
-#include "../../Helpers/Meta.h"
 
 #include "../../DataStructures/Container/Heap.h"
 #include "../../DataStructures/RAPTOR/Entities/ArrivalLabel.h"
@@ -42,18 +43,15 @@ public:
         currentArrivalTime(-never) {
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    AlternatingRAPTOR(const Data& data, const Data& reverseData, const CH::CH& chData) :
+    AlternatingRAPTOR(const Data& data, const Data& reverseData, const CH::CH& chData) requires std::same_as<InitialTransferGraph, CHGraph> :
         AlternatingRAPTOR(data, reverseData, chData.forward, chData.backward, Weight) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    AlternatingRAPTOR(const Data& data, const Data& reverseData, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph) :
+    AlternatingRAPTOR(const Data& data, const Data& reverseData, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph) requires std::same_as<InitialTransferGraph, TransferGraph> :
         AlternatingRAPTOR(data, reverseData, forwardGraph, backwardGraph, TravelTime) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    AlternatingRAPTOR(const Data& data, const Data& reverseData) :
+    AlternatingRAPTOR(const Data& data, const Data& reverseData) requires std::same_as<InitialTransferGraph, TransferGraph> :
         AlternatingRAPTOR(data, reverseData, data.transferGraph, reverseData.transferGraph) {
     }
 
@@ -216,12 +214,12 @@ private:
 };
 
 template<bool DEBUG = false, bool USE_MIN_TRANSFER_TIMES = false>
-using AlternatingTransitiveRAPTOR = AlternatingRAPTOR<RAPTOR<true, Meta::IF<DEBUG, SimpleProfiler, NoProfiler>, true, USE_MIN_TRANSFER_TIMES, true>, DEBUG>;
+using AlternatingTransitiveRAPTOR = AlternatingRAPTOR<RAPTOR<true, std::conditional_t<DEBUG, SimpleProfiler, NoProfiler>, true, USE_MIN_TRANSFER_TIMES, true>, DEBUG>;
 
 template<typename INITIAL_TRANSFERS, bool DEBUG = false, bool USE_MIN_TRANSFER_TIMES = false>
-using AlternatingDijkstraRAPTOR = AlternatingRAPTOR<DijkstraRAPTOR<INITIAL_TRANSFERS, Meta::IF<DEBUG, SimpleProfiler, NoProfiler>, true, USE_MIN_TRANSFER_TIMES, true>, DEBUG>;
+using AlternatingDijkstraRAPTOR = AlternatingRAPTOR<DijkstraRAPTOR<INITIAL_TRANSFERS, std::conditional_t<DEBUG, SimpleProfiler, NoProfiler>, true, USE_MIN_TRANSFER_TIMES, true>, DEBUG>;
 
 template<bool DEBUG = false>
-using AlternatingULTRARAPTOR = AlternatingRAPTOR<ULTRARAPTOR<Meta::IF<DEBUG, SimpleProfiler, NoProfiler>, true>, DEBUG>;
+using AlternatingULTRARAPTOR = AlternatingRAPTOR<ULTRARAPTOR<std::conditional_t<DEBUG, SimpleProfiler, NoProfiler>, true>, DEBUG>;
 
 }

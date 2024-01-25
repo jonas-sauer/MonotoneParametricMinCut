@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../CH/CH.h"
 #include "../RAPTOR/InitialTransfers.h"
@@ -28,7 +30,7 @@ public:
     constexpr static bool PathRetrieval = PATH_RETRIEVAL;
     using Profiler = PROFILER;
     using Type = DijkstraCSA<InitialTransferType, PathRetrieval, Profiler>;
-    using TripFlag = Meta::IF<PathRetrieval, ConnectionId, bool>;
+    using TripFlag = std::conditional_t<PathRetrieval, ConnectionId, bool>;
 
 private:
     struct ParentLabel {
@@ -69,13 +71,11 @@ public:
         profiler.initialize();
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraCSA(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraCSA(const Data& data, const CH::CH& chData, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, CHGraph> :
         DijkstraCSA(data, chData.forward, chData.backward, Weight, profilerTemplate) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    DijkstraCSA(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) :
+    DijkstraCSA(const Data& data, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph, const Profiler& profilerTemplate = Profiler()) requires std::same_as<InitialTransferGraph, TransferGraph> :
         DijkstraCSA(data, forwardGraph, backwardGraph, TravelTime, profilerTemplate) {
     }
 
@@ -115,13 +115,11 @@ public:
         return arrivalTime[stop];
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney() noexcept {
+    inline Journey getJourney() noexcept requires PathRetrieval {
         return getJourney(targetStop);
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney(const Vertex vertex) noexcept {
+    inline Journey getJourney(const Vertex vertex) noexcept requires PathRetrieval {
         StopId stop = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
         Journey journey;
         if (!reachable(stop)) return journey;

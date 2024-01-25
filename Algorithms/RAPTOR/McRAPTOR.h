@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <type_traits>
 
 #include "../../DataStructures/Container/Set.h"
 #include "../../DataStructures/Container/Map.h"
@@ -121,7 +122,7 @@ private:
     };
 
     using BagType = Bag<Label>;
-    using BestBag = Meta::IF<Transitive, CombinedBestBag, SeparatedBestBag>;
+    using BestBag = std::conditional_t<Transitive, CombinedBestBag, SeparatedBestBag>;
     using Round = std::vector<BagType>;
     using RouteBagType = RouteBag<RouteLabel>;
 

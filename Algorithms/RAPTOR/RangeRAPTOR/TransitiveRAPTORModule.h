@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <concepts>
 
 #include "../../../Helpers/Vector/Vector.h"
 
@@ -137,8 +138,7 @@ public:
         profiler.done();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<Journey> getJourneys() noexcept {
+    inline std::vector<Journey> getJourneys() noexcept requires OneToOne {
         return getJourneys(targetStop);
     }
 
@@ -163,8 +163,7 @@ public:
         return journeys.empty() ? Journey() : journeys.back();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<ArrivalLabel> getArrivals() noexcept {
+    inline std::vector<ArrivalLabel> getArrivals() noexcept requires OneToOne {
         return getArrivals(targetStop);
     }
 
@@ -186,8 +185,7 @@ public:
         return roundLabel(rounds.size() - 1, StopId(vertex)).arrivalTime;
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline int getWalkingArrivalTime() const noexcept {
+    inline int getWalkingArrivalTime() const noexcept requires OneToOne {
         return sourceDepartureTime + initialTransferDistance[targetStop];
     }
 
@@ -195,8 +193,7 @@ public:
         return sourceDepartureTime + initialTransferDistance[vertex];
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline int getWalkingTravelTime() const noexcept {
+    inline int getWalkingTravelTime() const noexcept requires OneToOne {
         return initialTransferDistance[targetStop];
     }
 
@@ -255,8 +252,7 @@ public:
     }
 
 private:
-    template<bool T = TripPruning, typename = std::enable_if_t<T == TripPruning && T>>
-    inline void resetLastTrip() noexcept {
+    inline void resetLastTrip() noexcept requires TripPruning {
         std::vector<std::vector<std::vector<uint16_t>>>(1).swap(lastTrip);
         std::vector<std::vector<uint16_t>>(data.numberOfRoutes()).swap(lastTrip[0]);
         for (const RouteId route : data.routes()) {

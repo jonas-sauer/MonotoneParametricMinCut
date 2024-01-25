@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../../../DataStructures/CH/UPGraphs.h"
 #include "../CH.h"
@@ -29,8 +31,8 @@ public:
     constexpr static bool UseTargetBuckets = USE_TARGET_BUCKETS;
     constexpr static bool StallOnDemand = STALL_ON_DEMAND;
     constexpr static bool Debug = DEBUG;
-    using StopGraph = Meta::IF<UseStopBuckets, BucketGraph, SweepGraph>;
-    using TargetGraph = Meta::IF<UseTargetBuckets, BucketGraph, SweepGraph>;
+    using StopGraph = std::conditional_t<UseStopBuckets, BucketGraph, SweepGraph>;
+    using TargetGraph = std::conditional_t<UseTargetBuckets, BucketGraph, SweepGraph>;
     using Type = UPQuery<UseStopBuckets, UseTargetBuckets, StallOnDemand, Debug>;
     using BucketBuilderType = BucketBuilder<StallOnDemand, Debug>;
 
@@ -293,8 +295,7 @@ private:
         }
     }
 
-    template<bool T = UseStopBuckets, typename = std::enable_if_t<T == UseStopBuckets && !T>>
-    inline void downwardSweepToStops() noexcept {
+    inline void downwardSweepToStops() noexcept requires (!UseStopBuckets) {
         if constexpr (Debug) {
             std::cout << "Running downward sweep to stops" << std::endl;
             timer.restart();
@@ -318,8 +319,7 @@ private:
         }
     }
 
-    template<bool T = UseStopBuckets, typename = std::enable_if_t<T == UseStopBuckets && T>>
-    inline void evaluateStopBuckets() noexcept {
+    inline void evaluateStopBuckets() noexcept requires UseStopBuckets {
         if constexpr (Debug) {
             std::cout << "Evaluating stop buckets" << std::endl;
             timer.restart();
@@ -344,8 +344,7 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && !T>>
-    inline void downwardSweepToTargets() noexcept {
+    inline void downwardSweepToTargets() noexcept requires (!UseTargetBuckets) {
         if constexpr (Debug) {
             std::cout << "Running downward sweep to targets" << std::endl;
             timer.restart();
@@ -369,8 +368,7 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && T>>
-    inline void evaluateTargetBuckets() noexcept {
+    inline void evaluateTargetBuckets() noexcept requires UseTargetBuckets {
         if constexpr (Debug) {
             std::cout << "Evaluating target buckets" << std::endl;
             timer.restart();

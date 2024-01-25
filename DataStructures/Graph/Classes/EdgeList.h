@@ -25,8 +25,8 @@
 
 template<typename LIST_OF_VERTEX_ATTRIBUTES, typename LIST_OF_EDGE_ATTRIBUTES>
 class EdgeListImplementation {
-    static_assert(Meta::Equals<Vertex, Meta::FindAttributeType<FromVertex, LIST_OF_EDGE_ATTRIBUTES>>(), "An edge list requires an edge attribute named FromVertex of type Vertex!");
-    static_assert(Meta::Equals<Vertex, Meta::FindAttributeType<ToVertex, LIST_OF_EDGE_ATTRIBUTES>>(), "An edge list requires an edge attribute named ToVertex of type Vertex!");
+    static_assert(std::is_same_v<Vertex, Meta::FindAttributeType<FromVertex, LIST_OF_EDGE_ATTRIBUTES>>, "An edge list requires an edge attribute named FromVertex of type Vertex!");
+    static_assert(std::is_same_v<Vertex, Meta::FindAttributeType<ToVertex, LIST_OF_EDGE_ATTRIBUTES>>, "An edge list requires an edge attribute named ToVertex of type Vertex!");
 
 public:
     using ListOfVertexAttributes = LIST_OF_VERTEX_ATTRIBUTES;
@@ -541,8 +541,8 @@ public:
                         //ToDo
                         //addEdge(from, to, AnyAttribute(weight));
                         edgeAttributes.forEach([&](auto& values) {
-                            using ValueType = typename Meta::RemoveReference<decltype (values)>::value_type;
-                            if constexpr (std::is_arithmetic<ValueType>::value && !Meta::Equals<ValueType, bool>()) {
+                            using ValueType = typename std::remove_reference_t<decltype (values)>;
+                            if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {
                                 values[edge] = weight;
                             }
                         });
@@ -685,9 +685,9 @@ public:
         out << "                     #Edges : " << std::setw(tabSize) << String::prettyInt(edgeCount) << "  (" << String::percent(edgeCount / (double) numEdges()) << ")" << std::endl;
         out << "                 #LoopEdges : " << std::setw(tabSize) << String::prettyInt(loopEdgeCount) << "  (" << String::percent(loopEdgeCount / (double) edgeCount) << ")" << std::endl;
         edgeAttributes.forEach([&](const auto& values, const AttributeNameType attribute) {
-            using ValueType = typename Meta::RemoveReference<decltype (values)>::value_type;
+            using ValueType = typename std::remove_reference_t<decltype (values)>;
             const std::string attributeName = attributeToString(attribute);
-            if constexpr (std::is_arithmetic<ValueType>::value && !Meta::Equals<ValueType, bool>()) {
+            if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {
                 ValueType minWeight = std::numeric_limits<ValueType>::max();
                 ValueType maxWeight = std::numeric_limits<ValueType>::lowest();
                 size_t negativeWeightCount = 0;

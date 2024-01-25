@@ -5,8 +5,8 @@
 #include <vector>
 #include <string>
 #include <limits>
+#include <concepts>
 
-#include "../Meta.h"
 #include "../Helpers.h"
 #include "../Assert.h"
 
@@ -337,7 +337,7 @@ namespace Vector {
         std::fill(vector.begin(), vector.end(), value);
     }
 
-    template<typename T, typename U, typename = std::enable_if_t<!Meta::Equals<T, U>()>>
+    template<typename T, typename U> requires (!std::same_as<T, U>)
     inline void assign(std::vector<T>& to, const std::vector<U>& from) noexcept {
         to.clear();
         to.reserve(from.size());

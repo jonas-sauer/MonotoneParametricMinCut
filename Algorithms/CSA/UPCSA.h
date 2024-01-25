@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../CH/CH.h"
 #include "../RAPTOR/InitialTransfers.h"
@@ -26,10 +28,10 @@ public:
     constexpr static bool UseTargetBuckets = USE_TARGET_BUCKETS;
     constexpr static bool PathRetrieval = PATH_RETRIEVAL;
     using Profiler = PROFILER;
-    constexpr static bool Debug = Meta::Equals<Profiler, SimpleProfiler>();
+    constexpr static bool Debug = std::is_same_v<Profiler, SimpleProfiler>;
     using Type = UPCSA<UseStopBuckets, UseTargetBuckets, PathRetrieval, Profiler>;
     using InitialAndFinalTransfers = RAPTOR::BasicInitialAndFinalTransfers<Debug, UseStopBuckets, UseTargetBuckets>;
-    using TripFlag = Meta::IF<PathRetrieval, ConnectionId, bool>;
+    using TripFlag = std::conditional_t<PathRetrieval, ConnectionId, bool>;
 
 private:
     inline static Order vertexOrder(const CH::CH& chData, const bool useDFSOrder) noexcept {
@@ -161,8 +163,7 @@ public:
         return initialAndFinalTransfers.getDistance(internalVertex);
     }
 
-    template<bool T = PathRetrieval, typename = std::enable_if_t<T == PathRetrieval && T>>
-    inline Journey getJourney(const Vertex vertex) noexcept {
+    inline Journey getJourney(const Vertex vertex) noexcept requires PathRetrieval {
         const Vertex internalVertex(queryData.externalToInternal[vertex]);
         Journey journey;
         const int distance = initialAndFinalTransfers.getDistance(internalVertex);

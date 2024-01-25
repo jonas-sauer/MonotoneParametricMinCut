@@ -3,10 +3,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "../../Dijkstra/Dijkstra.h"
 
-#include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Helpers.h"
 #include "../../../Helpers/Types.h"
 
@@ -26,7 +26,7 @@ public:
     inline static constexpr bool Debug = DEBUG;
     inline static constexpr bool UseArrivalKey = USE_ARRIVAL_KEY;
     inline static constexpr bool FullRouteScans = FULL_ROUTE_SCANS;
-    using KeyType = Meta::IF<UseArrivalKey, std::tuple<int, int>, std::tuple<int, int, int>>;
+    using KeyType = std::conditional_t<UseArrivalKey, std::tuple<int, int>, std::tuple<int, int, int>>;
     using Type = McShortcutSearch<Debug, UseArrivalKey, FullRouteScans>;
 
 public:

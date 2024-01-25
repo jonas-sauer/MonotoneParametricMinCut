@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../../../Helpers/Vector/Vector.h"
 
@@ -26,7 +28,7 @@ public:
     constexpr static bool UseTargetBuckets = USE_TARGET_BUCKETS;
     constexpr static bool UseDFSOrder = USE_DFS_ORDER;
     using Profiler = PROFILER;
-    constexpr static bool Debug = !Meta::Equals<Profiler, NoProfiler>();
+    constexpr static bool Debug = !std::is_same_v<Profiler, NoProfiler>;
     using InitialAndFinalTransfers = ProfileInitialAndFinalTransfers<Debug, UseTargetBuckets>;
     static constexpr bool TripPruning = TRIP_PRUNING;
     using Type = UPRAPTORModule<UseTargetBuckets, UseDFSOrder, Profiler, TripPruning>;
@@ -234,8 +236,7 @@ public:
     }
 
 private:
-    template<bool T = TripPruning, typename = std::enable_if_t<T == TripPruning && T>>
-    inline void resetLastTrip() noexcept {
+    inline void resetLastTrip() noexcept requires TripPruning {
         std::vector<std::vector<std::vector<uint16_t>>>(1).swap(lastTrip);
         std::vector<std::vector<uint16_t>>(data.numberOfRoutes()).swap(lastTrip[0]);
         for (const RouteId route : data.routes()) {

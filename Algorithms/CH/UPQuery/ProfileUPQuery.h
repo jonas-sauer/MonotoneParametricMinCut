@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../../../DataStructures/CH/UPGraphs.h"
 #include "../CH.h"
@@ -29,7 +31,7 @@ public:
     constexpr static bool UseTargetBuckets = USE_TARGET_BUCKETS;
     constexpr static bool StallOnDemand = STALL_ON_DEMAND;
     constexpr static bool Debug = DEBUG;
-    using TargetGraph = Meta::IF<UseTargetBuckets, BucketGraph, SweepGraph>;
+    using TargetGraph = std::conditional_t<UseTargetBuckets, BucketGraph, SweepGraph>;
     constexpr static size_t MaxSources = MAX_SOURCES;
     using Type = ProfileUPQuery<UseTargetBuckets, StallOnDemand, Debug, MaxSources>;
     using BucketBuilderType = BucketBuilder<StallOnDemand, Debug>;
@@ -284,8 +286,7 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && !T>>
-    inline void initialDownwardSweep() noexcept {
+    inline void initialDownwardSweep() noexcept requires (!UseTargetBuckets) {
         if constexpr (Debug) {
             std::cout << "Running downward sweep for initial transfers" << std::endl;
             timer.restart();
@@ -311,8 +312,7 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && !T>>
-    inline void finalDownwardSweep() noexcept {
+    inline void finalDownwardSweep() noexcept requires (!UseTargetBuckets) {
         if constexpr (Debug) {
             std::cout << "Running downward sweep for final transfers" << std::endl;
             timer.restart();
@@ -339,8 +339,7 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && T>>
-    inline void evaluateInitialTargetBuckets() noexcept {
+    inline void evaluateInitialTargetBuckets() noexcept requires UseTargetBuckets {
         if constexpr (Debug) {
             std::cout << "Evaluating target buckets for initial transfers" << std::endl;
             timer.restart();
@@ -362,8 +361,7 @@ private:
         }
     }
 
-    template<bool T = UseTargetBuckets, typename = std::enable_if_t<T == UseTargetBuckets && T>>
-    inline void evaluateFinalTargetBuckets() noexcept {
+    inline void evaluateFinalTargetBuckets() noexcept requires UseTargetBuckets {
         if constexpr (Debug) {
             std::cout << "Evaluating target buckets for final transfers" << std::endl;
             timer.restart();

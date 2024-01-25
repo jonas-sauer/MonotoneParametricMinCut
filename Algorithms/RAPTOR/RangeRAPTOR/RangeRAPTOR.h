@@ -3,11 +3,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <concepts>
 
 #include "../InitialTransfers.h"
 #include "../../Dijkstra/Dijkstra.h"
 
-#include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Helpers.h"
 #include "../../../Helpers/Vector/Vector.h"
 #include "../../../Helpers/Vector/Permutation.h"
@@ -124,38 +125,31 @@ public:
         profileByVertex(OneToOne ? 0 : forwardGraph.numVertices()) {
     }
 
-    template<typename T = CHGraph, typename = std::enable_if_t<Meta::Equals<T, CHGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    RangeRAPTOR(const Data& data, const Data& reverseData, const CH::CH& chData) :
+    RangeRAPTOR(const Data& data, const Data& reverseData, const CH::CH& chData) requires std::same_as<InitialTransferGraph, CHGraph> :
         RangeRAPTOR(data, reverseData, chData.forward, chData.backward, Weight) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    RangeRAPTOR(const Data& data, const Data& reverseData, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph) :
+    RangeRAPTOR(const Data& data, const Data& reverseData, const TransferGraph& forwardGraph, const TransferGraph& backwardGraph) requires std::same_as<InitialTransferGraph, TransferGraph> :
         RangeRAPTOR(data, reverseData, forwardGraph, backwardGraph, TravelTime) {
     }
 
-    template<typename T = TransferGraph, typename = std::enable_if_t<Meta::Equals<T, TransferGraph>() && Meta::Equals<T, InitialTransferGraph>()>>
-    RangeRAPTOR(const Data& data, const Data& reverseData) :
+    RangeRAPTOR(const Data& data, const Data& reverseData) requires std::same_as<InitialTransferGraph, TransferGraph> :
         RangeRAPTOR(data, reverseData, data.transferGraph, reverseData.transferGraph) {
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline void runOneToAll(const Vertex source, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept {
+    inline void runOneToAll(const Vertex source, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept requires (!OneToOne) {
         run(source, IndexedSet<false, Vertex>(Construct::Complete, data.transferGraph.numVertices()), minTime, maxTime, maxRounds);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline void runOneToAllStops(const Vertex source, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept {
+    inline void runOneToAllStops(const Vertex source, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept requires (!OneToOne) {
         run(source, IndexedSet<false, Vertex>(Construct::Complete, data.numberOfStops()), minTime, maxTime, maxRounds);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline void run(const Vertex source, const std::vector<Vertex>& targets, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept {
+    inline void run(const Vertex source, const std::vector<Vertex>& targets, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept requires (!OneToOne) {
         run(source, IndexedSet<false, Vertex>(data.transferGraph.numVertices(), targets), minTime, maxTime, maxRounds);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline void run(const Vertex source, const IndexedSet<false, Vertex>& targets, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept {
+    inline void run(const Vertex source, const IndexedSet<false, Vertex>& targets, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept requires (!OneToOne) {
         clear();
         sourceVertex = source;
         targetVertices = targets;
@@ -189,8 +183,7 @@ public:
         }
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline void run(const Vertex source, const Vertex target, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept {
+    inline void run(const Vertex source, const Vertex target, const int minTime = 0, const int maxTime = 60 * 60 * 24, const size_t maxRounds = INFTY) noexcept requires OneToOne {
         clear();
         sourceVertex = source;
         minDepartureTime = minTime;
@@ -223,94 +216,76 @@ public:
         if constexpr (!CorrectDepartureTimes) targetProfile.prune(maxDepartureTime);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline const Profile& getProfile() const noexcept {
+    inline const Profile& getProfile() const noexcept requires OneToOne {
         return targetProfile.getProfile();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline const Profile& getProfile(const Vertex vertex) const noexcept {
+    inline const Profile& getProfile(const Vertex vertex) const noexcept requires (!OneToOne) {
         Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
         return profileByVertex[vertex].getProfile();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline Profile getProfile(const size_t maxTrips) const noexcept {
+    inline Profile getProfile(const size_t maxTrips) const noexcept requires OneToOne {
         return targetProfile.getProfile(maxTrips);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline Profile getProfile(const Vertex vertex, const size_t maxTrips) const noexcept {
+    inline Profile getProfile(const Vertex vertex, const size_t maxTrips) const noexcept requires (!OneToOne) {
         return profileByVertex[vertex].getProfile(maxTrips);
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline ProfileHandle getProfileHandle(const size_t maxTrips = 100) noexcept {
+    inline ProfileHandle getProfileHandle(const size_t maxTrips = 100) noexcept requires OneToOne {
         return ProfileHandle(getProfile(maxTrips), minDepartureTime, maxDepartureTime, forwardRaptor.getWalkingTravelTime());
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline ProfileHandle getProfileHandle(const Vertex vertex, const size_t maxTrips = 100) noexcept {
+    inline ProfileHandle getProfileHandle(const Vertex vertex, const size_t maxTrips = 100) noexcept requires (!OneToOne) {
         return ProfileHandle(getProfile(vertex, maxTrips), minDepartureTime, maxDepartureTime, forwardRaptor.getWalkingTravelTime(vertex));
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<Geometry::Point> getArrivalTimeFunction(const size_t maxTrips = 100) noexcept {
+    inline std::vector<Geometry::Point> getArrivalTimeFunction(const size_t maxTrips = 100) noexcept requires OneToOne {
         return getProfileHandle(maxTrips).getArrivalTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline std::vector<Geometry::Point> getArrivalTimeFunction(const Vertex vertex, const size_t maxTrips = 100) noexcept {
+    inline std::vector<Geometry::Point> getArrivalTimeFunction(const Vertex vertex, const size_t maxTrips = 100) noexcept requires (!OneToOne) {
         return getProfileHandle(vertex, maxTrips).getArrivalTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<Geometry::Point> getTravelTimeFunction(const size_t maxTrips = 100) noexcept {
+    inline std::vector<Geometry::Point> getTravelTimeFunction(const size_t maxTrips = 100) noexcept requires OneToOne {
         return getProfileHandle(maxTrips).getTravelTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline std::vector<Geometry::Point> getTravelTimeFunction(const Vertex vertex, const size_t maxTrips = 100) noexcept {
+    inline std::vector<Geometry::Point> getTravelTimeFunction(const Vertex vertex, const size_t maxTrips = 100) noexcept requires (!OneToOne) {
         return getProfileHandle(vertex, maxTrips).getTravelTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<Geometry::Point> getWalkingArrivalTimeFunction() noexcept {
+    inline std::vector<Geometry::Point> getWalkingArrivalTimeFunction() noexcept requires OneToOne {
         return getProfileHandle().getWalkingArrivalTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline std::vector<Geometry::Point> getWalkingArrivalTimeFunction(const Vertex vertex) noexcept {
+    inline std::vector<Geometry::Point> getWalkingArrivalTimeFunction(const Vertex vertex) noexcept requires (!OneToOne) {
         return getProfileHandle(vertex).getWalkingArrivalTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<Geometry::Point> getWalkingTravelTimeFunction() noexcept {
+    inline std::vector<Geometry::Point> getWalkingTravelTimeFunction() noexcept requires OneToOne {
         return getProfileHandle().getWalkingTravelTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline std::vector<Geometry::Point> getWalkingTravelTimeFunction(const Vertex vertex) noexcept {
+    inline std::vector<Geometry::Point> getWalkingTravelTimeFunction(const Vertex vertex) noexcept requires (!OneToOne) {
         return getProfileHandle(vertex).getWalkingTravelTimeFunction();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<std::vector<Geometry::Point>> getArrivalTimeFunctions(const size_t maxTrips = 100) noexcept {
+    inline std::vector<std::vector<Geometry::Point>> getArrivalTimeFunctions(const size_t maxTrips = 100) noexcept requires OneToOne {
         return getProfileHandle(maxTrips).getArrivalTimeFunctions();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline std::vector<std::vector<Geometry::Point>> getArrivalTimeFunctions(const Vertex vertex, const size_t maxTrips = 100) noexcept {
+    inline std::vector<std::vector<Geometry::Point>> getArrivalTimeFunctions(const Vertex vertex, const size_t maxTrips = 100) noexcept requires (!OneToOne) {
         return getProfileHandle(vertex, maxTrips).getArrivalTimeFunctions();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && T>>
-    inline std::vector<std::vector<Geometry::Point>> getTravelTimeFunctions(const size_t maxTrips = 100) noexcept {
+    inline std::vector<std::vector<Geometry::Point>> getTravelTimeFunctions(const size_t maxTrips = 100) noexcept requires OneToOne {
         return getProfileHandle(maxTrips).getTravelTimeFunctions();
     }
 
-    template<bool T = OneToOne, typename = std::enable_if_t<T == OneToOne && !T>>
-    inline std::vector<std::vector<Geometry::Point>> getTravelTimeFunctions(const Vertex vertex, const size_t maxTrips = 100) noexcept {
+    inline std::vector<std::vector<Geometry::Point>> getTravelTimeFunctions(const Vertex vertex, const size_t maxTrips = 100) noexcept requires (!OneToOne) {
         return getProfileHandle(vertex, maxTrips).getTravelTimeFunctions();
     }
 
@@ -413,12 +388,12 @@ private:
 
 
 template<bool DEBUG = false, bool ONE_TO_ONE = false, bool TRIP_PRUNING = true, bool CORRECT_DEPARTURE_TIMES = true>
-using RangeTransitiveRAPTOR = RangeRAPTOR<TransitiveRAPTORModule<Meta::IF<DEBUG, SimpleProfiler, NoProfiler>, ONE_TO_ONE, true, TRIP_PRUNING>, ONE_TO_ONE, DEBUG, CORRECT_DEPARTURE_TIMES>;
+using RangeTransitiveRAPTOR = RangeRAPTOR<TransitiveRAPTORModule<std::conditional_t<DEBUG, SimpleProfiler, NoProfiler>, ONE_TO_ONE, true, TRIP_PRUNING>, ONE_TO_ONE, DEBUG, CORRECT_DEPARTURE_TIMES>;
 
 template<typename INITIAL_TRANSFERS, bool DEBUG = false, bool ONE_TO_ONE = false, bool USE_MIN_TRANSFER_TIMES = false, bool TRIP_PRUNING = true, bool CORRECT_DEPARTURE_TIMES = true>
-using RangeDijkstraRAPTOR = RangeRAPTOR<DijkstraRAPTORModule<INITIAL_TRANSFERS, Meta::IF<DEBUG, SimpleProfiler, NoProfiler>, ONE_TO_ONE, true, USE_MIN_TRANSFER_TIMES, TRIP_PRUNING>, ONE_TO_ONE, DEBUG, CORRECT_DEPARTURE_TIMES>;
+using RangeDijkstraRAPTOR = RangeRAPTOR<DijkstraRAPTORModule<INITIAL_TRANSFERS, std::conditional_t<DEBUG, SimpleProfiler, NoProfiler>, ONE_TO_ONE, true, USE_MIN_TRANSFER_TIMES, TRIP_PRUNING>, ONE_TO_ONE, DEBUG, CORRECT_DEPARTURE_TIMES>;
 
 template<bool DEBUG = false, bool TRIP_PRUNING = true, bool CORRECT_DEPARTURE_TIMES = true>
-using RangeULTRARAPTOR = RangeRAPTOR<ULTRARAPTORModule<Meta::IF<DEBUG, SimpleProfiler, NoProfiler>, true, TRIP_PRUNING>, true, DEBUG, CORRECT_DEPARTURE_TIMES>;
+using RangeULTRARAPTOR = RangeRAPTOR<ULTRARAPTORModule<std::conditional_t<DEBUG, SimpleProfiler, NoProfiler>, true, TRIP_PRUNING>, true, DEBUG, CORRECT_DEPARTURE_TIMES>;
 
 }

@@ -3,12 +3,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <type_traits>
 
 #include "DepthFirstSearch.h"
 
 #include "../Helpers/Types.h"
 #include "../Helpers/Assert.h"
-#include "../Helpers/Meta.h"
 
 template<typename GRAPH, bool DEBUG = true, bool IGNORE_REVERSE_EDGES = false>
 class StronglyConnectedComponents {
@@ -39,7 +39,7 @@ public:
         Vertex parent;
     };
 
-    using VertexLabel = Meta::IF<IgnoreReverseEdges, VertexLabelWithParent, VertexLabelWithoutParent>;
+    using VertexLabel = std::conditional_t<IgnoreReverseEdges, VertexLabelWithParent, VertexLabelWithoutParent>;
 
 public:
     StronglyConnectedComponents(const Graph& graph) :
