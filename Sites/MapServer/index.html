@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <link href="main.css" type="text/css" rel="stylesheet">
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?v=3.21&sensor=false"></script>
+    <script type="text/javascript" src="js/prototype.js"></script>
+    <script type="text/javascript" src="js/maps.js"></script>
+</head>
+
+<body onload="InitializeMap()">
+    <div id="all" class="unblock"></div>
+
+    <div id="mapCanvas" style="width:100%; height:100%"></div>
+
+    <div id="controlPanel" onmousemove="javascript:HideEntryMenu();HideContextMenu();">
+        <p>Algorithm:<br/><select id='select_algorithm' onchange="LoadParameter();Run();"></select></p>
+        <div id='parameterArea'></div>
+        <table style="padding: 5px 0pt; width: 100%;"><tbody id='infoArea'></tbody></table>
+    </div>
+
+    <canvas id="functionCanvas"></canvas>
+
+    <div id="contextMenu" class="contextMenu">
+        <p><a href="javascript:SetSource();HideContextMenu();Run();">Set Source</a></p>
+        <p><a href="javascript:SetTarget();HideContextMenu();Run();">Set Target</a></p>
+        <p><a href="javascript:HideContextMenu();Run();">Rerun last Query</a></p>
+        <p><a href="javascript:ResetQuery();">Reset Query</a></p>
+    </div>
+
+    <div id="entryMenu" class="contextMenu">
+        <p><a href="javascript:HideEntryMenu();ToggleGroup();">Toggle</a></p>
+        <p><a href="javascript:HideEntryMenu();PinGroup();">Pin</a></p>
+        <p><a href="javascript:HideEntryMenu();DeleteGroup();">Delete</a></p>
+    </div>
+
+    <div class="gmnoprint gm-style-cc" draggable="false" style="z-index: 1000001;user-select: none;height: 14px;line-height: 14px;position: absolute;right: 277px;bottom: 0px;">
+        <div style="opacity: 0.7; width: 100%; height: 100%; position: absolute;">
+            <div style="width: 1px;"></div>
+            <div style="background-color: rgb(245, 245, 245); width: auto; height: 100%; margin-left: 1px;"></div>
+        </div>
+        <div style="position: relative; padding-right: 6px; padding-left: 6px; font-family: Roboto, Arial, sans-serif; font-size: 10px; color: rgb(68, 68, 68); white-space: nowrap; direction: ltr; text-align: right; vertical-align: middle; display: inline-block;">
+            <a href="https://www.kit.edu/datenschutz.php" target="_blank" style="text-decoration: none; cursor: pointer; color: rgb(68, 68, 68);">Datenschutzerkl&aumlrung</a>
+        </div>
+    </div>
+</body>
+
+</html>

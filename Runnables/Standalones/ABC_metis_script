@@ -1,0 +1,40 @@
+#!/bin/bash
+
+inputDir="/home/tobias/Data/switzerland/Metis/graph_";
+fileExtension="min.metis";
+command="/home/tobias/Downloads/metis-5.1.0/build/Linux-x86_64/programs/gpmetis -ptype=kway -objtype=cut -contig -minconn -ufactor=100 -niter=10 -ncuts=1 -dbglvl=1 ";
+
+timeC=(
+"10"
+"20"
+"30"
+"40"
+);
+
+partC=(
+"25"
+"30"
+"35"
+"40"
+"45"
+"50"
+"55"
+"60"
+"65"
+"70"
+"75"
+"80"
+"85"
+"90"
+"95"
+"100"
+);
+
+for timeN in ${timeC[*]}; do
+    for partN in ${partC[*]}; do
+        commandLine=${command}" "${inputDir}${fileN}${timeN}${fileExtension}" "${partN}
+        echo ${commandLine}
+        ${commandLine}
+    done
+done
+

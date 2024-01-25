@@ -1,0 +1,76 @@
+// Copyright 2012 Google Inc
+//
+// The content of this file is licensed under the Creative Commons Attribution
+// 3.0 License.
+//
+// Protocol definition OVapi.nl-specific extensions to GTFS-realtime.
+
+syntax = "proto2";
+
+import "gtfs-realtime.proto";
+
+option java_package = "com.google.transit.realtime";
+package transit_realtime;
+
+message OVapiTripDescriptor {
+  // Matches with realtime_trip_id field in trips.txt
+  optional string realtime_trip_id = 1;
+  // The trip_short_name of the (added) trip
+  optional string trip_short_name = 2;
+  // The commercial_mode id of the
+  optional string commercial_mode_id = 3;
+}
+
+extend TripDescriptor {
+  optional OVapiTripDescriptor ovapi_tripdescriptor = 1003;
+}
+
+message OVapiVehiclePosition {
+  // Estimated arrival-delay at the next stop (in seconds) can be positive (meaning that the vehicle is late) or
+  // negative (meaning that the vehicle is ahead of schedule). Delay of 0
+  // means that the vehicle is exactly on time.
+  optional int32 delay = 1;
+}
+
+extend VehiclePosition {
+  optional OVapiVehiclePosition ovapi_vehicle_position = 1003;
+}
+
+message OVapiTripUpdate {
+  //The trip_headsign field contains the text that appears on a sign that identifies the trip's destination to passengers
+  // Overrides possible trip_headsign's in static GTFS feeds, overrides stop_headsigns in the static feed 
+  // unless there stop_headsign in a StopTimeUpdate
+  optional string trip_headsign = 1;
+}
+
+extend TripUpdate {
+  optional OVapiTripUpdate ovapi_trip_update = 1003;
+}
+
+message OVapiStopTimeUpdate {
+  //The trip_headsign field contains the text that appears on a sign that identifies the trip's destination to passengers
+  // Overrides possible trip_headsign's and stop_headsign's in static GTFS feeds.
+  optional string stop_headsign = 1;
+
+  // The planned platform-code where the trip is scheduled to depart from
+  optional string scheduled_track = 2;
+  // (optional) The actual platform-code where the deviates from the scheduled platform.
+  optional string actual_track = 3;
+  // (optional) The (internal)identifier of a trainstation where the stoptimeupdate applies to
+  optional string station_id = 4;
+}
+
+
+extend transit_realtime.TripUpdate.StopTimeUpdate {
+  optional OVapiStopTimeUpdate ovapi_stop_time_update = 1003;
+}
+
+message OVapiVehicleDescriptor {
+  optional bool wheelchair_accessible = 1;
+  optional string vehicle_type = 2;
+  optional string vehicle_headsign = 3;
+}
+
+extend VehicleDescriptor {
+  optional OVapiVehicleDescriptor ovapi_vehicle_descriptor = 1003;
+}
