@@ -209,7 +209,7 @@ private:
         for (const Vertex target : forwardSearch.getReachedTargetVertices()) {
             AssertMsg(forwardSearch.reachable(target), "Unreachable vertex " << target << " was marked as reachable!");
             const std::vector<size_t> targetCells = flagsData.getFinePartition().cellsOfVertex(target);
-            for (const PreprocessingJourney journey : forwardSearch.template getJourneys<true>(target)) {
+            for (const PreprocessingJourney& journey : forwardSearch.template getJourneys<true>(target)) {
                 flagsMarker.markJourney(journey, targetCells);
             }
         }

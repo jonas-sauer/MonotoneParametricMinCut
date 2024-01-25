@@ -267,15 +267,6 @@ public:
         IdMapping(Construct::Invert, std::move(permutation)) {
     }
 
-    Order(const Construct::FromTextFileTag, const std::string& fileName) {
-        std::ifstream file(fileName);
-        IO::checkStream(file, fileName);
-        std::string line;
-        while (std::getline(file, line)) {
-            emplace_back(String::lexicalCast<size_t>(line));
-        }
-    }
-
 public:
     template<typename T>
     inline std::vector<T> getOrdered(const std::vector<T>& vector) const noexcept {

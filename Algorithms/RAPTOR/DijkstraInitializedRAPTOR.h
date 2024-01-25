@@ -358,13 +358,11 @@ private:
 private:
     inline Round& currentRound() noexcept {
         AssertMsg(roundIndex < rounds.size(), "Round index is out of bounds (roundIndex = " << roundIndex << ", rounds.size() = " << rounds.size() << ")!");
-        AssertMsg(roundIndex >= 0, "Cannot return current round, because no round exists!");
         return rounds[roundIndex];
     }
 
     inline EarliestArrivalLabel& currentLabel(const StopId stop) noexcept {
         AssertMsg(roundIndex < rounds.size(), "Round index is out of bounds (roundIndex = " << roundIndex << ", rounds.size() = " << rounds.size() << ")!");
-        AssertMsg(roundIndex >= 0, "Cannot return current round, because no round exists!");
         return rounds[roundIndex][stop];
     }
 

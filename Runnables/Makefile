@@ -9,9 +9,9 @@ INCLUDE=-I /usr/include/cairo
 LIBRARY_PATH=-L /usr/lib
 DYN_LIBRARIES=-lcairo
 
-allDebug: ShellsDebug MapServersDebug ToolsDebug UnitTestsDebug PublicTransitHyperGraphsDebug
+allDebug: ShellsDebug MapServersDebug UnitTestsDebug
 
-allRelease: ShellsRelease MapServersRelease ToolsRelease UnitTestsRelease PublicTransitHyperGraphsRelease
+allRelease: ShellsRelease MapServersRelease UnitTestsRelease
 
 #Shells
 ShellsDebug: AssignmentDebug BenchmarkShellDebug BikeSharingDebug CHDebug DelayExperimentsShellDebug EvaluationShellDebug IsochroneShellDebug MultimodalCoverageShellDebug NetworkBuilderDebug NetworkOrderShellDebug PartitionShellDebug QueriesShellDebug RouteFlagsExperimentsShellDebug TestDebug ULTRADebug UltraAssignmentDebug ULTRAExperimentsShellDebug UnrestrictedWalkingShellDebug ValidationShellDebug
@@ -161,30 +161,9 @@ RaptorMapServerRelease:
 	$(CC) $(FLAGS) $(INCLUDE) $(LIBRARY_PATH) $(OPTIMIZATION) $(RELEASE) -o RaptorMapServer RaptorMapServer.cpp -pthread mongoose.so -ldl $(DYN_LIBRARIES)
 	rm mongoose.so
 
-#Tools
-ToolsDebug: PdfCompareDebug StackSampler
-
-ToolsRelease: PdfCompareRelease StackSampler
-
-PdfCompareDebug:
-	$(CC) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o PdfCompare PdfCompare.cpp
-	
-PdfCompareRelease:
-	$(CC) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o PdfCompare PdfCompare.cpp
-
-StackSampler:
-	$(CC) $(FLAGS) $(RELEASE) -o StackSampler StackSampler.cpp
-
 #Tests
 UnitTestsDebug:
 	$(CC) $(FLAGS) $(DEBUG) -o UnitTests UnitTests.cpp
 
 UnitTestsRelease:
 	$(CC) $(FLAGS) $(RELEASE) -o UnitTests UnitTests.cpp
-
-#Other
-PublicTransitHyperGraphsDebug:
-	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(DEBUG) -o PublicTransitHyperGraphs PublicTransitHyperGraphs.cpp $(DYN_LIBRARIES)
-
-PublicTransitHyperGraphsRelease:
-	$(CC) $(INCLUDE) $(LIBRARY_PATH) $(FLAGS) $(OPTIMIZATION) $(RELEASE) -o PublicTransitHyperGraphs PublicTransitHyperGraphs.cpp $(DYN_LIBRARIES)

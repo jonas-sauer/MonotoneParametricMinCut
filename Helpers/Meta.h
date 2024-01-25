@@ -13,8 +13,6 @@
 
 #include "String/String.h"
 
-// Introducing namespace Meta, which shall contain all functions used for template meta programming
-
 namespace Meta {
 
     // ID

@@ -53,7 +53,6 @@ public:
             AssertMsg((i + 1 >= data->size()) || ((*data)[i + 1].departureTime < time), "Profile is not scanned monotonously (current time: " << time << " previous time: " << (*data)[i + 1].departureTime << ")!");
             while ((*data)[i].departureTime < time) {
                 i--;
-                AssertMsg(i >= 0, "There seems to be no profile entry for time = " << time << "!");
             }
             return (*data)[i];
         }

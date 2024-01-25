@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <vector>
 
 #include "../../DataStructures/Assignment/Settings.h"
@@ -120,7 +121,7 @@ private:
     }
 
     inline double getScalingFactor(const int travelTime) const noexcept {
-        return std::sqrt(6 * beta * referenceTravelTime * travelTime)/PI;
+        return std::sqrt(6 * beta * referenceTravelTime * travelTime)/M_PI;
     }
 
     const double beta;

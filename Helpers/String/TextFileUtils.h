@@ -79,24 +79,4 @@ inline std::string trim(const std::string& fromFile, const size_t minWordLength 
     return to.str();
 }
 
-inline void pdfToText(std::string fromFile, std::string toFile) {
-    pid_t pid = fork();
-    switch (pid) {
-    case -1:
-        error("Failure during fork()!");
-        exit(1);
-    case 0:
-        fromFile = FileSystem::extendPath(FileSystem::getWorkingDirectory(), fromFile);
-        toFile = FileSystem::extendPath(FileSystem::getWorkingDirectory(), toFile);
-        execl("/usr/bin/pdftotext", "pdftotext", fromFile.c_str(), toFile.c_str(), nullptr);
-        error("/usr/bin/pdftotext failed!");
-        exit(1);
-    default:
-        int status;
-        while (!WIFEXITED(status)) {
-            waitpid(pid, &status, 0);
-        }
-    }
-}
-
 }

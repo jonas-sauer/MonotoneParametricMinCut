@@ -52,7 +52,7 @@ public:
         AssertMsg(data.hasImplicitBufferTimes(), "Departure buffer times have to be implicit!");
     }
 
-    inline void run(const Vertex source, const Vertex target, const int originalDepartureTime, const double arrivalFactor, const double tripsPerHour) noexcept {
+    inline void run(const Vertex source, const Vertex target, const int, const double arrivalFactor, const double tripsPerHour) noexcept {
         profiler.startPhase();
         clear<true>();
         sourceVertex = source;

@@ -14,7 +14,7 @@ public:
     IntraCellFlagsCounter(const VertexSeparatorPartition& partition, const Data& raptorData) :
         raptorData(raptorData),
         intraCellSegmentsPerRoute(partition.numberOfCells(), std::vector<size_t>(raptorData.numberOfRoutes(), 0)),
-        isIntraCellStop({buildIsIntraCellStop(partition), buildIsIntraCellStop(partition)}){
+        isIntraCellStop{buildIsIntraCellStop(partition), buildIsIntraCellStop(partition)}{
         for (const RouteId route : raptorData.routes()) {
             const StopId* stops = raptorData.stopArrayOfRoute(route);
             const size_t tripSize = raptorData.numberOfStopsInRoute(route);

@@ -348,7 +348,7 @@ private:
             for (size_t i = connections.size() - 1; i < connections.size(); i--) {
                 AssertMsg(algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1 <= i, "Increasing path index at arrival stop from " << i << " to " << (algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1) << "!");
                 i = algorithmData.stops[data.connections[connections[i]].arrivalStopId] - 1;
-                if (i < 0) break;
+                //if (i < 0) break;
                 algorithmData.passengersInConnection[connections[i]].emplace_back(getGlobalPassengerId(destinationVertex, passenger));
                 usedConnectionsCount++;
                 AssertMsg(algorithmData.stops[data.connections[connections[i]].departureStopId] <= i, "Increasing path index at departure stop from " << i << " to " << (algorithmData.stops[data.connections[connections[i]].departureStopId]) << "!");

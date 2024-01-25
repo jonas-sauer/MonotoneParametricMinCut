@@ -36,6 +36,7 @@
 
 #include "../UnitTests/DataStructures/CoordinateTree.h"
 
+#include "../UnitTests/Helpers/IO.h"
 #include "../UnitTests/Helpers/Permutation.h"
 #include "../UnitTests/Helpers/FileSystem.h"
 

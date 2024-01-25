@@ -50,7 +50,7 @@ public:
         AssertMsg(data.hasImplicitBufferTimes(), "Departure buffer times have to be implicit!");
     }
 
-    inline void run(const Vertex source, const int departureTime, const Vertex target, const double arrivalFactor, const double tripsPerHour) noexcept {
+    inline void run(const Vertex source, const int departureTime, const Vertex target, const double arrivalFactor, const double) noexcept {
         profiler.startPhase();
         clear();
         initialize(source, departureTime, target, arrivalFactor);
@@ -77,7 +77,7 @@ public:
             profiler.donePhase(PHASE_TRANSFERS);
         }
         profiler.startPhase();
-        computeAnchorLabels(tripsPerHour);
+        computeAnchorLabels();
         profiler.donePhase(PHASE_INITIALIZATION);
     }
 
@@ -243,11 +243,10 @@ private:
         arrival(stop, time, walkingDistance, stopsUpdatedByTransfer, METRIC_STOPS_BY_TRANSFER);
     }
 
-    inline void computeAnchorLabels(const double tripsPerHour) noexcept {
+    inline void computeAnchorLabels() noexcept {
         for (size_t i = 1; i < rounds.size(); i += 2) {
             if (rounds[i][targetStop].arrivalTime >= (anchorLabels.empty() ? never : anchorLabels.back().arrivalTime)) continue;
             anchorLabels.emplace_back(rounds[i][targetStop].arrivalTime, rounds[i][targetStop].walkingDistance, i / 2);
-            const size_t slackNumTrips = i / 2 + (rounds[i][targetStop].walkingDistance/static_cast<double>(3600) * tripsPerHour);
         }
         Vector::reverse(anchorLabels);
     }

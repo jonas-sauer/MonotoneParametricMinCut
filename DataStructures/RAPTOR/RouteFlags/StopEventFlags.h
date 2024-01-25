@@ -18,9 +18,9 @@ class StopEventFlags {
 public:
     StopEventFlags(const size_t fromCells, const size_t toCells, const Data& raptorData) :
         raptorData(raptorData),
-        stopEventFlags({buildFlags(fromCells, toCells, raptorData.numberOfStopEvents()), buildFlags(fromCells, toCells, raptorData.numberOfStopEvents())}),
-        routeSegmentFlags({buildFlags(fromCells, toCells, raptorData.numberOfRouteSegments()), buildFlags(fromCells, toCells, raptorData.numberOfRouteSegments())}),
-        stopFlags({buildFlags(fromCells, toCells, raptorData.numberOfStops()), buildFlags(fromCells, toCells, raptorData.numberOfStops())}) {
+        stopEventFlags{buildFlags(fromCells, toCells, raptorData.numberOfStopEvents()), buildFlags(fromCells, toCells, raptorData.numberOfStopEvents())},
+        routeSegmentFlags{buildFlags(fromCells, toCells, raptorData.numberOfRouteSegments()), buildFlags(fromCells, toCells, raptorData.numberOfRouteSegments())},
+        stopFlags{buildFlags(fromCells, toCells, raptorData.numberOfStops()), buildFlags(fromCells, toCells, raptorData.numberOfStops())} {
     }
 
     StopEventFlags(const Data& raptorData, const std::string& filename) :

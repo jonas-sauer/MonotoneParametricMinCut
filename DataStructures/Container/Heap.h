@@ -112,7 +112,6 @@ private:
     }
 
     inline void siftDownHole(size_t i = 0) {
-        AssertMsg(i >= 0, "Cannot siftDownHole " << i << " on heap of size " << size());
         AssertMsg(i < size(), "Cannot siftDownHole " << i << " on heap of size " << size());
         while (true) {
             const size_t r = right(i);
@@ -141,7 +140,6 @@ private:
 
     inline void siftUp(size_t i) {
         using std::swap;
-        Assert(i >= 0);
         Assert(i < size());
         while (i > 0) {
             const size_t p = parent(i);

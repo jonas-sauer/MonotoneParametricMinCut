@@ -61,15 +61,6 @@ namespace Vector {
         return a;
     }
 
-    template<typename T>
-    inline T& remove(T& array, size_t index) {
-        Assert(index >= 0);
-        Assert(index < array.size());
-        array[index] = array.back();
-        array.pop_back();
-        return array;
-    }
-
     template<typename T, typename FUNCTION>
     inline void removeIf(std::vector<T>& container, const FUNCTION& condition) noexcept {
         container.erase(std::remove_if(container.begin(), container.end(), condition), container.end());

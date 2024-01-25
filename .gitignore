@@ -1,4 +1,5 @@
 .cproject
+.idea/
 .project
 .settings/
 *.pdf
@@ -20,9 +21,9 @@
 *.conf
 *.data
 *.exe
+cmake-build-debug/
 *readcache
 MapServer/HalloWorldMapServer
-ProtocolBuffer/ParseRealTimeGTFS
 Runnables/*.txt
 Runnables/test.txt
 Runnables/settings.conf
@@ -41,12 +42,9 @@ Runnables/MultimodalCoverageShell
 Runnables/NetworkBuilder
 Runnables/NetworkOrderShell
 Runnables/PartitionShell
-Runnables/PdfCompare
-Runnables/PublicTransitHyperGraphs
 Runnables/QueriesShell
 Runnables/RaptorMapServer
 Runnables/RouteFlagsExperimentsShell
-Runnables/StackSampler
 Runnables/ULTRA
 Runnables/UltraAssignment
 Runnables/ULTRAExperimentsShell

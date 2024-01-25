@@ -108,19 +108,3 @@ inline bool printStackTrace(std::ostream& out = std::cout, size_t maxFrames = 63
     delete[] addressList;
     return false;
 }
-
-std::vector<int> debugStack;
-
-void segfaultSigaction(int, siginfo_t* si, void*) {
-    printf("Caught segfault at address %p\n", si->si_addr);
-    std::cout << "Debug Stack:" << std::endl;
-    for (const int line : debugStack) {
-        std::cout << "   " << line << std::endl;
-    }
-    exit(0);
-}
-
-#define __Push__ debugStack.push_back(__LINE__)
-#define __Pop__ debugStack.pop_back()
-#define __Change__ debugStack.back() = __LINE__
-#define __Debug_Stack__ struct sigaction __sa__; memset(&__sa__, 0, sizeof(struct sigaction)); sigemptyset(&__sa__.sa_mask); __sa__.sa_sigaction = segfaultSigaction; __sa__.sa_flags = SA_SIGINFO; sigaction(SIGSEGV, &__sa__, NULL)

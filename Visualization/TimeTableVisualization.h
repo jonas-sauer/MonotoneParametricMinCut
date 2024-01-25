@@ -14,7 +14,6 @@
 #include "../DataStructures/Intermediate/Data.h"
 #include "../DataStructures/GTFS/Entities/Route.h"
 
-#include "../DataStructures/RAPTOR/HyperGraph/Partition.h"
 #include "../DataStructures/Partition/VertexPartition.h"
 #include "../DataStructures/Partition/NestedDissection.h"
 
@@ -220,18 +219,6 @@ public:
                 return data.routeData[route].type == type;
             }, colors[type], 3, GTFS::TypeNames[type]);
         }
-    }
-
-    inline void drawPartition(const RAPTOR::Partition& partition) noexcept {
-        warning("drawPartition 1");
-        for (const size_t cell : range(partition.numberOfCells())) {
-            drawRoutes([&](const RouteId route){
-                return partition.cellOfVertice[route] == cell;
-            }, cyclicColor(cell), 3, "Cell " + std::to_string(cell));
-        }
-        drawStops([&](const StopId stop){
-            return partition.cellsOfEdge[stop].size() > 1;
-        }, Color::Red, 40, "Cut stops");
     }
 
     inline void drawPartition(const VertexPartition& partition, const std::vector<int>& cellColors, const bool stopsOnly = true) noexcept {

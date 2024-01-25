@@ -523,7 +523,7 @@ public:
 
     inline std::ostream& toCSV(std::ostream& out) const {
         out << CSV_HEADER << "\n";
-        for (const Entry<> entry : entries) {
+        for (const Entry<>& entry : entries) {
             entry.toCSV(out);
         }
         return out;

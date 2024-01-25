@@ -449,8 +449,8 @@ public:
         Super::copy(from, to);
     }
     inline void swap(const size_t i, const size_t j) noexcept {
-        AssertMsg((i >= 0) || (i < values.size()), "Invalid Index i = " << i << ", Attributes range from 0 to " << values.size() << "!");
-        AssertMsg((j >= 0) || (j < values.size()), "Invalid Index j = " << j << ", Attributes range from 0 to " << values.size() << "!");
+        AssertMsg(i < values.size(), "Invalid Index i = " << i << ", Attributes range from 0 to " << values.size() << "!");
+        AssertMsg(j < values.size(), "Invalid Index j = " << j << ", Attributes range from 0 to " << values.size() << "!");
         std::swap(values[i], values[j]);
         Super::swap(i, j);
     }
