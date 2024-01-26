@@ -162,42 +162,6 @@ public:
         return result;
     }
 
-    inline static AccumulatedVertexDemand FromAlexCSV(const std::string& filename, const CSA::Data& data, const bool verbose) {
-        if (verbose) std::cout << "Reading Demand from CSV file (" << filename << ")..." << std::endl;
-        AccumulatedVertexDemand result;
-        if (FileSystem::isFile(filename)) {
-            Timer timer;
-            size_t count = 0;
-            int firstDeparture = std::numeric_limits<int>::max();
-            int lastDeparture = std::numeric_limits<int>::min();
-            IO::CSVReader<5, IO::TrimChars<' '>, IO::DoubleQuoteEscape<';','"'>> in(filename);
-            in.readHeader("# origin-node-id", "destination-node-id", "earliest-departure", "latest-departure", "demand");
-            Entry demand(-1, -1, noVertex, noVertex, -1);
-            double numberOfPassengers = 0;
-            while (in.readRow(demand.originVertex, demand.destinationVertex, demand.earliestDepartureTime, demand.latestDepartureTime, numberOfPassengers)) {
-                count++;
-                demand.numberOfPassengers = numberOfPassengers;
-                if (demand.numberOfPassengers <= 0) continue;
-                if (demand.latestDepartureTime < demand.earliestDepartureTime) continue;
-                if (demand.originVertex == demand.destinationVertex) continue;
-                if (!data.transferGraph.isVertex(demand.originVertex)) continue;
-                if (!data.transferGraph.isVertex(demand.destinationVertex)) continue;
-                demand.demandIndex = result.entries.size();
-                result.entries.emplace_back(demand);
-                result.numberOfPassengers += demand.numberOfPassengers;
-                if (firstDeparture > demand.earliestDepartureTime) firstDeparture = demand.earliestDepartureTime;
-                if (lastDeparture < demand.latestDepartureTime) lastDeparture = demand.latestDepartureTime;
-            }
-            if (verbose) std::cout << " firstDeparture: " << String::secToTime(firstDeparture) << std::endl;
-            if (verbose) std::cout << " lastDeparture:  " << String::secToTime(lastDeparture) << std::endl;
-            if (verbose) std::cout << " numberOfPassengers:  " << String::prettyInt(result.numberOfPassengers) << std::endl;
-            if (verbose) std::cout << " done (Using " << String::prettyInt(result.entries.size()) << " of " << String::prettyInt(count) << " entries in " << String::msToString(timer.elapsedMilliseconds()) << ")." << std::endl;
-        } else {
-            if (verbose) std::cout << " file not found." << std::endl;
-        }
-        return result;
-    }
-
     inline static void MakeImpassableZones(const std::string& inputFileName, const std::string& outputFileName) noexcept {
         std::cout << "Reading Demand from CSV file (" << inputFileName << ")..." << std::endl;
         if (FileSystem::isFile(inputFileName)) {

@@ -18,8 +18,6 @@
 #undef Assert
 #define Assert(assumption, msg) assert((assumption) || (std::cout << "\n\033[31mASSERTION FAILED: " << msg << "\033[0m\nFile: " << __FILE__ << "\nLine: " << __LINE__ << "\n" << std::flush && printStackTrace()))
 
-#define __Print_Here__ std::cout << "\033[1;36mFile: " << __FILE__ << ", Line: " << __LINE__ << "\033[0m" << std::endl
-
 inline std::string shortType(const std::string& input) noexcept {
     if (input.empty()) return input;
     std::string cleanType = Meta::Implementation::type(input);

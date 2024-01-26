@@ -103,52 +103,6 @@ public:
         return data;
     }
 
-    inline static Data FromPajorCSV(const std::string& fileNameBase) noexcept {
-        Data data;
-        data.readStops(fileNameBase);
-        data.readPajorConnections(fileNameBase);
-        data.readTransfers<false>(fileNameBase);
-        std::vector<Set<Vertex>> neighbors(data.stopData.size());
-        for (const Vertex vertex : data.transferGraph.vertices()) {
-            for (const Edge edge : data.transferGraph.edgesFrom(vertex)) {
-                const Vertex other = data.transferGraph.get(ToVertex, edge);
-                if (data.stopData[vertex].coordinates.x == 0 && data.stopData[vertex].coordinates.y == 0 && data.stopData[other].coordinates.x == 0 && data.stopData[other].coordinates.y == 0) continue;
-                neighbors[vertex].insert(other);
-                neighbors[other].insert(vertex);
-            }
-        }
-        for (const Connection c : data.connections) {
-            if (c.travelTime() > 120) continue;
-            if (data.stopData[c.departureStopId].coordinates.x == 0 && data.stopData[c.departureStopId].coordinates.y == 0 && data.stopData[c.arrivalStopId].coordinates.x == 0 && data.stopData[c.arrivalStopId].coordinates.y == 0) continue;
-            neighbors[c.departureStopId].insert(c.arrivalStopId);
-            neighbors[c.arrivalStopId].insert(c.departureStopId);
-        }
-        for (const Vertex vertex : data.transferGraph.vertices()) {
-            if (data.stopData[vertex].coordinates.x != 0) continue;
-            if (data.stopData[vertex].coordinates.y != 0) continue;
-            if (neighbors[vertex].empty()) {
-                warning("Stop ", vertex ," coordinates cannot be fixed");
-            } else {
-                for (const Vertex other : neighbors[vertex]) {
-                    data.stopData[vertex].coordinates += data.stopData[other].coordinates;
-                }
-                data.stopData[vertex].coordinates /= neighbors[vertex].size();
-                data.transferGraph.set(Coordinates, vertex, data.stopData[vertex].coordinates);
-            }
-        }
-        return data;
-    }
-
-    template<bool MAKE_BIDIRECTIONAL = true>
-    inline static Data FromAlexCSV(const std::string& fileNameBase, const bool verbose = true) {
-        Data data;
-        data.readDepartureBufferTimes(fileNameBase, verbose);
-        data.readAlexConnections(fileNameBase, verbose);
-        data.readVehicles(fileNameBase, verbose);
-        data.readWalkingEdges<MAKE_BIDIRECTIONAL>(fileNameBase, verbose);
-        return data;
-    }
-
     inline static void RepairFiles(const std::string& fileNameBase) noexcept {
         RepairFileNames(fileNameBase);
         RepairHeaders(fileNameBase);
@@ -372,22 +326,6 @@ protected:
         }, verbose);
     }
 
-    inline void readDepartureBufferTimes(const std::string& fileNameBase, const bool verbose = true) {
-        IO::readFile(departureBufferTimesFileNameAliases, "Stops", [&](){
-            size_t count = 0;
-            IO::CSVReader<2, IO::TrimChars<' '>, IO::DoubleQuoteEscape<';','"'>> in(fileNameBase + departureBufferTimesFileNameAliases);
-            in.readHeader("# node-id", "buffer-time");
-            StopId stopID;
-            Stop stop;
-            while (in.readRow(stopID, stop.minTransferTime)) {
-                if (stopID >= stopData.size()) stopData.resize(stopID + 1, Stop("NOT_NAMED", Geometry::Point(), -1));
-                stopData[stopID] = stop;
-                count++;
-            }
-            return count;
-        }, verbose);
-    }
-
     inline void readConnections(const std::string& fileNameBase, const bool verbose = true) {
         IO::readFile(connectionFileNameAliases, "Connections", [&](){
             size_t count = 0;
@@ -404,64 +342,6 @@ protected:
             return count;
         }, verbose);
         sanitizeConnections();
-    }
-
-    inline void readPajorConnections(const std::string& fileNameBase, const bool verbose = true) {
-        IO::readFile(connectionFileNameAliases, "Connections", [&](){
-            std::vector<int> types = {
-                GTFS::Type::Subway,
-                GTFS::Type::Gondola,
-                GTFS::Type::Gondola,
-                GTFS::Type::Bus,
-                GTFS::Type::Funicular,
-                GTFS::Type::Funicular,
-                GTFS::Type::CableCar,
-                GTFS::Type::CableCar,
-                GTFS::Type::Funicular,
-                GTFS::Type::Funicular,
-                GTFS::Type::Bus,
-                GTFS::Type::Rail,
-                GTFS::Type::Ferry,
-                GTFS::Type::Ferry,
-                GTFS::Type::Tram
-            };
-            size_t count = 0;
-            IO::CSVReader<8, IO::TrimChars<>, IO::DoubleQuoteEscape<',','"'>> in(fileNameBase + connectionFileNameAliases);
-            in.readHeader("TripId", "FromStopId", "ToStopId", "DepartureTime", "Duration", "LineId", "SuperLineName", "VehicleTypeId");
-            std::string tripName;
-            std::string routeName;
-            int pajorType;
-            Connection con;
-            while (in.readRow(con.tripId, con.departureStopId, con.arrivalStopId, con.departureTime, con.arrivalTime, tripName, routeName, pajorType)) {
-                if (con.departureStopId >= stopData.size() || stopData[con.departureStopId].minTransferTime < 0) continue;
-                if (con.arrivalStopId >= stopData.size() || stopData[con.arrivalStopId].minTransferTime < 0) continue;
-                if (pajorType < 0 || pajorType >= static_cast<int>(types.size())) pajorType = 11;
-                if (con.tripId >= tripData.size()) tripData.resize(con.tripId + 1, Trip("NOT_NAMED", "NOT_NAMED", -2));
-                if (tripData[con.tripId].type == -2) tripData[con.tripId] = Trip(tripName, routeName, types[pajorType]);
-                con.arrivalTime = con.arrivalTime + con.departureTime;
-                connections.emplace_back(con);
-                count++;
-            }
-            return count;
-        }, verbose);
-        sanitizeTrips();
-    }
-
-    inline void readAlexConnections(const std::string& fileNameBase, const bool verbose = true) {
-        IO::readFile(connectionFileNameAliases, "Connections", [&](){
-            size_t count = 0;
-            IO::CSVReader<5, IO::TrimChars<' '>, IO::DoubleQuoteEscape<';','"'>> in(fileNameBase + connectionFileNameAliases);
-            in.readHeader("# departure-node-id", "arrival-node-id", "departure-time", "arrival-time", "vehicle-id");
-            Connection con;
-            while (in.readRow(con.departureStopId, con.arrivalStopId, con.departureTime, con.arrivalTime, con.tripId)) {
-                if (con.departureStopId >= stopData.size() || stopData[con.departureStopId].minTransferTime < 0) continue;
-                if (con.arrivalStopId >= stopData.size() || stopData[con.arrivalStopId].minTransferTime < 0) continue;
-                if (con.tripId >= tripData.size()) tripData.resize(con.tripId + 1, Trip("NOT_NAMED", "NOT_NAMED", -2));
-                connections.emplace_back(con);
-                count++;
-            }
-            return count;
-        }, verbose);
     }
 
     inline void readTrips(const std::string& fileNameBase, const bool verbose = true) {
@@ -488,23 +368,6 @@ protected:
                 if (type == "subway") tripData[tripID].type = GTFS::Type::Subway;
                 //if (type == "U70") tripData[tripID].type = GTFS::Type::Subway;
                 //if (type == "UBU") tripData[tripID].type = GTFS::Type::Subway;
-                count++;
-            }
-            return count;
-        }, verbose);
-        sanitizeTrips();
-    }
-
-    inline void readVehicles(const std::string& fileNameBase, const bool verbose = true) {
-        IO::readFile(tripFileNameAliases, "Trips", [&](){
-            size_t count = 0;
-            IO::CSVReader<2, IO::TrimChars<' '>, IO::DoubleQuoteEscape<';','"'>> in(fileNameBase + tripFileNameAliases);
-            in.readHeader(IO::IGNORE_EXTRA_COLUMN | IO::IGNORE_MISSING_COLUMN, "# vehicle-id", "capacity");
-            TripId tripID;
-            std::string tripName = "0";
-            while (in.readRow(tripID, tripName)) {
-                if (tripID >= tripData.size()) continue;
-                tripData[tripID] = Trip(tripName, "", GTFS::Type::Rail);
                 count++;
             }
             return count;
@@ -574,39 +437,6 @@ protected:
                     graph.addEdge(from, to).set(TravelTime, travelTime);
                     if constexpr (MAKE_BIDIRECTIONAL) graph.addEdge(to, from).set(TravelTime, travelTime);
                 }
-                count++;
-            }
-            return count;
-        }, verbose);
-        graph.reduceMultiEdgesBy(TravelTime);
-        graph.packEdges();
-        Graph::move(std::move(graph), transferGraph);
-    }
-
-    template<bool MAKE_BIDIRECTIONAL = true>
-    inline void readWalkingEdges(const std::string& fileNameBase, const bool verbose = true) {
-        Intermediate::TransferGraph graph;
-        graph.addVertices(stopData.size());
-        for (const Vertex vertex : graph.vertices()) {
-            graph.set(Coordinates, vertex, stopData[vertex].coordinates);
-        }
-        IO::readFile(transferFileNameAliases, "Transfers", [&](){
-            size_t count = 0;
-            IO::CSVReader<3, IO::TrimChars<' '>, IO::DoubleQuoteEscape<';','"'>> in(fileNameBase + transferFileNameAliases);
-            in.readHeader("# departure-node-id", "arrival-node-id", "duration");
-            Vertex from;
-            Vertex to;
-            int travelTime;
-            while (in.readRow(from, to, travelTime)) {
-                while (!graph.isVertex(from)) {
-                    graph.addVertex();
-                }
-                while (!graph.isVertex(to)) {
-                    graph.addVertex();
-                }
-                if (from == to) continue;
-                graph.addEdge(from, to).set(TravelTime, travelTime);
-                if constexpr (MAKE_BIDIRECTIONAL) graph.addEdge(to, from).set(TravelTime, travelTime);
                 count++;
             }
             return count;
@@ -841,29 +671,6 @@ public:
         Dijkstra<TransferGraph, false> dijkstraToZones(transferGraph, transferGraph[TravelTime]);
         newTransferGraph.packEdges();
         Graph::move(std::move(newTransferGraph), transferGraph);
-    }
-
-    inline void duplicateConnections(const int timeOffset = 24 * 60 * 60) noexcept {
-        const size_t oldConnectionCount = connections.size();
-        const size_t oldTripCount = tripData.size();
-        for (size_t i = 0; i < oldConnectionCount; i++) {
-            connections.emplace_back(connections[i], timeOffset, oldTripCount);
-        }
-        for (size_t i = 0; i < oldTripCount; i++) {
-            tripData.emplace_back(tripData[i]);
-        }
-    }
-
-    inline std::vector<int> numberOfNeighborStopsByStop() const noexcept {
-        std::vector<int> result(numberOfStops(), 0);
-        for (const StopId stop : stops()) {
-            for (const Edge edge : transferGraph.edgesFrom(stop)) {
-                if (isStop(transferGraph.get(ToVertex, edge))) {
-                    result[stop]++;
-                }
-            }
-        }
-        return result;
     }
 
     inline void applyMinTravelTime(const double minTravelTime) noexcept {

@@ -740,25 +740,6 @@ private:
     }
 
 public:
-    inline std::vector<std::vector<Intermediate::Trip>> fifoBikeRoutes(const std::vector<bool>& bicycleTransportIsAllowedForTrip, size_t& numberOfBicycleTransportRoutes) const noexcept {
-        std::vector<Intermediate::Trip> sortedTripsWithBicycleTransport;
-        std::vector<Intermediate::Trip> sortedTripsWithoutBicycleTransport;
-        for (const TripId trip : tripIds()) {
-            if (bicycleTransportIsAllowedForTrip[trip]) {
-                sortedTripsWithBicycleTransport.emplace_back(trips[trip]);
-            } else {
-                sortedTripsWithoutBicycleTransport.emplace_back(trips[trip]);
-            }
-        }
-        std::sort(sortedTripsWithBicycleTransport.begin(), sortedTripsWithBicycleTransport.end());
-        std::sort(sortedTripsWithoutBicycleTransport.begin(), sortedTripsWithoutBicycleTransport.end());
-        std::vector<std::vector<Intermediate::Trip>> routes;
-        appendRoutes(routes, sortedTripsWithBicycleTransport, [](const Trip& a, const Trip& b){return isFiFo(a, b);});
-        numberOfBicycleTransportRoutes = routes.size();
-        appendRoutes(routes, sortedTripsWithoutBicycleTransport, [](const Trip& a, const Trip& b){return isFiFo(a, b);});
-        return routes;
-    }
-
     inline std::vector<std::vector<Intermediate::Trip>> fifoRoutes() const noexcept {
         std::vector<Intermediate::Trip> sortedTrips = trips;
         std::sort(sortedTrips.begin(), sortedTrips.end());

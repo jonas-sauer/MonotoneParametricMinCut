@@ -132,7 +132,6 @@ public:
         addParameter("Parse zones?", "false");
         addParameter("Make bidirectional?", "true");
         addParameter("Repair files?", "false");
-        addParameter("Pajor format?", "false");
     }
 
     virtual void execute() noexcept {
@@ -140,7 +139,6 @@ public:
         const bool parseZones = getParameter<bool>("Parse zones?");
         const bool makeBidirectional = getParameter<bool>("Make bidirectional?");
         const bool repairFiles = getParameter<bool>("Repair files?");
-        const bool pajorFormat = getParameter<bool>("Pajor format?");
 
         if (repairFiles) {
             CSA::Data::RepairFiles(csvDirectory);
@@ -151,8 +149,6 @@ public:
             } else {
                 parseData(CSA::Data::FromCSVwithZones<true>(csvDirectory));
             }
-        } else if (pajorFormat) {
-            parseData(CSA::Data::FromPajorCSV(csvDirectory));
         } else {
             parseData(CSA::Data::FromCSV(csvDirectory));
         }
