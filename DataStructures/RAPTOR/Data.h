@@ -55,11 +55,7 @@ public:
         return data;
     }
 
-    inline static Data FromIntermediate(const Intermediate::Data& inter, const int routeType = 1) noexcept {
-        if (routeType == 0) return FromIntermediate(inter, inter.geographicRoutes());
-        if (routeType == 1) return FromIntermediate(inter, inter.fifoRoutes());
-        if (routeType == 2) return FromIntermediate(inter, inter.offsetRoutes());
-        if (routeType == 3) return FromIntermediate(inter, inter.frequencyRoutes());
+    inline static Data FromIntermediate(const Intermediate::Data& inter) noexcept {
         return FromIntermediate(inter, inter.fifoRoutes());
     }
 
@@ -236,18 +232,6 @@ public:
         return getTripIterator(route.routeId, route.stopIndex);
     }
 
-    inline std::vector<const StopEvent*> getLastTripByStopIndex() const noexcept {
-        std::vector<const StopEvent*> result;
-        result.reserve(stopIds.size());
-        for (const RouteId route : routes()) {
-            Assert(numberOfStopsInRoute(route) > 0, "Route " << route << " has 0 stops!");
-            result.emplace_back(lastTripOfRoute(route));
-            result.resize(firstStopIdOfRoute[route + 1], result.back());
-        }
-        Assert(result.size() == stopIds.size(), "Wrong number of trips!");
-        return result;
-    }
-
 private:
     inline StopEvent* firstTripOfRoute(const RouteId route) noexcept {
         Assert(isRoute(route), "The id " << route << " does not represent a route!");
@@ -406,18 +390,6 @@ public:
             maxSpeedTimesDistance = speedTimesDist;
         }
         return maxSpeedTimesDistance;
-    }
-
-    inline int getTripOffset(const RouteId route) const noexcept {
-        Assert(isRoute(route), "The id " << route << " does not represent a route!");
-        const size_t tripCount = numberOfTripsInRoute(route);
-        const size_t stopCount = numberOfStopsInRoute(route);
-        if (tripCount <= 1) return 1;
-        const int offset = stopEvents[firstStopEventOfRoute[route] + stopCount].departureTime - stopEvents[firstStopEventOfRoute[route]].departureTime;
-        for (size_t i = 1; i < tripCount; i++) {
-            Assert(offset == stopEvents[firstStopEventOfRoute[route] + (i * stopCount)].departureTime - stopEvents[firstStopEventOfRoute[route] + ((i - 1) * stopCount)].departureTime, "The route " << route << " has no constant frequency!");
-        }
-        return offset;
     }
 
     inline const std::vector<Geometry::Point>& getCoordinates() const noexcept {
@@ -853,27 +825,6 @@ public:
             }
         }
         file.close();
-    }
-
-    inline std::vector<TripId> mapStopEventsToTripId() const noexcept {
-        std::vector<TripId> result;
-        TripId currentTrip = TripId(0);
-        for (const RouteId route : routes()) {
-            const size_t routeLength = numberOfStopsInRoute(route);
-            for (size_t i = 0; i < numberOfTripsInRoute(route); i++) {
-                result.insert(result.end(), routeLength, currentTrip);
-                currentTrip++;
-            }
-        }
-        return result;
-    }
-
-    inline std::vector<RouteId> mapStopEventsToRouteId() const noexcept {
-        std::vector<RouteId> result;
-        for (const RouteId route : routes()) {
-            result.insert(result.end(), numberOfStopEventsInRoute(route), route);
-        }
-        return result;
     }
 
     inline long long byteSize() const noexcept {

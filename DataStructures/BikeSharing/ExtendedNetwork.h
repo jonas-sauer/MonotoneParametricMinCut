@@ -146,7 +146,7 @@ private:
 
         oldToNewVertex.swap(oldToNewVertexOfOperator[0]);
 
-        data = RAPTOR::Data::FromIntermediate(inter, 1);
+        data = RAPTOR::Data::FromIntermediate(inter);
         data.implicitDepartureBufferTimes = input.walkingNetwork.implicitDepartureBufferTimes;
         data.implicitArrivalBufferTimes = input.walkingNetwork.implicitArrivalBufferTimes;
     }

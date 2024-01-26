@@ -99,7 +99,13 @@ public:
         walkingNetwork = RAPTOR::Data::FromIntermediate(data);
         Graph::computeTravelTimes(walkingNetwork.transferGraph, 4.5, true);
         walkingNetwork.useImplicitDepartureBufferTimes();
-        data.removeTripsWithoutBicycleTransport(bicycleTransportIsAllowedForTrip);
+        std::vector<Intermediate::Trip> filteredTrips;
+        for (size_t i = 0; i < data.trips.size(); i++) {
+            if (bicycleTransportIsAllowedForTrip[i]) {
+                filteredTrips.emplace_back(data.trips[i]);
+            }
+        }
+        filteredTrips.swap(data.trips);
         cyclingNetwork = RAPTOR::Data::FromIntermediate(data);
         Graph::computeTravelTimes(cyclingNetwork.transferGraph, 20.0, true);
         cyclingNetwork.useImplicitDepartureBufferTimes();

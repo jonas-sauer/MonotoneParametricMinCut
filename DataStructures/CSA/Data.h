@@ -731,32 +731,6 @@ public:
         return text.str();
     }
 
-    inline std::vector<std::string> journeyToText(const Journey& journey) const noexcept {
-        std::vector<std::string> text;
-        for (const JourneyLeg& leg : journey) {
-            std::stringstream line;
-            if (leg.usesTrip) {
-                line << "Take " << GTFS::TypeNames[tripData[leg.tripId].type];
-                line << ": " << tripData[leg.tripId].routeName << "(" << tripData[leg.tripId].tripName << ")" << "[" << leg.tripId << "] ";
-                line << "from " << stopData[leg.from].name << "[" << leg.from << "] ";
-                line << "departing at " << String::secToTime(leg.departureTime) << "[" << leg.departureTime << "] ";
-                line << "to " << stopData[leg.to].name << "[" << leg.to << "] ";
-                line << "arrive at " << String::secToTime(leg.arrivalTime) << "[" << leg.arrivalTime << "];";
-            } else if (leg.from == leg.to) {
-                line << "Wait at " << stopData[leg.from].name << " [" << leg.from << "], ";
-                line << "minimal waiting time: " << String::secToString(leg.arrivalTime - leg.departureTime) << ".";
-            } else {
-                line << "Walk from " << (isStop(leg.from) ? stopData[leg.from].name : "Vertex") << " [" << leg.from << "] ";
-                line << "to " << (isStop(leg.to) ? stopData[leg.to].name : "Vertex") << " [" << leg.to << "], ";
-                line << "start at " << String::secToTime(leg.departureTime) << " [" << leg.departureTime << "] ";
-                line << "and arrive at " << String::secToTime(leg.arrivalTime) << " [" << leg.arrivalTime << "] ";
-                line << "(" << String::secToString(leg.arrivalTime - leg.departureTime) << ").";
-            }
-            text.emplace_back(line.str());
-        }
-        return text;
-    }
-
     inline std::string journeyToText(const std::vector<ConnectionId>& connectionList) const noexcept {
         std::stringstream text;
         TripId currentTripIndex = TripId(0);
@@ -857,13 +831,6 @@ public:
         std::cout << "   First Departure:           " << std::setw(12) << String::secToTime(firstDay) << std::endl;
         std::cout << "   Last Arrival:              " << std::setw(12) << String::secToTime(lastDay) << std::endl;
         std::cout << "   Bounding Box:              " << std::setw(12) << boundingBox() << std::endl;
-        /*std::cout << "   Transfer graph:            " << std::setw(12) << Graph::characterize(transferGraph) << std::endl;
-        if (transferGraph.numVertices() > numberOfStops()) {
-            DynamicTransferGraph stopGraph;
-            Graph::copy(transferGraph, stopGraph);
-            stopGraph.deleteVertices([&](const Vertex v){return v >= numberOfStops();});
-            std::cout << "   Stop graph:                " << std::setw(12) << Graph::characterize(stopGraph) << std::endl;
-        }*/
     }
 
     inline void serialize(const std::string& fileName) const noexcept {

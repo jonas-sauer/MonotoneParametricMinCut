@@ -15,7 +15,6 @@
 #include "../../../Helpers/String/String.h"
 #include "../../../Helpers/Vector/Permutation.h"
 
-#include "../../../Algorithms/UnionFind.h"
 #include "../../../Algorithms/DepthFirstSearch.h"
 #include "../../../Algorithms/Dijkstra/Dijkstra.h"
 #include "../../../Algorithms/StronglyConnectedComponents.h"
@@ -93,61 +92,6 @@ namespace Graph {
             }
         }
         return result;
-    }
-
-    template<typename GRAPH>
-    inline bool isClusterGraph(const GRAPH& graph) noexcept {
-        UnionFind unionFind(graph.numVertices());
-        std::vector<size_t> cliqueSize(graph.numVertices(), 1);
-        size_t edgeCount = 0;
-        for (const auto [edge, from] : graph.edgesWithFromVertex()) {
-            const Vertex to = graph.get(ToVertex, edge);
-            if (unionFind(from) != unionFind(to)) {
-                const size_t newSize = cliqueSize[unionFind(from)] + cliqueSize[unionFind(to)];
-                edgeCount += 2 * cliqueSize[unionFind(from)] * cliqueSize[unionFind(to)];
-                unionFind(from, to);
-                cliqueSize[unionFind(from)] = newSize;
-            }
-        }
-        if (graph.numEdges() < edgeCount) {
-            return false;
-        } else {
-            return graph.numEdges() - numberOfMultiEdges(graph) == edgeCount;
-        }
-    }
-
-    template<typename GRAPH, AttributeNameType ATTRIBUTE_NAME>
-    inline bool hasTriangleInequality(const GRAPH& graph, const AttributeNameWrapper<ATTRIBUTE_NAME> attributeName) noexcept {
-        static_assert(GRAPH::HasEdgeAttribute(AttributeNameWrapper<ATTRIBUTE_NAME>()), "GRAPH does not have the required edge attribute!");
-        for (const Vertex from : graph.vertices()) {
-            for (const Edge edge : graph.edgesFrom(from)) {
-                const Vertex to = graph.get(ToVertex, edge);
-                for (const Edge first : graph.edgesFrom(from)) {
-                    for (const Edge second : graph.edgesFrom(graph.get(ToVertex, first))) {
-                        if (graph.get(ToVertex, second) != to) continue;
-                        if (graph.get(attributeName, first) + graph.get(attributeName, second) < graph.get(attributeName, edge)) return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    template<typename GRAPH, AttributeNameType ATTRIBUTE_NAME = TravelTime>
-    inline std::string characterize(const GRAPH& graph, const AttributeNameWrapper<ATTRIBUTE_NAME> attributeName = TravelTime) noexcept {
-        if (isClusterGraph(graph)) {
-            if (hasTriangleInequality(graph, attributeName)) {
-                return "Transitively closed";
-            } else {
-                return "Cluster graph without triangle inequality";
-            }
-        } else {
-            if (hasTriangleInequality(graph, attributeName)) {
-                return "Transitive but not closed";
-            } else {
-                return "Not transitive";
-            }
-        }
     }
 
     template<typename GRAPH>
