@@ -186,22 +186,12 @@ public:
         return arrivalTimes;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) noexcept {
-        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
-        return journeyToPath(getJourneys(vertex).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept {
-        Assert(targetVertices.contains(vertex), "Vertex " << vertex << " is not a target!");
-        return data.journeyToText(getJourneys(vertex).back());
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }
 
 private:
-    inline void clear() {
+    inline void clear() noexcept {
         sourceVertex = noVertex;
         sourceDepartureTime = never;
         Vector::fill(arrivalTime, never);

@@ -119,20 +119,12 @@ public:
         return journey;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) noexcept {
-        return journeyToPath(getJourney(vertex));
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept {
-        return data.journeyToText(getJourney(vertex));
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }
 
 private:
-    inline void clear() {
+    inline void clear() noexcept {
         sourceVertex = noVertex;
         sourceDepartureTime = never;
         targetVertex = noVertex;

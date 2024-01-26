@@ -241,16 +241,6 @@ public:
         return initialTransfers.getForwardDistance(vertex);
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) {
-        Assert(data.transferGraph.isVertex(vertex), "The Id " << vertex << " does not correspond to any vertex!");
-        return journeyToPath(getJourneys(vertex).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) {
-        Assert(data.transferGraph.isVertex(vertex), "The Id " << vertex << " does not correspond to any vertex!");
-        return data.journeyToText(getJourneys(vertex).back());
-    }
-
     inline int getArrivalTime(const Vertex vertex, const size_t numberOfTrips) noexcept {
         if (data.isStop(vertex)) {
             size_t round = numberOfTrips * RoundFactor;
@@ -657,16 +647,6 @@ private:
             const DijkstraLabel& label = dijkstraLabel(numberOfTrips, vertex);
             if (label.arrivalTime >= (labels.empty() ? never : labels.back().arrivalTime)) return;
             labels.emplace_back(label.arrivalTime, numberOfTrips);
-        }
-    }
-
-    inline void printRoundsForStop(const StopId stop) noexcept {
-        Assert(data.isStop(stop), stop << " is not a valid stop!");
-        std::cout << "Raptor Label for stop " << stop << ":" << std::endl;
-        std::cout << std::setw(10) << "Round" << std::setw(14) << "arrivalTime" << std::setw(14) << "parent" << std::endl;
-        for (size_t i = 0; i <= roundIndex; i++) {
-            EarliestArrivalLabel& label = roundLabel(i, stop);
-            std::cout << std::setw(10) << i << std::setw(14) << label.arrivalTime << std::setw(14) << label.parent << std::endl;
         }
     }
 

@@ -160,14 +160,6 @@ public:
         return initialTransfers.getForwardDistance(vertex);
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) const {
-        return journeyToPath(getJourneys(vertex).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) const {
-        return data.journeyToText(getJourneys(vertex).back());
-    }
-
     inline int getArrivalTime(const Vertex vertex, const size_t round) const noexcept {
         if (data.isStop(vertex)) {
             Assert(rounds[round][vertex].arrivalTime < never, "No label found for stop " << vertex << " in round " << round << "!");
@@ -380,15 +372,6 @@ private:
         const int arrivalTime = data.isStop(vertex) ? rounds[round][vertex].arrivalTime : dijkstraLabels[round][vertex].arrivalTime;
         if (arrivalTime >= (labels.empty() ? never : labels.back())) return;
         labels.emplace_back(arrivalTime);
-    }
-
-    inline void printRoundsForStop(const StopId stop) const noexcept {
-        Assert(data.isStop(stop), stop << " is not a valid stop!");
-        std::cout << "Raptor Label for stop " << stop << ":" << std::endl;
-        std::cout << std::setw(10) << "Round" << std::setw(14) << "arrivalTime" << std::setw(14) << "parent" << std::endl;
-        for (size_t i = 0; i < rounds.size(); i++) {
-            std::cout << std::setw(10) << i << std::setw(14) << rounds[i][stop].arrivalTime << std::setw(14) << rounds[i][stop].parent << std::endl;
-        }
     }
 
 private:

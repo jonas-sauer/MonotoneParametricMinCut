@@ -131,21 +131,6 @@ public:
         ultra.getProfiler().printData(f);
     }
 
-    inline void printPath() const noexcept {
-        std::vector<Vertex> newToOldVertex(extendedNetwork.graph.numVertices(), noVertex);
-        for (size_t i = 0; i < extendedNetwork.oldToNewVertex.size(); i++) {
-            newToOldVertex[extendedNetwork.oldToNewVertex[i]] = Vertex(i);
-        }
-        RAPTOR::Journey journey = ultra.getJourneys().back();
-        for (size_t i = journey.size() - 1; i < journey.size(); i --) {
-            std::cout << "from: " << newToOldVertex[journey[i].from] << ", to: " << newToOldVertex[journey[i].to] << ", departureTime: " << journey[i].departureTime << ", arrivalTime: " << journey[i].arrivalTime << ", " << (journey[i].usesRoute ? journey[i].routeId : noRouteId) << std::endl;
-        }
-        std::vector<Vertex> path = ultra.getPath();
-        for (size_t i = path.size() - 1; i < path.size(); i --) {
-            std::cout << newToOldVertex[path[i]] << std::endl;
-        }
-    }
-
 private:
     const BikeSharing::ExtendedNetwork& extendedNetwork;
 
@@ -182,10 +167,6 @@ public:
 
     inline void debug(const double f = 1.0) noexcept {
         raptor.debug(f);
-    }
-
-    inline void printPath() const noexcept {
-        raptor.printPath();
     }
 
 private:

@@ -193,16 +193,6 @@ public:
         return labelByNumberOfTrips[0][vertex].arrivalTime - sourceDepartureTime;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) const {
-        Assert(data.transferGraph.isVertex(vertex), "The Id " << vertex << " does not correspond to any vertex!");
-        return journeyToPath(getJourneys(vertex).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) const {
-        Assert(data.transferGraph.isVertex(vertex), "The Id " << vertex << " does not correspond to any vertex!");
-        return data.journeyToText(getJourneys(vertex).back());
-    }
-
     inline int getArrivalTime(const Vertex vertex, const size_t numberOfTrips) const noexcept {
         Assert(data.transferGraph.isVertex(vertex), "The Id " << vertex << " does not correspond to any vertex!");
         if (data.isStop(vertex)) {
@@ -523,15 +513,6 @@ private:
             const DijkstraLabel& label = labelByNumberOfTrips[numberOfTrips][vertex];
             if (label.arrivalTime >= (labels.empty() ? never : labels.back().arrivalTime)) return;
             labels.emplace_back(label.arrivalTime, numberOfTrips);
-        }
-    }
-
-    inline void printRoundsForStop(const StopId stop) const noexcept {
-        Assert(data.isStop(stop), stop << " is not a valid stop!");
-        std::cout << "Raptor Label for stop " << stop << ":" << std::endl;
-        std::cout << std::setw(10) << "Round" << std::setw(14) << "arrivalTime" << std::setw(14) << "parent" << std::endl;
-        for (size_t i = 0; i <= roundIndex; i++) {
-            std::cout << std::setw(10) << i << std::setw(14) << rounds[i][stop].arrivalTime << std::setw(14) << rounds[i][stop].parent << std::endl;
         }
     }
 

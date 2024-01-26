@@ -199,18 +199,6 @@ public:
         return Vector::min(getArrivalTimes(internalVertex));
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) noexcept {
-        const Vertex internalVertex(queryData.externalToInternal[vertex]);
-        Assert(targetVertices.contains(internalVertex), "Vertex " << internalVertex << " is not a target!");
-        return journeyToPath(getJourneys(internalVertex).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept {
-        const Vertex internalVertex(queryData.externalToInternal[vertex]);
-        Assert(targetVertices.contains(internalVertex), "Vertex " << internalVertex << " is not a target!");
-        return data.journeyToText(getJourneys(internalVertex).back());
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }

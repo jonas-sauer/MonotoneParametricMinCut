@@ -432,16 +432,6 @@ private:
         labels.emplace_back(label.arrivalTime, round);
     }
 
-    inline void printRoundsForStop(const StopId stop) noexcept {
-        Assert(data.isStop(stop), stop << " is not a valid stop!");
-        std::cout << "Raptor Label for stop " << stop << ":" << std::endl;
-        std::cout << std::setw(10) << "Round" << std::setw(14) << "arrivalTime" << std::setw(14) << "parent" << std::endl;
-        for (size_t i = 0; i <= roundIndex; i++) {
-            EarliestArrivalLabel& label = roundLabel(i, stop);
-            std::cout << std::setw(10) << i << std::setw(14) << label.arrivalTime << std::setw(14) << label.parent << std::endl;
-        }
-    }
-
 private:
     const Data& data;
 

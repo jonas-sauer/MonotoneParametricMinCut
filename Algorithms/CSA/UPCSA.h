@@ -198,18 +198,6 @@ public:
         return journey;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) noexcept {
-        const Vertex internalVertex(queryData.externalToInternal[vertex]);
-        Assert(targetVertices.contains(internalVertex), "Vertex " << internalVertex << " is not a target!");
-        return journeyToPath(getJourney(internalVertex));
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept {
-        const Vertex internalVertex(queryData.externalToInternal[vertex]);
-        Assert(targetVertices.contains(internalVertex), "Vertex " << internalVertex << " is not a target!");
-        return data.journeyToText(getJourney(internalVertex));
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }

@@ -240,16 +240,6 @@ public:
         return initialTransfers.getDistance(vertex);
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) const {
-        const StopId target = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
-        return journeyToPath(getJourneys(target).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) const {
-        const StopId target = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
-        return data.journeyToText(getJourneys(target).back());
-    }
-
     inline int getArrivalTime(const Vertex vertex, const size_t numberOfTrips) const noexcept {
         const StopId target = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
         size_t round = numberOfTrips * RoundFactor;
@@ -535,15 +525,6 @@ private:
             if ((round + 1 < rounds.size()) && (rounds[round + 1][stop].arrivalTime < rounds[round][stop].arrivalTime)) round++;
         }
         labels.emplace_back(std::min(rounds[round][stop].arrivalTime, (labels.empty()) ? (never) : (labels.back())));
-    }
-
-    inline void printRoundsForStop(const StopId stop) const noexcept {
-        Assert(data.isStop(stop), stop << " is not a valid stop!");
-        std::cout << "Raptor Label for stop " << stop << ":" << std::endl;
-        std::cout << std::setw(10) << "Round" << std::setw(14) << "arrivalTime" << std::setw(14) << "parent" << std::endl;
-        for (size_t i = 0; i < rounds.size(); i++) {
-            std::cout << std::setw(10) << i << std::setw(14) << rounds[i][stop].arrivalTime << std::setw(14) << rounds[i][stop].parent << std::endl;
-        }
     }
 
 private:

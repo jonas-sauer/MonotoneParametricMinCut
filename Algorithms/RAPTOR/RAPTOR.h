@@ -172,14 +172,6 @@ public:
         return walkingDistance;
     }
 
-    inline std::vector<Vertex> getPath(const StopId stop) const {
-        return journeyToPath(getJourneys(stop).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const StopId stop) const {
-        return data.journeyToText(getJourneys(stop).back());
-    }
-
     template<bool RESET_CAPACITIES = false>
     inline void clear() noexcept {
         stopsUpdatedByRoute.clear();

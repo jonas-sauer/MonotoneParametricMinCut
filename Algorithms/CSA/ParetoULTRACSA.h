@@ -143,14 +143,6 @@ public:
         return arrivalTimes;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) noexcept {
-        return journeyToPath(getJourneys(vertex).back());
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept {
-        return data.journeyToText(getJourneys(vertex).back());
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }

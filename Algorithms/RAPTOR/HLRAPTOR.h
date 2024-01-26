@@ -182,20 +182,6 @@ public:
         return -1;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) const noexcept {
-        const StopId target = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
-        return journeyToPath(getJourneys(target).back());
-    }
-
-    inline std::vector<Vertex> getPath() const noexcept {
-        return getPath(targetVertex);
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) const noexcept {
-        const StopId target = (vertex == targetVertex) ? (targetStop) : (StopId(vertex));
-        return data.journeyToText(getJourneys(target).back());
-    }
-
     inline Profiler& getProfiler() noexcept {
         return profiler;
     }

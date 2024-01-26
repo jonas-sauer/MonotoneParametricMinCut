@@ -126,14 +126,6 @@ public:
         return journey;
     }
 
-    inline std::vector<Vertex> getPath(const Vertex vertex) noexcept requires PathRetrieval {
-        return journeyToPath(getJourney(vertex));
-    }
-
-    inline std::vector<std::string> getRouteDescription(const Vertex vertex) noexcept requires PathRetrieval {
-        return data.journeyToText(getJourney(vertex));
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }

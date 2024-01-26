@@ -109,14 +109,6 @@ public:
         return journey;
     }
 
-    inline std::vector<Vertex> getPath(const StopId stop) const noexcept {
-        return journeyToPath(getJourney(stop));
-    }
-
-    inline std::vector<std::string> getRouteDescription(const StopId stop) const noexcept {
-        return data.journeyToText(getJourney(stop));
-    }
-
     inline const Profiler& getProfiler() const noexcept {
         return profiler;
     }
