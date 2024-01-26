@@ -541,7 +541,7 @@ public:
                         //ToDo
                         //addEdge(from, to, AnyAttribute(weight));
                         edgeAttributes.forEach([&](auto& values) {
-                            using ValueType = typename std::remove_reference_t<decltype (values)>;
+                            using ValueType = typename std::remove_reference_t<decltype (values)>::value_type;
                             if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {
                                 values[edge] = weight;
                             }
@@ -685,7 +685,7 @@ public:
         out << "                     #Edges : " << std::setw(tabSize) << String::prettyInt(edgeCount) << "  (" << String::percent(edgeCount / (double) numEdges()) << ")" << std::endl;
         out << "                 #LoopEdges : " << std::setw(tabSize) << String::prettyInt(loopEdgeCount) << "  (" << String::percent(loopEdgeCount / (double) edgeCount) << ")" << std::endl;
         edgeAttributes.forEach([&](const auto& values, const AttributeNameType attribute) {
-            using ValueType = typename std::remove_reference_t<decltype (values)>;
+            using ValueType = typename std::remove_reference_t<decltype (values)>::value_type;
             const std::string attributeName = attributeToString(attribute);
             if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {
                 ValueType minWeight = std::numeric_limits<ValueType>::max();

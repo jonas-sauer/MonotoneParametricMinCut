@@ -146,7 +146,7 @@ namespace ImplementationDetail {
         /* 10 */ "ToVertex",
         /* 11 */ "ViaVertex",
         /* 12 */ "ReverseEdge",
-        /* 13 */ "(Consumption)",
+        /* 13 */ "(Unused)",
         /* 14 */ "Function",
         /* 15 */ "Capacity",
         /* 16 */ "Valid",

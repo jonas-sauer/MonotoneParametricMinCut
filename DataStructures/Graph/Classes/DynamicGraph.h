@@ -890,7 +890,7 @@ public:
         out << "          #FromVertexErrors : " << std::setw(tabSize) << String::prettyInt(fromVertexErrorCount) << std::endl;
         edgeAttributes.forEach([&](const auto& values, const AttributeNameType attribute) {
             if (attribute == IncomingEdgePointer) return;
-            using ValueType = typename std::remove_reference_t<decltype (values)>;
+            using ValueType = typename std::remove_reference_t<decltype (values)>::value_type;
             const std::string attributeName = attributeToString(attribute);
             if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {
                 ValueType minWeight = std::numeric_limits<ValueType>::max();

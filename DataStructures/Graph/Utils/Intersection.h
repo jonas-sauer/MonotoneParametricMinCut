@@ -43,7 +43,7 @@ public:
         this->graphB = &graphB;
         Assert(checkGraph(graphA), "Edges of graphA are not sorted!");
         Assert(checkGraph(graphB), "Edges of graphB are not sorted!");
-        if constexpr (std::is_same_v<GraphA, GraphB> {
+        if constexpr (std::is_same_v<GraphA, GraphB>) {
             if (graphA.numVertices() > graphB.numVertices()) {
                 std::swap(this->graphA, this->graphB);
             }
