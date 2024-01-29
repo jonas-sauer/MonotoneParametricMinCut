@@ -6,6 +6,7 @@
 #include <string>
 #include <limits>
 #include <concepts>
+#include <cmath>
 
 #include "../Helpers.h"
 #include "../Assert.h"

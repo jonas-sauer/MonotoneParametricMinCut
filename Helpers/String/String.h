@@ -8,7 +8,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <iostream>
-#include <limits.h>
+#include <limits>
 #include <algorithm>
 
 #include "../Assert.h"

@@ -7,6 +7,7 @@
 #include "../../DataStructures/Container/Set.h"
 #include "../../DataStructures/Graph/Classes/GraphInterface.h"
 #include "../../Helpers/Vector/Vector.h"
+#include "../../Helpers/Types.h"
 
 template<typename GRAPH>
 class IsoDijkstra {
@@ -16,7 +17,7 @@ private:
         VertexLabel() : distance(INFTY) {}
         int distance;
 
-        inline bool hasSmallerKey(const VertexLabel* other) const {
+        inline bool hasSmallerKey(const VertexLabel* other) const noexcept {
             return distance < other->distance;
         }
     };
@@ -40,7 +41,7 @@ public:
         isochrone.insert(source);
 
         while (!queue.empty()) {
-            VertexLabel* uLabel = queue.extractFront();
+            const VertexLabel* uLabel = queue.extractFront();
             const Vertex u = Vertex(uLabel - &(label[0]));
             isochrone.insert(u);
             const int uDistance = uLabel->distance;

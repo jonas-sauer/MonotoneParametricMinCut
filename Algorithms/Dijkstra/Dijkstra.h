@@ -30,7 +30,7 @@ public:
             parent = noVertex;
             timeStamp = time;
         }
-        inline bool hasSmallerKey(const VertexLabel* other) const {
+        inline bool hasSmallerKey(const VertexLabel* other) const noexcept {
             return distance < other->distance;
         }
 
@@ -116,7 +116,7 @@ public:
     inline void run(const Vertex target, const SETTLE& settle, const STOP& stop = NoOperation, const PRUNE_EDGE& pruneEdge = NoOperation) noexcept {
         while(!Q.empty()) {
             if (stop()) break;
-            VertexLabel* uLabel = Q.extractFront();
+            const VertexLabel* uLabel = Q.extractFront();
             const Vertex u = Vertex(uLabel - &(label[0]));
             if (u == target) break;
             for (const Edge edge : graph.edgesFrom(u)) {

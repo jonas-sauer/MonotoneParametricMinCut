@@ -6,6 +6,7 @@
 #include "../../DataStructures/Container/ExternalKHeap.h"
 #include "../../DataStructures/Graph/Classes/GraphInterface.h"
 #include "../../Helpers/Vector/Vector.h"
+#include "../../Helpers/Types.h"
 
 template<typename GRAPH>
 class SimpleDijkstra {
@@ -15,7 +16,7 @@ private:
         VertexLabel() : distance(INFTY) {}
         int distance;
 
-        inline bool hasSmallerKey(const VertexLabel* other) const {
+        inline bool hasSmallerKey(const VertexLabel* other) const noexcept {
             return distance < other->distance;
         }
     };
@@ -36,7 +37,7 @@ public:
         queue.update(&label[source]);
 
         while (!queue.empty()) {
-            VertexLabel* uLabel = queue.extractFront();
+            const VertexLabel* uLabel = queue.extractFront();
             const Vertex u = Vertex(uLabel - &(label[0]));
             const int uDistance = uLabel->distance;
             for (const Edge e : graph.edgesFrom(u)) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <type_traits>
 
 #include "AttributeNames.h"
