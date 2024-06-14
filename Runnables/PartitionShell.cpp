@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
     new DrawVertexPartition(shell);
     new DrawNestedDissection(shell);
     new ComputeSampleGraph(shell);
+    new RunPushRelabel(shell);
     shell.run();
     return 0;
 }

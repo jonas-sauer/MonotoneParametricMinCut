@@ -34,6 +34,7 @@
 #include "../../Algorithms/Partition/GreedyCenters.h"
 #include "../../Algorithms/Partition/InertialFlow.h"
 #include "../../Algorithms/MaxFlowMinCut/Dinic.h"
+#include "../../Algorithms/MaxFlowMinCut/PushRelabel.h"
 
 #include "../../Visualization/Color.h"
 #include "../../Visualization/PDF.h"
@@ -475,5 +476,34 @@ private:
         else {
             return getParameter<int>("Number of threads");
         }
+    }
+};
+
+class RunPushRelabel : public ParameterizedCommand {
+
+public:
+    RunPushRelabel(BasicShell& shell) :
+        ParameterizedCommand(shell, "runPushRelabel", "Computes a minimum s-t-cut on the given graph with push-relabel.") {
+        addParameter("Graph");
+        addParameter("Source vertex");
+        addParameter("Sink vertex");
+    }
+
+    virtual void execute() noexcept {
+        TransferGraph graph;
+        Graph::fromDimacs(getParameter("Graph"), graph);
+        Graph::printInfo(graph);
+        graph.printAnalysis();
+
+        DynamicFlowGraph flowGraph;
+        Graph::move(std::move(graph), flowGraph, Capacity << TravelTime);
+
+        const auto source(getParameter<Vertex>("Source vertex"));
+        const auto sink(getParameter<Vertex>("Sink vertex"));
+
+        PushRelabel algorithm(flowGraph);
+        algorithm.run(source, sink);
+        std::cout << algorithm.getSourceComponent().size() << std::endl;
+        std::cout << algorithm.getSinkComponent().size() << std::endl;
     }
 };
