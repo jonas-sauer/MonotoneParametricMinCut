@@ -35,6 +35,7 @@
 #include "../../Algorithms/Partition/InertialFlow.h"
 #include "../../Algorithms/MaxFlowMinCut/Dinic.h"
 #include "../../Algorithms/MaxFlowMinCut/PushRelabel.h"
+#include "../../Algorithms/MaxFlowMinCut/IBFS.h"
 
 #include "../../Visualization/Color.h"
 #include "../../Visualization/PDF.h"
@@ -502,6 +503,35 @@ public:
         const auto sink(getParameter<Vertex>("Sink vertex"));
 
         PushRelabel algorithm(flowGraph);
+        algorithm.run(source, sink);
+        std::cout << algorithm.getSourceComponent().size() << std::endl;
+        std::cout << algorithm.getSinkComponent().size() << std::endl;
+    }
+};
+
+class RunIBFS : public ParameterizedCommand {
+
+public:
+    RunIBFS(BasicShell& shell) :
+        ParameterizedCommand(shell, "runIBFS", "Computes a minimum s-t-cut on the given graph with IBFS.") {
+        addParameter("Graph");
+        addParameter("Source vertex");
+        addParameter("Sink vertex");
+    }
+
+    virtual void execute() noexcept {
+        TransferGraph graph;
+        Graph::fromDimacs(getParameter("Graph"), graph);
+        Graph::printInfo(graph);
+        graph.printAnalysis();
+
+        DynamicFlowGraph flowGraph;
+        Graph::move(std::move(graph), flowGraph, Capacity << TravelTime);
+
+        const auto source(getParameter<Vertex>("Source vertex"));
+        const auto sink(getParameter<Vertex>("Sink vertex"));
+
+        IBFS algorithm(flowGraph);
         algorithm.run(source, sink);
         std::cout << algorithm.getSourceComponent().size() << std::endl;
         std::cout << algorithm.getSinkComponent().size() << std::endl;

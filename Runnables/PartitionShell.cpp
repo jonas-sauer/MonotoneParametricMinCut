@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
     new DrawNestedDissection(shell);
     new ComputeSampleGraph(shell);
     new RunPushRelabel(shell);
+    new RunIBFS(shell);
     shell.run();
     return 0;
 }
