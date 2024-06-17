@@ -9,6 +9,7 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
+//TODO: Delete source-/sink-incident edges and maintain them implictly
 class IBFS {
 
     struct TreeData {
@@ -254,12 +255,14 @@ private:
         treeData.removeVertex(vertex);
     }
 
+    //TODO: Adopt orphans in increasing order of distance
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
         while (!orphans[DIRECTION].empty()) {
             const Vertex orphan = orphans[DIRECTION].front();
             orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
+            //TODO: If getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION], then we can give up
             treeData.removeChildren(orphan, [&](const Vertex child) {
                 orphans[DIRECTION].push(child);
             });
@@ -285,6 +288,7 @@ private:
 
     template<int DIRECTION>
     inline bool adoptWithNewDistance(const Vertex orphan) noexcept {
+        const int oldDistance = getDistance<DIRECTION>(orphan);
         int newDistance = maxDistance[DIRECTION];
         Edge newEdge = noEdge;
         Edge newEdgeTowardsSink = noEdge;
@@ -300,16 +304,13 @@ private:
                 newEdge = edge;
                 newEdgeTowardsSink = edgeTowardsSink;
                 newParent = from;
+                if (newDistance == oldDistance) break;
             }
         }
-        if (newEdge == noEdge) {
-            checkDistanceInvariants(orphan, true);
-            return false;
-        }
+        if (newEdge == noEdge) return false;
         setDistance<DIRECTION>(orphan, newDistance + 1);
         currentEdge[orphan] = newEdge;
         treeData.addVertex(newParent, orphan, newEdgeTowardsSink);
-        checkDistanceInvariants(orphan);
         if (newDistance + 1 == maxDistance[DIRECTION])
             nextQ[DIRECTION].push(orphan);
         return true;
