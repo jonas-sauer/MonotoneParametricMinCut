@@ -35,6 +35,7 @@ using SimpleEdgeList = EdgeList<NoVertexAttributes, NoEdgeAttributes>;
 
 using DynamicFlowGraph = DynamicGraph<NoVertexAttributes, WithReverseEdgesAndCapacity>;
 using StaticFlowGraph = StaticGraph<NoVertexAttributes, WithReverseEdgesAndCapacity>;
+using FlowGraphEdgeList = EdgeList<NoVertexAttributes, WithReverseEdgesAndCapacity>;
 
 using CHConstructionGraph = EdgeList<NoVertexAttributes, WithViaVertexAndWeight>;
 using CHCoreGraph = DynamicGraph<NoVertexAttributes, WithViaVertexAndWeight>;

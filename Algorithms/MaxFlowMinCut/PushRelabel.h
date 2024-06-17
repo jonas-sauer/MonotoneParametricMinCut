@@ -162,24 +162,19 @@ public:
     };
 
 public:
-    //TODO: Capacities should be double
-    explicit PushRelabel(DynamicFlowGraph dynamicGraph) :
-        n(dynamicGraph.numVertices()),
+    explicit PushRelabel(const StaticFlowGraph& graph) :
+        graph(graph),
+        n(graph.numVertices()),
         sourceVertex(noVertex),
         sinkVertex(noVertex),
+        residualCapacity(graph.get(Capacity)),
         distance(n, 0),
         excess(n, 0),
         currentEdge(n, noEdge),
         vertexBuckets(n),
         workSinceLastUpdate(0),
-        workLimit(VertexToEdgeRatio * dynamicGraph.numVertices() + dynamicGraph.numEdges()),
+        workLimit(VertexToEdgeRatio * graph.numVertices() + graph.numEdges()),
         cut(n) {
-        for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
-            if (dynamicGraph.hasReverseEdge(edge)) continue;
-            dynamicGraph.addReverseEdge(edge).set(Capacity, 0);
-        }
-        Graph::move(std::move(dynamicGraph), graph);
-        residualCapacity = graph.get(Capacity);
     }
 
 public:
@@ -191,10 +186,10 @@ public:
         run();
     }
 
-    inline void runWithCapacityUpdate(const std::vector<int>& sourceCapacities, const std::vector<int>& sinkCapacities) noexcept {
+    /*inline void runWithCapacityUpdate(const std::vector<int>& sourceCapacities, const std::vector<int>& sinkCapacities) noexcept {
         updateCapacities(sourceCapacities, sinkCapacities);
         run();
-    }
+    }*/
 
     inline std::vector<Vertex> getSourceComponent() const noexcept {
         return cut.getSourceComponent();
@@ -202,6 +197,15 @@ public:
 
     inline std::vector<Vertex> getSinkComponent() const noexcept {
         return cut.getSinkComponent();
+    }
+
+    inline int getFlowValue() noexcept {
+        int flow = 0;
+        for (const Edge edge : graph.edgesFrom(sinkVertex)) {
+            const Edge reverseEdge = graph.get(ReverseEdge, edge);
+            flow += graph.get(Capacity, reverseEdge) - residualCapacity[reverseEdge];
+        }
+        return flow;
     }
 
 private:
@@ -230,7 +234,8 @@ private:
         }
     }
 
-    inline void updateCapacities(const std::vector<int>& sourceCapacities, const std::vector<int>& sinkCapacities) noexcept {
+    //TODO: Cannot change the graph, so handle this differently
+    /*inline void updateCapacities(const std::vector<int>& sourceCapacities, const std::vector<int>& sinkCapacities) noexcept {
         Edge edgeFromSource = graph.beginEdgeFrom(sourceVertex);
         for (size_t i = 0; i < sourceCapacities.size(); i++, edgeFromSource++) {
             const int oldCapacity = graph.get(Capacity, edgeFromSource);
@@ -263,19 +268,17 @@ private:
                 pushFlow(sinkVertex, from, edgeFromSink, edgeToSink, -newResidualCapacity);
             }
         }
-    }
+    }*/
 
     inline void run() noexcept {
         workSinceLastUpdate = 0;
         while (!vertexBuckets.empty()) {
             const Vertex vertex = vertexBuckets.pop();
-            std::cout << "Discharge " << vertex << std::endl;
             discharge(vertex);
             if (distance[vertex] < n && excess[vertex] > 0)
                 makeVertexActive(vertex);
 
             if (workSinceLastUpdate > workLimit) {
-                std::cout << "Global update: " << workSinceLastUpdate << " > " << workLimit << std::endl;
                 globalDistanceUpdate();
                 workSinceLastUpdate = 0;
             }
@@ -307,7 +310,6 @@ private:
     }
 
     inline void pushFlow(const Vertex from, const Vertex to, const Edge edge) noexcept {
-        std::cout << "\tPush " << from << " -> " << to << std::endl;
         const int flow = std::min(excess[from], residualCapacity[edge]);
         const Edge reverseEdge = graph.get(ReverseEdge, edge);
         pushFlow(from, to, edge, reverseEdge, flow);
@@ -322,7 +324,6 @@ private:
     }
 
     inline void relabel(const Vertex vertex) noexcept {
-        std::cout << "\tRelabel " << vertex << std::endl;
         const int oldDistance = distance[vertex];
         int newDistance = n;
         Edge newAdmissibleEdge = noEdge;
@@ -336,7 +337,6 @@ private:
             }
         }
         Assert(newDistance > distance[vertex], "Relabel did not increase the distance!");
-        std::cout << "\tUpdate distance from " << distance[vertex] << " to " << newDistance << std::endl;
         vertexBuckets.updateDistance(vertex, distance[vertex], newDistance);
         distance[vertex] = newDistance;
         currentEdge[vertex] = newAdmissibleEdge;
@@ -401,7 +401,7 @@ private:
     }
 
 private:
-    StaticFlowGraph graph;
+    const StaticFlowGraph& graph;
     const int n;
     Vertex sourceVertex;
     Vertex sinkVertex;

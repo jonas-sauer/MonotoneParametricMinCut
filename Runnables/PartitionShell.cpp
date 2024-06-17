@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
     new DrawVertexPartition(shell);
     new DrawNestedDissection(shell);
     new ComputeSampleGraph(shell);
+    new LoadMaxFlowInstanceFromDimacs(shell);
     new RunPushRelabel(shell);
     new RunIBFS(shell);
     shell.run();

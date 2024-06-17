@@ -9,7 +9,6 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
-//TODO: Delete source-/sink-incident edges and maintain them implictly
 class IBFS {
 
     struct TreeData {
@@ -32,6 +31,7 @@ class IBFS {
         inline void addVertex(const Vertex parent, const Vertex child, const Edge edge) noexcept {
             parentEdge[child] = edge;
             parentVertex[child] = parent;
+            prevSibling[child] = noVertex;
             nextSibling[child] = firstChild[parent];
             if (nextSibling[child] != noVertex)
                 prevSibling[nextSibling[child]] = child;
@@ -56,8 +56,6 @@ class IBFS {
                 const Vertex next = nextSibling[child];
                 parentEdge[child] = noEdge;
                 parentVertex[child] = noVertex;
-                nextSibling[child] = noVertex;
-                prevSibling[child] = noVertex;
                 callback(child);
                 child = next;
             }
@@ -101,20 +99,16 @@ class IBFS {
     };
 
 public:
-    explicit IBFS(DynamicFlowGraph dynamicGraph) :
-        n(dynamicGraph.numVertices()),
+    explicit IBFS(const StaticFlowGraph& graph) :
+        graph(graph),
+        n(graph.numVertices()),
         terminal{noVertex, noVertex},
+        residualCapacity(graph.get(Capacity)),
         distance(n, 0),
         maxDistance{0, 0},
         currentEdge(n, noEdge),
         treeData(n),
         cut(n) {
-        for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
-            if (dynamicGraph.hasReverseEdge(edge)) continue;
-            dynamicGraph.addReverseEdge(edge).set(Capacity, 0);
-        }
-        Graph::move(std::move(dynamicGraph), graph);
-        residualCapacity = graph.get(Capacity);
     }
 
 public:
@@ -134,6 +128,15 @@ public:
 
     inline std::vector<Vertex> getSinkComponent() const noexcept {
         return cut.getSinkComponent();
+    }
+
+    inline int getFlowValue() noexcept {
+        int flow = 0;
+        for (const Edge edge : graph.edgesFrom(terminal[BACKWARD])) {
+            const Edge reverseEdge = graph.get(ReverseEdge, edge);
+            flow += graph.get(Capacity, reverseEdge) - residualCapacity[reverseEdge];
+        }
+        return flow;
     }
 
 private:
@@ -279,7 +282,6 @@ private:
             const Vertex from = graph.get(ToVertex, edge);
             if (!isEdgeAdmissible<DIRECTION>(orphan, from)) continue;
             treeData.addVertex(from, orphan, edgeTowardsSink);
-            checkDistanceInvariants(orphan);
             currentEdge[orphan] = edge;
             return true;
         }
@@ -365,18 +367,41 @@ private:
     inline void checkDistanceInvariants(const Vertex vertex, const bool allowOrphans = false) const noexcept {
         const Vertex parent = treeData.parentVertex[vertex];
         if (abs(distance[vertex]) <= 1) {
-            Assert(parent == noVertex, "Vertex with distance <= 1 has a parent!");
+            Ensure(parent == noVertex, "Vertex " << vertex << " with distance <= 1 has parent " << parent << "!");
         } else {
             if (!graph.isVertex(parent)) {
-                Assert(allowOrphans, "Invalid parent!");
+                Ensure(allowOrphans, "Vertex " << vertex << " has an invalid parent!");
             } else {
-                Assert(abs(distance[vertex]) == abs(distance[parent]) + 1, "Distances are incorrect!");
+                Ensure(abs(distance[vertex]) == abs(distance[parent]) + 1, "Distance of " << vertex << " is " << distance[vertex] << ", but distance of " << parent << " is " << distance[parent] << "!");
+            }
+        }
+    }
+
+    inline void checkChildrenRelation() const noexcept {
+        for (const Vertex vertex : graph.vertices()) {
+            checkChildrenRelation(vertex);
+        }
+    }
+
+    inline void checkChildrenRelation(const Vertex vertex) const noexcept {
+        std::vector<bool> isChild(n, false);
+        Vertex child = treeData.firstChild[vertex];
+        while (child != noVertex) {
+            isChild[child] = true;
+            child = treeData.nextSibling[child];
+        }
+        for (const Vertex c : graph.vertices()) {
+            const Vertex parent = treeData.parentVertex[c];
+            if (isChild[c]) {
+                Ensure(parent == vertex, "Child " << c << " of << " << vertex << " has the wrong parent!");
+            } else {
+                Ensure(parent != vertex, "Vertex " << c << " has parent << " << vertex << " but is not a child!");
             }
         }
     }
 
 private:
-    StaticFlowGraph graph;
+    const StaticFlowGraph& graph;
     const int n;
     Vertex terminal[2];
     std::vector<int> residualCapacity;
