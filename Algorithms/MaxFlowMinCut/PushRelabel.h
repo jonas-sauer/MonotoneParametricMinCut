@@ -283,6 +283,7 @@ private:
                 workSinceLastUpdate = 0;
             }
         }
+        //TODO: Not necessarily sink-minimal?
         cut.compute(distance);
     }
 

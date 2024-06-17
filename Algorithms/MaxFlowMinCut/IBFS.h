@@ -265,7 +265,10 @@ private:
             const Vertex orphan = orphans[DIRECTION].front();
             orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
-            //TODO: If getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION], then we can give up
+            if (getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION]) {
+                distance[orphan] = 0;
+                continue;
+            }
             treeData.removeChildren(orphan, [&](const Vertex child) {
                 orphans[DIRECTION].push(child);
             });
