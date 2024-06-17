@@ -27,7 +27,7 @@ function(add_shell name)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX ${CAIRO_LIBRARIES})
 endfunction()
 
-set(SHELLS Assignment BenchmarkShell BikeSharing CH DelayExperimentsShell IsochroneShell MultimodalCoverageShell NetworkBuilder NetworkOrderShell PartitionShell QueriesShell ULTRA UltraAssignment ULTRAExperimentsShell UnrestrictedWalkingShell ValidationShell)
+set(SHELLS Assignment BenchmarkShell BikeSharing CH DelayExperimentsShell FlowShell IsochroneShell MultimodalCoverageShell NetworkBuilder NetworkOrderShell PartitionShell QueriesShell ULTRA UltraAssignment ULTRAExperimentsShell UnrestrictedWalkingShell ValidationShell)
 foreach(f ${SHELLS})
     add_shell(${f} Runnables/${f}.cpp)
 endforeach()
