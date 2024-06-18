@@ -15,6 +15,7 @@
 #include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
 #include "../../Algorithms/MaxFlowMinCut/PushRelabel.h"
 #include "../../Algorithms/MaxFlowMinCut/IBFS.h"
+#include "../../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
 
 using namespace Shell;
 
@@ -67,6 +68,26 @@ public:
     virtual void execute() noexcept {
         MaxFlowInstance instance(getParameter("Instance file"));
         IBFS algorithm(instance.graph);
+        Timer timer;
+        algorithm.run(instance.source, instance.sink);
+        std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
+        std::cout << "#Source component: " << algorithm.getSourceComponent().size() << std::endl;
+        std::cout << "#Sink component: " << algorithm.getSinkComponent().size() << std::endl;
+        std::cout << "Flow value: " << algorithm.getFlowValue() << std::endl;
+    }
+};
+
+class RunExcessesIBFS : public ParameterizedCommand {
+
+public:
+    RunExcessesIBFS(BasicShell& shell) :
+    ParameterizedCommand(shell, "runExcessesIBFS", "Computes a minimum s-t-cut on the given graph with Excesses IBFS.") {
+        addParameter("Instance file");
+    }
+
+    virtual void execute() noexcept {
+        MaxFlowInstance instance(getParameter("Instance file"));
+        ExcessesIBFS algorithm(instance.graph);
         Timer timer;
         algorithm.run(instance.source, instance.sink);
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;

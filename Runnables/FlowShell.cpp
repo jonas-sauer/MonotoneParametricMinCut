@@ -13,6 +13,7 @@ int main(int argc, char** argv) {
     new LoadMaxFlowInstanceFromDimacs(shell);
     new RunPushRelabel(shell);
     new RunIBFS(shell);
+    new RunExcessesIBFS(shell);
     shell.run();
     return 0;
 }
