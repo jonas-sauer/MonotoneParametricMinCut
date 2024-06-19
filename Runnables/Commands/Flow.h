@@ -146,3 +146,53 @@ public:
         std::cout << "Flow value: " << algorithm.getFlowValue() << std::endl;
     }
 };
+
+//TODO: Do this properly once we have true parametric instances
+class TestParametricExcessesIBFS : public ParameterizedCommand {
+
+public:
+    TestParametricExcessesIBFS(BasicShell& shell) :
+        ParameterizedCommand(shell, "testParametricExcessesIBFS", "temp") {
+        addParameter("Instance file");
+    }
+
+    virtual void execute() noexcept {
+        MaxFlowInstance instance(getParameter("Instance file"));
+        instance.maxParameter = 2;
+        Edge edgeFromSource = instance.graph.beginEdgeFrom(instance.source);
+        for (size_t i = 0; i < instance.graph.outDegree(instance.source); edgeFromSource++, i++) {
+            instance.sourceEdgeSlopes[i] = instance.getCapacity(edgeFromSource) / instance.maxParameter;
+            instance.graph.set(Capacity, edgeFromSource, 0);
+            instance.currentCapacity[edgeFromSource] = 0;
+        }
+        Edge edgeFromSink = instance.graph.beginEdgeFrom(instance.sink);
+        for (size_t i = 0; i < instance.graph.outDegree(instance.sink); edgeFromSink++, i++) {
+            const Edge edgeToSink = instance.graph.get(ReverseEdge, edgeFromSink);
+            instance.sinkEdgeSlopes[i] = -instance.getCapacity(edgeToSink) / instance.maxParameter;
+        }
+
+        ExcessesIBFS algorithm(instance);
+        run(algorithm, false);
+
+        for (int i = 1; i <= instance.maxParameter; i++) {
+            instance.setCurrentParameter(i);
+            run(algorithm, true);
+            ExcessesIBFS newAlgorithm(instance);
+            run(newAlgorithm, false);
+        }
+    }
+
+private:
+    inline void run(ExcessesIBFS& algorithm, const bool update) const noexcept {
+        Timer timer;
+        if (update) {
+            algorithm.continueAfterUpdate();
+        } else {
+            algorithm.run();
+        }
+        std::cout << "\tTime: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
+        std::cout << "\t#Source component: " << algorithm.getSourceComponent().size() << std::endl;
+        std::cout << "\t#Sink component: " << algorithm.getSinkComponent().size() << std::endl;
+        std::cout << "\tFlow value: " << algorithm.getFlowValue() << std::endl;
+    }
+};

@@ -164,10 +164,12 @@ public:
         initialize<FORWARD>();
         initialize<BACKWARD>();
         runAfterInitialize();
-        cut.compute(distance);
     }
 
-    //TODO: Implement update after capacity change
+    inline void continueAfterUpdate() noexcept {
+        updateCapacities();
+        runAfterInitialize();
+    }
 
     inline std::vector<Vertex> getSourceComponent() const noexcept {
         return cut.getSourceComponent();
@@ -197,12 +199,67 @@ private:
         nextQ[DIRECTION].push(terminal[DIRECTION]);
     }
 
-    inline void runAfterInitialize() noexcept {
-        while (true) {
-            //TODO: Clever alternation
-            if (!grow<FORWARD>()) break;
-            if (!grow<BACKWARD>()) break;
+    inline void updateCapacities() noexcept {
+        Edge edgeFromSource = graph.beginEdgeFrom(terminal[FORWARD]);
+        for (size_t i = 0; i < instance.sourceDiff.size(); i++, edgeFromSource++) {
+            Assert(instance.sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
+            residualCapacity[edgeFromSource] += instance.sourceDiff[i];
+            const Vertex to = graph.get(ToVertex, edgeFromSource);
+            if (!isVertexInTree<BACKWARD>(to)) continue;
+            if (residualCapacity[edgeFromSource] > 0) {
+                const int add = residualCapacity[edgeFromSource];
+                const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
+                residualCapacity[edgeFromSource] = 0;
+                residualCapacity[edgeToSource] += add;
+                excess[to] += add;
+                excessVertices[BACKWARD].addVertex(to, getDistance<BACKWARD>(to));
+            }
         }
+
+        Edge edgeFromSink = graph.beginEdgeFrom(terminal[BACKWARD]);
+        for (size_t i = 0; i < instance.sinkDiff.size(); i++, edgeFromSink++) {
+            Assert(instance.sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
+            const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
+            const Vertex from = graph.get(ToVertex, edgeFromSink);
+            residualCapacity[edgeToSink] += instance.sinkDiff[i];
+            if (residualCapacity[edgeToSink] < 0) {
+                const int add = -residualCapacity[edgeToSink];
+                residualCapacity[edgeFromSink] -= add;
+                residualCapacity[edgeToSink] = 0;
+                excess[from] += add;
+                if (isVertexInTree<FORWARD>(from)) {
+                    treeData.removeVertex(from);
+                } else {
+                    excessVertices[BACKWARD].addVertex(from, getDistance<BACKWARD>(from));
+                }
+            }
+            if (residualCapacity[edgeToSink] <= 0 && treeData.parentEdge[from] == edgeToSink) {
+                makeOrphan<BACKWARD>(from);
+            }
+        }
+        adoptOrphans<BACKWARD>();
+        drainExcesses<BACKWARD>();
+    }
+
+    inline void runAfterInitialize() noexcept {
+        bool growForward = true;
+        bool growBackward = true;
+        while (growForward || growBackward) {
+            /*size_t inSource = 0;
+            size_t inSink = 0;
+            size_t free = 0;
+            for (const Vertex vertex : graph.vertices()) {
+                if (distance[vertex] == 0) free++;
+                else if (distance[vertex] < 0) inSink++;
+                else inSource++;
+            }
+            std::cout << "S: " << inSource << ", N: " << free << ", T: " << inSink << std::endl;*/
+
+            //TODO: Clever alternation
+            if (growForward && !grow<FORWARD>()) growForward = false;
+            if (growBackward && !grow<BACKWARD>()) growBackward = false;
+        }
+        cut.compute(distance);
     }
 
     template<int DIRECTION>
@@ -239,8 +296,8 @@ private:
         const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
         const int flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
         pushFlow<BACKWARD>(sourceEndpoint, sinkEndpoint, edgeTowardsSink, edgeTowardsSource, flow);
-        drainExcesses<FORWARD>(sourceEndpoint);
-        drainExcesses<BACKWARD>(sinkEndpoint);
+        registerAndDrainExcess<FORWARD>(sourceEndpoint);
+        registerAndDrainExcess<BACKWARD>(sinkEndpoint);
     }
 
     inline int findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
@@ -264,7 +321,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline void drainExcesses(const Vertex start) noexcept {
+    inline void registerAndDrainExcess(const Vertex start) noexcept {
         const int exc = getExcess<DIRECTION>(start);
         if (exc < 0) return;
         else if (exc == 0) {
@@ -272,11 +329,16 @@ private:
             adoptOrphans<DIRECTION>();
         } else {
             excessVertices[DIRECTION].addVertex(start, getDistance<DIRECTION>(start));
-            while (!excessVertices[DIRECTION].empty()) {
-                const Vertex vertex = excessVertices[DIRECTION].front();
-                drainExcess<DIRECTION>(vertex);
-                adoptOrphans<DIRECTION>();
-            }
+            drainExcesses<DIRECTION>();
+        }
+    }
+
+    template<int DIRECTION>
+    inline void drainExcesses() noexcept {
+        while (!excessVertices[DIRECTION].empty()) {
+            const Vertex vertex = excessVertices[DIRECTION].front();
+            drainExcess<DIRECTION>(vertex);
+            adoptOrphans<DIRECTION>();
         }
     }
 
