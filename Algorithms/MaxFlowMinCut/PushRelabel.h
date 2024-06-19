@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../../DataStructures/Graph/Graph.h"
+#include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
 
 #include "../../Helpers/Assert.h"
 #include "../../Helpers/Types.h"
@@ -21,12 +22,6 @@ public:
         }
 
         inline void initialize(const int sink) {
-            std::vector<std::vector<Vertex>>(activeVertices.size()).swap(activeVertices);
-            std::vector<std::vector<Vertex>>(inactiveVertices.size()).swap(inactiveVertices);
-            std::vector<bool>(isVertexActive.size(), false).swap(isVertexActive);
-            maxActiveBucket = -1;
-            maxBucket = 0;
-
             for (int i = 0; static_cast<size_t>(i) < isVertexActive.size(); i++) {
                 if (i == sink) continue;
                 positionOfVertex[i] = inactiveVertices[0].size();
@@ -162,12 +157,13 @@ public:
     };
 
 public:
-    explicit PushRelabel(const StaticFlowGraph& graph) :
-        graph(graph),
+    explicit PushRelabel(const MaxFlowInstance& instance) :
+        instance(instance),
+        graph(instance.graph),
         n(graph.numVertices()),
-        sourceVertex(noVertex),
-        sinkVertex(noVertex),
-        residualCapacity(graph.get(Capacity)),
+        sourceVertex(instance.source),
+        sinkVertex(instance.sink),
+        residualCapacity(instance.currentCapacity),
         distance(n, 0),
         excess(n, 0),
         currentEdge(n, noEdge),
@@ -175,21 +171,21 @@ public:
         workSinceLastUpdate(0),
         workLimit(VertexToEdgeRatio * graph.numVertices() + graph.numEdges()),
         cut(n) {
+        for (const Vertex vertex : graph.vertices()) {
+            currentEdge[vertex] = graph.beginEdgeFrom(vertex);
+        }
     }
 
 public:
-    inline void run(const Vertex source, const Vertex sink) noexcept {
-        clear();
-        sourceVertex = source;
-        sinkVertex = sink;
+    inline void run() noexcept {
         initialize();
-        run();
+        runAfterInitialize();
     }
 
-    /*inline void runWithCapacityUpdate(const std::vector<int>& sourceCapacities, const std::vector<int>& sinkCapacities) noexcept {
-        updateCapacities(sourceCapacities, sinkCapacities);
-        run();
-    }*/
+    inline void continueAfterUpdate() noexcept {
+        updateCapacities();
+        runAfterInitialize();
+    }
 
     inline std::vector<Vertex> getSourceComponent() const noexcept {
         return cut.getSourceComponent();
@@ -203,27 +199,17 @@ public:
         int flow = 0;
         for (const Edge edge : graph.edgesFrom(sinkVertex)) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
-            flow += graph.get(Capacity, reverseEdge) - residualCapacity[reverseEdge];
+            flow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
         }
         return flow;
     }
 
 private:
-    inline void clear() noexcept {
-        //TODO: Too slow?
-        residualCapacity = graph.get(Capacity);
-        Vector::fill(distance, 0);
-        Vector::fill(excess, 0);
-        for (const Vertex vertex : graph.vertices()) {
-            currentEdge[vertex] = graph.beginEdgeFrom(vertex);
-        }
-    }
-
     inline void initialize() noexcept {
         vertexBuckets.initialize(sinkVertex);
         distance[sourceVertex] = distance.size();
         for (const Edge edge : graph.edgesFrom(sourceVertex)) {
-            const int capacity = graph.get(Capacity, edge);
+            const int capacity = instance.getCapacity(edge);
             if (capacity == 0) continue;
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
             residualCapacity[edge] = 0;
@@ -234,43 +220,7 @@ private:
         }
     }
 
-    //TODO: Cannot change the graph, so handle this differently
-    /*inline void updateCapacities(const std::vector<int>& sourceCapacities, const std::vector<int>& sinkCapacities) noexcept {
-        Edge edgeFromSource = graph.beginEdgeFrom(sourceVertex);
-        for (size_t i = 0; i < sourceCapacities.size(); i++, edgeFromSource++) {
-            const int oldCapacity = graph.get(Capacity, edgeFromSource);
-            graph.set(Capacity, edgeFromSource, sourceCapacities[i]);
-            const Vertex to = graph.get(ToVertex, edgeFromSource);
-            if (distance[to] >= n) continue;
-            Assert(residualCapacity[edgeFromSource] == 0, "Source-incident cut edge is not saturated!");
-
-            const int newResidualCapacity = sourceCapacities[i] - oldCapacity;
-            Assert(newResidualCapacity >= 0, "Capacity of source-incident edge has decreased!");
-            if (newResidualCapacity > 0) {
-                const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
-                pushFlow(sourceVertex, to, edgeFromSource, edgeToSource, newResidualCapacity);
-            }
-        }
-
-        Edge edgeFromSink = graph.beginEdgeFrom(sinkVertex);
-        for (size_t i = 0; i < sinkCapacities.size(); i++, edgeFromSink++) {
-            const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
-            const int oldCapacity = graph.get(Capacity, edgeToSink);
-            graph.set(Capacity, edgeToSink, sinkCapacities[i]);
-
-            const int lostCapacity = oldCapacity - sinkCapacities[i];
-            Assert(lostCapacity >= 0, "Capacity of sink-incident edge has increased!");
-            const int newResidualCapacity = residualCapacity[edgeToSink] - lostCapacity;
-            if (newResidualCapacity >= 0) {
-                residualCapacity[edgeToSink] = newResidualCapacity;
-            } else {
-                const Vertex from = graph.get(ToVertex, edgeFromSink);
-                pushFlow(sinkVertex, from, edgeFromSink, edgeToSink, -newResidualCapacity);
-            }
-        }
-    }*/
-
-    inline void run() noexcept {
+    inline void runAfterInitialize() noexcept {
         workSinceLastUpdate = 0;
         while (!vertexBuckets.empty()) {
             const Vertex vertex = vertexBuckets.pop();
@@ -285,6 +235,38 @@ private:
         }
         //TODO: Not necessarily sink-minimal?
         cut.compute(distance);
+    }
+
+    inline void updateCapacities() noexcept {
+        Edge edgeFromSource = graph.beginEdgeFrom(sourceVertex);
+        for (size_t i = 0; i < instance.sourceDiff.size(); i++, edgeFromSource++) {
+            Assert(instance.sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
+            residualCapacity[edgeFromSource] += instance.sourceDiff[i];
+            const Vertex to = graph.get(ToVertex, edgeFromSource);
+            if (distance[to] < n && residualCapacity[edgeFromSource] > 0) {
+                const int add = residualCapacity[edgeFromSource];
+                const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
+                residualCapacity[edgeFromSource] = 0;
+                residualCapacity[edgeToSource] += add;
+                excess[to] += add;
+                makeVertexActive(to);
+            }
+        }
+
+        Edge edgeFromSink = graph.beginEdgeFrom(sinkVertex);
+        for (size_t i = 0; i < instance.sinkDiff.size(); i++, edgeFromSink++) {
+            Assert(instance.sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
+            const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
+            residualCapacity[edgeToSink] += instance.sinkDiff[i];
+            if (residualCapacity[edgeToSink] < 0) {
+                const int add = -residualCapacity[edgeToSink];
+                const Vertex from = graph.get(ToVertex, edgeFromSink);
+                residualCapacity[edgeFromSink] -= add;
+                residualCapacity[edgeToSink] = 0;
+                excess[from] += add;
+                if (distance[from] < n) makeVertexActive(from);
+            }
+        }
     }
 
     inline void discharge(const Vertex vertex) noexcept {
@@ -401,11 +383,38 @@ private:
         return true;
     }
 
+    inline void checkFlowConservation() const noexcept {
+        for (const Vertex vertex : graph.vertices()) {
+            checkFlowConservation(vertex);
+        }
+    }
+
+    inline int getInflow(const Vertex vertex) const noexcept {
+        int inflow = 0;
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Edge reverseEdge = graph.get(ReverseEdge, edge);
+            inflow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
+        }
+        return inflow;
+    }
+
+    inline void checkFlowConservation(const Vertex vertex) const noexcept {
+        if (vertex == sourceVertex || vertex == sinkVertex) return;
+        Assert(getInflow(vertex) == excess[vertex], "Flow conservation not fulfilled!");
+    }
+
+    inline void checkCapacityConstraints() const noexcept {
+        for (const Edge edge : graph.edges()) {
+            Assert(residualCapacity[edge] >= 0, "Capacity constraint violated!");
+        }
+    }
+
 private:
+    const MaxFlowInstance& instance;
     const StaticFlowGraph& graph;
     const int n;
-    Vertex sourceVertex;
-    Vertex sinkVertex;
+    const Vertex sourceVertex;
+    const Vertex sinkVertex;
     std::vector<int> residualCapacity;
     std::vector<int> distance;
     std::vector<int> excess;

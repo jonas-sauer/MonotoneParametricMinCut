@@ -14,22 +14,48 @@
 
 //TODO: Capacities should be double
 //TODO: Delete source-/sink-incident edges and maintain them implictly?
+//TODO: Add deserialization for parametric instances
 class MaxFlowInstance {
 public:
-    MaxFlowInstance() : source(noVertex), sink(noVertex) {}
+    MaxFlowInstance() : source(noVertex), sink(noVertex), minParameter(0), maxParameter(0), currentParameter(0) {}
 
     explicit MaxFlowInstance(const std::string& fileName) {
         deserialize(fileName);
+        initialize();
     }
 
     inline void serialize(const std::string& fileName) const noexcept {
-        IO::serialize(fileName, source, sink);
+        IO::serialize(fileName, source, sink, sourceEdgeSlopes, sinkEdgeSlopes, minParameter, maxParameter);
         graph.writeBinary(fileName + ".graph");
     }
 
     inline void deserialize(const std::string& fileName) noexcept {
-        IO::deserialize(fileName, source, sink);
+        IO::deserialize(fileName, source, sink, sourceEdgeSlopes, sinkEdgeSlopes, minParameter, maxParameter);
         graph.readBinary(fileName + ".graph");
+    }
+
+    inline int getCapacity(const Edge edge) const noexcept {
+        return currentCapacity[edge];
+    }
+
+    inline void setCurrentParameter(const int p) noexcept {
+        Assert(p > currentParameter, "Parameter did not increase!");
+        Assert(p <= maxParameter, "Parameter out of range!");
+        currentParameter = p;
+        Edge edgeFromSource = graph.beginEdgeFrom(source);
+        for (size_t i = 0; i < sourceEdgeSlopes.size(); i++, edgeFromSource++) {
+            const int newCapacity = graph.get(Capacity, edgeFromSource) + (currentParameter - minParameter) * sourceEdgeSlopes[i];
+            sourceDiff[i] = newCapacity - currentCapacity[edgeFromSource];
+            currentCapacity[edgeFromSource] = newCapacity;
+        }
+        Edge edgeFromSink = graph.beginEdgeFrom(sink);
+        for (size_t i = 0; i < sinkEdgeSlopes.size(); i++, edgeFromSink++) {
+            const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
+            const int newCapacity = graph.get(Capacity, edgeToSink) + (currentParameter - minParameter) * sinkEdgeSlopes[i];
+            Assert(newCapacity >= 0, "Negative capacity!");
+            sinkDiff[i] = newCapacity - currentCapacity[edgeToSink];
+            currentCapacity[edgeToSink] = newCapacity;
+        }
     }
 
     template<bool VERBOSE = true>
@@ -111,10 +137,29 @@ public:
             temp.addReverseEdge(edge).set(Capacity, 0);
         }
         Graph::move(std::move(temp), graph);
+        std::vector<int>(graph.outDegree(source), 0).swap(sourceEdgeSlopes);
+        std::vector<int>(graph.outDegree(sink), 0).swap(sinkEdgeSlopes);
+        initialize();
+    }
+
+private:
+    inline void initialize() noexcept {
+        currentParameter = minParameter;
+        currentCapacity = graph.get(Capacity);
+        std::vector<int>(sourceEdgeSlopes.size(), 0).swap(sourceDiff);
+        std::vector<int>(sinkEdgeSlopes.size(), 0).swap(sinkDiff);
     }
 
 public:
     StaticFlowGraph graph;
     Vertex source;
     Vertex sink;
+    std::vector<int> sourceEdgeSlopes;
+    std::vector<int> sinkEdgeSlopes;
+    int minParameter;
+    int maxParameter;
+    int currentParameter;
+    std::vector<int> currentCapacity;
+    std::vector<int> sourceDiff;
+    std::vector<int> sinkDiff;
 };

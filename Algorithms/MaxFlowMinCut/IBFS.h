@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../../DataStructures/Graph/Graph.h"
+#include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
 
 #include "../../Helpers/Assert.h"
 #include "../../Helpers/Types.h"
@@ -18,14 +19,6 @@ class IBFS {
             firstChild(n, noVertex),
             nextSibling(n, noVertex),
             prevSibling(n, noVertex) {
-        }
-
-        inline void clear() noexcept {
-            Vector::fill(parentEdge, noEdge);
-            Vector::fill(parentVertex, noVertex);
-            Vector::fill(firstChild, noVertex);
-            Vector::fill(nextSibling, noVertex);
-            Vector::fill(prevSibling, noVertex);
         }
 
         inline void addVertex(const Vertex parent, const Vertex child, const Edge edge) noexcept {
@@ -99,11 +92,12 @@ class IBFS {
     };
 
 public:
-    explicit IBFS(const StaticFlowGraph& graph) :
-        graph(graph),
+    explicit IBFS(const MaxFlowInstance& instance) :
+        instance(instance),
+        graph(instance.graph),
         n(graph.numVertices()),
-        terminal{noVertex, noVertex},
-        residualCapacity(graph.get(Capacity)),
+        terminal{instance.source, instance.sink},
+        residualCapacity(instance.currentCapacity),
         distance(n, 0),
         maxDistance{0, 0},
         currentEdge(n, noEdge),
@@ -112,13 +106,10 @@ public:
     }
 
 public:
-    inline void run(const Vertex source, const Vertex sink) noexcept {
-        clear();
-        terminal[FORWARD] = source;
-        terminal[BACKWARD] = sink;
+    inline void run() noexcept {
         initialize<FORWARD>();
         initialize<BACKWARD>();
-        run();
+        runAfterInitialize();
         cut.compute(distance);
     }
 
@@ -134,34 +125,12 @@ public:
         int flow = 0;
         for (const Edge edge : graph.edgesFrom(terminal[BACKWARD])) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
-            flow += graph.get(Capacity, reverseEdge) - residualCapacity[reverseEdge];
+            flow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
         }
         return flow;
     }
 
 private:
-    inline void clear() noexcept {
-        //TODO: Too slow?
-        residualCapacity = graph.get(Capacity);
-        Vector::fill(distance, 0);
-        treeData.clear();
-        clearDirectional<FORWARD>();
-        clearDirectional<BACKWARD>();
-    }
-
-    template<int DIRECTION>
-    inline void clearDirectional() noexcept {
-        maxDistance[DIRECTION] = 0;
-        clearQueue(Q[DIRECTION]);
-        clearQueue(nextQ[DIRECTION]);
-        clearQueue(orphans[DIRECTION]);
-    }
-
-    inline static void clearQueue(std::queue<Vertex>& queue) noexcept {
-        std::queue<Vertex> emptyQ;
-        std::swap(emptyQ, queue);
-    }
-
     template<int DIRECTION>
     inline void initialize() noexcept {
         setDistance<DIRECTION>(terminal[DIRECTION], 1);
@@ -170,7 +139,7 @@ private:
         nextQ[DIRECTION].push(terminal[DIRECTION]);
     }
 
-    inline void run() noexcept {
+    inline void runAfterInitialize() noexcept {
         while (true) {
             if (!grow<FORWARD>()) break;
             if (!grow<BACKWARD>()) break;
@@ -404,9 +373,10 @@ private:
     }
 
 private:
+    const MaxFlowInstance& instance;
     const StaticFlowGraph& graph;
     const int n;
-    Vertex terminal[2];
+    const Vertex terminal[2];
     std::vector<int> residualCapacity;
     std::vector<int> distance; // 1 for source, -1 for target, 0 for n-vertices
     int maxDistance[2];

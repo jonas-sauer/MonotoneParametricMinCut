@@ -12,6 +12,7 @@ int main(int argc, char** argv) {
     Shell::Shell shell;
     new LoadMaxFlowInstanceFromDimacs(shell);
     new RunPushRelabel(shell);
+    new TestParametricPushRelabel(shell);
     new RunIBFS(shell);
     new RunExcessesIBFS(shell);
     shell.run();

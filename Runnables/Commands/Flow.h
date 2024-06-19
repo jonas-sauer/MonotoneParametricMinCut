@@ -47,13 +47,63 @@ public:
 
     virtual void execute() noexcept {
         MaxFlowInstance instance(getParameter("Instance file"));
-        PushRelabel algorithm(instance.graph);
+        PushRelabel algorithm(instance);
         Timer timer;
-        algorithm.run(instance.source, instance.sink);
+        algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         std::cout << "#Source component: " << algorithm.getSourceComponent().size() << std::endl;
         std::cout << "#Sink component: " << algorithm.getSinkComponent().size() << std::endl;
         std::cout << "Flow value: " << algorithm.getFlowValue() << std::endl;
+    }
+};
+
+//TODO: Do this properly once we have true parametric instances
+class TestParametricPushRelabel : public ParameterizedCommand {
+
+public:
+    TestParametricPushRelabel(BasicShell& shell) :
+    ParameterizedCommand(shell, "testParametricPushRelabel", "temp") {
+        addParameter("Instance file");
+    }
+
+    virtual void execute() noexcept {
+        MaxFlowInstance instance(getParameter("Instance file"));
+        instance.maxParameter = 2;
+        Edge edgeFromSource = instance.graph.beginEdgeFrom(instance.source);
+        for (size_t i = 0; i < instance.graph.outDegree(instance.source); edgeFromSource++, i++) {
+            instance.sourceEdgeSlopes[i] = instance.getCapacity(edgeFromSource) / instance.maxParameter;
+            instance.graph.set(Capacity, edgeFromSource, 0);
+            instance.currentCapacity[edgeFromSource] = 0;
+        }
+        Edge edgeFromSink = instance.graph.beginEdgeFrom(instance.sink);
+        for (size_t i = 0; i < instance.graph.outDegree(instance.sink); edgeFromSink++, i++) {
+            const Edge edgeToSink = instance.graph.get(ReverseEdge, edgeFromSink);
+            instance.sinkEdgeSlopes[i] = -instance.getCapacity(edgeToSink) / instance.maxParameter;
+        }
+
+        PushRelabel algorithm(instance);
+        run(algorithm, false);
+
+        for (int i = 1; i <= instance.maxParameter; i++) {
+            instance.setCurrentParameter(i);
+            run(algorithm, true);
+            PushRelabel newAlgorithm(instance);
+            run(newAlgorithm, false);
+        }
+    }
+
+private:
+    inline void run(PushRelabel& algorithm, const bool update) const noexcept {
+        Timer timer;
+        if (update) {
+            algorithm.continueAfterUpdate();
+        } else {
+            algorithm.run();
+        }
+        std::cout << "\tTime: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
+        std::cout << "\t#Source component: " << algorithm.getSourceComponent().size() << std::endl;
+        std::cout << "\t#Sink component: " << algorithm.getSinkComponent().size() << std::endl;
+        std::cout << "\tFlow value: " << algorithm.getFlowValue() << std::endl;
     }
 };
 
@@ -67,9 +117,9 @@ public:
 
     virtual void execute() noexcept {
         MaxFlowInstance instance(getParameter("Instance file"));
-        IBFS algorithm(instance.graph);
+        IBFS algorithm(instance);
         Timer timer;
-        algorithm.run(instance.source, instance.sink);
+        algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         std::cout << "#Source component: " << algorithm.getSourceComponent().size() << std::endl;
         std::cout << "#Sink component: " << algorithm.getSinkComponent().size() << std::endl;
@@ -87,9 +137,9 @@ public:
 
     virtual void execute() noexcept {
         MaxFlowInstance instance(getParameter("Instance file"));
-        ExcessesIBFS algorithm(instance.graph);
+        ExcessesIBFS algorithm(instance);
         Timer timer;
-        algorithm.run(instance.source, instance.sink);
+        algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         std::cout << "#Source component: " << algorithm.getSourceComponent().size() << std::endl;
         std::cout << "#Sink component: " << algorithm.getSinkComponent().size() << std::endl;
