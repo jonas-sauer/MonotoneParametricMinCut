@@ -378,7 +378,7 @@ private:
     const int n;
     const Vertex terminal[2];
     std::vector<int> residualCapacity;
-    std::vector<int> distance; // 1 for source, -1 for target, 0 for n-vertices
+    std::vector<int> distance; // 1 for source, -1 for sink, 0 for n-vertices
     int maxDistance[2];
     std::vector<Edge> currentEdge; //TODO: Can be represented implicitly, but unclear if that saves time
     TreeData treeData;

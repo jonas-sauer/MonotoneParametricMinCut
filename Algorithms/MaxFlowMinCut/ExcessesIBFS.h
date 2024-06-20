@@ -118,12 +118,6 @@ class ExcessesIBFS {
     struct Cut {
         Cut(const int n) : inSinkComponent(n, false) {}
 
-        inline void compute(const std::vector<int>& dist) {
-            for (size_t i = 0; i < dist.size(); i++) {
-                inSinkComponent[i] = (dist[i] < 0);
-            }
-        }
-
         inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
@@ -167,6 +161,8 @@ public:
     }
 
     inline void continueAfterUpdate() noexcept {
+        std::swap(Q[FORWARD], nextQ[FORWARD]);
+        std::swap(Q[BACKWARD], nextQ[BACKWARD]);
         updateCapacities();
         runAfterInitialize();
     }
@@ -196,7 +192,7 @@ private:
         addExcess<DIRECTION>(terminal[DIRECTION], -INFTY);
         maxDistance[DIRECTION] = 1;
         currentEdge[terminal[DIRECTION]] = graph.beginEdgeFrom(terminal[DIRECTION]);
-        nextQ[DIRECTION].push(terminal[DIRECTION]);
+        nextQ[DIRECTION].emplace_back(terminal[DIRECTION]);
     }
 
     inline void updateCapacities() noexcept {
@@ -227,10 +223,14 @@ private:
                 residualCapacity[edgeFromSink] -= add;
                 residualCapacity[edgeToSink] = 0;
                 excess[from] += add;
-                if (isVertexInTree<FORWARD>(from)) {
-                    treeData.removeVertex(from);
-                } else {
+                if (isVertexInTree<BACKWARD>(from)) {
                     excessVertices[BACKWARD].addVertex(from, getDistance<BACKWARD>(from));
+                } else {
+                    treeData.removeVertex(from);
+                    if (distance[from] == 0) {
+                        setDistance<FORWARD>(from, maxDistance[FORWARD]);
+                        nextQ[FORWARD].emplace_back(from);
+                    }
                 }
             }
             if (residualCapacity[edgeToSink] <= 0 && treeData.parentEdge[from] == edgeToSink) {
@@ -242,33 +242,43 @@ private:
     }
 
     inline void runAfterInitialize() noexcept {
-        bool growForward = true;
-        bool growBackward = true;
-        while (growForward || growBackward) {
-            /*size_t inSource = 0;
-            size_t inSink = 0;
-            size_t free = 0;
-            for (const Vertex vertex : graph.vertices()) {
-                if (distance[vertex] == 0) free++;
-                else if (distance[vertex] < 0) inSink++;
-                else inSource++;
-            }
-            std::cout << "S: " << inSource << ", N: " << free << ", T: " << inSink << std::endl;*/
-
+        while (true) {
             //TODO: Clever alternation
-            if (growForward && !grow<FORWARD>()) growForward = false;
-            if (growBackward && !grow<BACKWARD>()) growBackward = false;
+            if (!grow<FORWARD>()) {
+                std::swap(Q[BACKWARD], nextQ[BACKWARD]);
+                break;
+            }
+            if (!grow<BACKWARD>()) break;
         }
-        cut.compute(distance);
+        computeCut();
+    }
+
+    inline void computeCut() noexcept {
+        std::vector<bool>(n, false).swap(cut.inSinkComponent);
+        std::queue<Vertex> queue;
+        queue.push(terminal[BACKWARD]);
+        cut.inSinkComponent[terminal[BACKWARD]] = true;
+        while (!queue.empty()) {
+            const Vertex vertex = queue.front();
+            queue.pop();
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                const Edge edgeToSink = graph.get(ReverseEdge, edge);
+                if (!isEdgeResidual(edgeToSink)) continue;
+                if (!cut.inSinkComponent[to]) {
+                    queue.push(to);
+                    cut.inSinkComponent[to] = true;
+                }
+            }
+        }
     }
 
     template<int DIRECTION>
     inline bool grow() {
+        Q[DIRECTION].clear();
         std::swap(Q[DIRECTION], nextQ[DIRECTION]);
         maxDistance[DIRECTION]++;
-        while (!Q[DIRECTION].empty()) {
-            const Vertex from = Q[DIRECTION].front();
-            Q[DIRECTION].pop();
+        for (const Vertex from : Q[DIRECTION]) {
             if (getDistance<DIRECTION>(from) != maxDistance[DIRECTION] - 1) continue;
 
             for (Edge edge = graph.beginEdgeFrom(from); edge < graph.endEdgeFrom(from); edge++) {
@@ -279,7 +289,7 @@ private:
                     setDistance<DIRECTION>(to, maxDistance[DIRECTION]);
                     currentEdge[to] = graph.beginEdgeFrom(to);
                     treeData.addVertex(from, to, edgeTowardsSink);
-                    nextQ[DIRECTION].push(to);
+                    nextQ[DIRECTION].emplace_back(to);
                 } else if (!isVertexInTree<DIRECTION>(to)) {
                     const Vertex sourceEndpoint = (DIRECTION == BACKWARD) ? to : from;
                     const Vertex sinkEndpoint = (DIRECTION == BACKWARD) ? from : to;
@@ -289,7 +299,11 @@ private:
                 }
             }
         }
-        return !nextQ[DIRECTION].empty();
+        if (nextQ[DIRECTION].empty()) {
+            maxDistance[DIRECTION]--;
+            return false;
+        }
+        return true;
     }
 
     inline void augment(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) noexcept {
@@ -402,7 +416,7 @@ private:
             const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
             if (!isEdgeResidual(edgeTowardsSink)) continue;
             const Vertex from = graph.get(ToVertex, edge);
-            if (!isEdgeAdmissible<DIRECTION>(orphan, from)) continue;
+            if (distance[from] == 0 || !isEdgeAdmissible<DIRECTION>(orphan, from)) continue;
             treeData.addVertex(from, orphan, edgeTowardsSink);
             currentEdge[orphan] = edge;
             return true;
@@ -438,7 +452,7 @@ private:
         currentEdge[orphan] = newEdge;
         treeData.addVertex(newParent, orphan, newEdgeTowardsSink);
         if (newDistance + 1 == maxDistance[DIRECTION])
-            nextQ[DIRECTION].push(orphan);
+            nextQ[DIRECTION].emplace_back(orphan);
         return true;
     }
 
@@ -447,7 +461,7 @@ private:
         if (getExcess<DIRECTION>(orphan) > 0) {
             excessVertices[DIRECTION].removeVertex(orphan, getDistance<DIRECTION>(orphan));
             setDistance<!DIRECTION>(orphan, maxDistance[!DIRECTION]);
-            nextQ[!DIRECTION].push(orphan);
+            nextQ[!DIRECTION].emplace_back(orphan);
             currentEdge[orphan] = graph.beginEdgeFrom(orphan);
         } else {
             distance[orphan] = 0;
@@ -545,8 +559,22 @@ private:
     }
 
     inline void checkChildrenRelation() const noexcept {
+        std::vector<std::vector<Vertex>> childrenByParent(n);
         for (const Vertex vertex : graph.vertices()) {
-            checkChildrenRelation(vertex);
+            if (treeData.parentVertex[vertex] != noVertex) {
+                childrenByParent[treeData.parentVertex[vertex]].emplace_back(vertex);
+            }
+        }
+        for (const Vertex vertex : graph.vertices()) {
+            std::vector<Vertex> children;
+            Vertex child = treeData.firstChild[vertex];
+            while (child != noVertex) {
+                children.emplace_back(child);
+                child = treeData.nextSibling[child];
+            }
+            std::sort(children.begin(), children.end());
+            std::sort(childrenByParent[vertex].begin(), childrenByParent[vertex].end());
+            Ensure(Vector::equals(children, childrenByParent[vertex]), "Child and parent relations are inconsistent!");
         }
     }
 
@@ -608,8 +636,8 @@ private:
     int maxDistance[2];
     std::vector<Edge> currentEdge; //TODO: Can be represented implicitly, but unclear if that saves time
     TreeData treeData;
-    std::queue<Vertex> Q[2];
-    std::queue<Vertex> nextQ[2];
+    std::vector<Vertex> Q[2];
+    std::vector<Vertex> nextQ[2];
     ExcessBuckets excessVertices[2];
     std::queue<Vertex> orphans[2];
     Cut cut;

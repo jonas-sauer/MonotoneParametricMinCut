@@ -68,7 +68,7 @@ public:
 
     virtual void execute() noexcept {
         MaxFlowInstance instance(getParameter("Instance file"));
-        instance.maxParameter = 2;
+        instance.maxParameter = 10;
         Edge edgeFromSource = instance.graph.beginEdgeFrom(instance.source);
         for (size_t i = 0; i < instance.graph.outDegree(instance.source); edgeFromSource++, i++) {
             instance.sourceEdgeSlopes[i] = instance.getCapacity(edgeFromSource) / instance.maxParameter;

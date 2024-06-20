@@ -22,7 +22,9 @@
 *.data
 *.exe
 cmake-build-debug/
+cmake-build-release/
 *readcache
+Data/
 MapServer/HalloWorldMapServer
 Runnables/*.txt
 Runnables/test.txt
