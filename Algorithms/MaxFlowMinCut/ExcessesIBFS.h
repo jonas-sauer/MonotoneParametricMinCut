@@ -207,8 +207,7 @@ private:
                 const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
                 residualCapacity[edgeFromSource] = 0;
                 residualCapacity[edgeToSource] += add;
-                excess[to] += add;
-                excessVertices[BACKWARD].addVertex(to, getDistance<BACKWARD>(to));
+                addExcessToSinkVertex(to, add);
             }
         }
 
@@ -222,10 +221,10 @@ private:
                 const int add = -residualCapacity[edgeToSink];
                 residualCapacity[edgeFromSink] -= add;
                 residualCapacity[edgeToSink] = 0;
-                excess[from] += add;
                 if (isVertexInTree<BACKWARD>(from)) {
-                    excessVertices[BACKWARD].addVertex(from, getDistance<BACKWARD>(from));
+                    addExcessToSinkVertex(from, add);
                 } else {
+                    excess[from] += add;
                     treeData.removeVertex(from);
                     if (distance[from] == 0) {
                         setDistance<FORWARD>(from, maxDistance[FORWARD]);
@@ -239,6 +238,16 @@ private:
         }
         adoptOrphans<BACKWARD>();
         drainExcesses<BACKWARD>();
+    }
+
+    inline void addExcessToSinkVertex(const Vertex vertex, const int amount) noexcept {
+        excess[vertex] += amount;
+        if (treeData.parentVertex[vertex] == noVertex && excess[vertex] >= 0) {
+            makeOrphan<BACKWARD>(vertex);
+        }
+        if (excess[vertex] > 0) {
+            excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+        }
     }
 
     inline void runAfterInitialize() noexcept {
@@ -351,6 +360,7 @@ private:
     inline void drainExcesses() noexcept {
         while (!excessVertices[DIRECTION].empty()) {
             const Vertex vertex = excessVertices[DIRECTION].front();
+            Assert(excess[vertex] != 0, "Trying to drain zero excess!");
             drainExcess<DIRECTION>(vertex);
             adoptOrphans<DIRECTION>();
         }

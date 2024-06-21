@@ -85,6 +85,7 @@ public:
         run(algorithm, false);
 
         for (int i = 1; i <= instance.maxParameter; i++) {
+            std::cout << "Instance " << i << std::endl;
             instance.setCurrentParameter(i);
             run(algorithm, true);
             PushRelabel newAlgorithm(instance);
@@ -158,7 +159,7 @@ public:
 
     virtual void execute() noexcept {
         MaxFlowInstance instance(getParameter("Instance file"));
-        instance.maxParameter = 2;
+        instance.maxParameter = 10;
         Edge edgeFromSource = instance.graph.beginEdgeFrom(instance.source);
         for (size_t i = 0; i < instance.graph.outDegree(instance.source); edgeFromSource++, i++) {
             instance.sourceEdgeSlopes[i] = instance.getCapacity(edgeFromSource) / instance.maxParameter;
@@ -175,6 +176,7 @@ public:
         run(algorithm, false);
 
         for (int i = 1; i <= instance.maxParameter; i++) {
+            std::cout << "Instance " << i << std::endl;
             instance.setCurrentParameter(i);
             run(algorithm, true);
             ExcessesIBFS newAlgorithm(instance);
