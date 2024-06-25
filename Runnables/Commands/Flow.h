@@ -16,6 +16,7 @@
 #include "../../Algorithms/MaxFlowMinCut/PushRelabel.h"
 #include "../../Algorithms/MaxFlowMinCut/IBFS.h"
 #include "../../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
+#include "../../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
 
 using namespace Shell;
 
@@ -149,11 +150,11 @@ public:
 };
 
 //TODO: Do this properly once we have true parametric instances
-class TestParametricExcessesIBFS : public ParameterizedCommand {
+class TestRestartableIBFS : public ParameterizedCommand {
 
 public:
-    TestParametricExcessesIBFS(BasicShell& shell) :
-        ParameterizedCommand(shell, "testParametricExcessesIBFS", "temp") {
+    TestRestartableIBFS(BasicShell& shell) :
+        ParameterizedCommand(shell, "testRestartableIBFS", "temp") {
         addParameter("Instance file");
     }
 
@@ -172,20 +173,20 @@ public:
             instance.sinkEdgeSlopes[i] = -instance.getCapacity(edgeToSink) / instance.maxParameter;
         }
 
-        ExcessesIBFS algorithm(instance);
+        RestartableIBFS algorithm(instance);
         run(algorithm, false);
 
         for (int i = 1; i <= instance.maxParameter; i++) {
             std::cout << "Instance " << i << std::endl;
             instance.setCurrentParameter(i);
             run(algorithm, true);
-            ExcessesIBFS newAlgorithm(instance);
+            RestartableIBFS newAlgorithm(instance);
             run(newAlgorithm, false);
         }
     }
 
 private:
-    inline void run(ExcessesIBFS& algorithm, const bool update) const noexcept {
+    inline void run(RestartableIBFS& algorithm, const bool update) const noexcept {
         Timer timer;
         if (update) {
             algorithm.continueAfterUpdate();

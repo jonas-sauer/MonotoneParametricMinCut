@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
     new TestParametricPushRelabel(shell);
     new RunIBFS(shell);
     new RunExcessesIBFS(shell);
-    new TestParametricExcessesIBFS(shell);
+    new TestRestartableIBFS(shell);
     shell.run();
     return 0;
 }

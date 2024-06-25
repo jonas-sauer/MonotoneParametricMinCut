@@ -10,7 +10,7 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
-class ExcessesIBFS {
+class RestartableIBFS {
 
     struct ExcessBuckets {
         ExcessBuckets(const int n) :
@@ -118,12 +118,6 @@ class ExcessesIBFS {
     struct Cut {
         Cut(const int n) : inSinkComponent(n, false) {}
 
-        inline void compute(const std::vector<int>& dist) {
-            for (size_t i = 0; i < dist.size(); i++) {
-                inSinkComponent[i] = dist[i] < 0;
-            }
-        }
-
         inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
@@ -144,7 +138,7 @@ class ExcessesIBFS {
     };
 
 public:
-    explicit ExcessesIBFS(const MaxFlowInstance& instance) :
+    explicit RestartableIBFS(const MaxFlowInstance& instance) :
         instance(instance),
         graph(instance.graph),
         n(graph.numVertices()),
@@ -166,6 +160,13 @@ public:
         runAfterInitialize();
     }
 
+    inline void continueAfterUpdate() noexcept {
+        std::swap(Q[FORWARD], nextQ[FORWARD]);
+        std::swap(Q[BACKWARD], nextQ[BACKWARD]);
+        updateCapacities();
+        runAfterInitialize();
+    }
+
     inline std::vector<Vertex> getSourceComponent() const noexcept {
         return cut.getSourceComponent();
     }
@@ -177,14 +178,9 @@ public:
     //TODO: Maintain the flow value throughout the algorithm.
     inline int getFlowValue() const noexcept {
         int flow = 0;
-        for (const Vertex vertex : graph.vertices()) {
-            if (cut.inSinkComponent[vertex]) continue;
-            for (const Edge edge : graph.edgesFrom(vertex)) {
-                const Vertex to = graph.get(ToVertex, edge);
-                if (!cut.inSinkComponent[to]) continue;
-                Assert(residualCapacity[edge] == 0, "Cut edge is not saturated!");
-                flow += instance.getCapacity(edge);
-            }
+        for (const auto [edge, from] : graph.edgesWithFromVertex()) {
+            const Vertex to = graph.get(ToVertex, edge);
+            if (distance[from] >= 0 && distance[to] < 0) flow += instance.getCapacity(edge) - residualCapacity[edge];
         }
         return flow;
     }
@@ -199,6 +195,71 @@ private:
         nextQ[DIRECTION].emplace_back(terminal[DIRECTION]);
     }
 
+    inline void updateCapacities() noexcept {
+        Edge edgeFromSource = graph.beginEdgeFrom(terminal[FORWARD]);
+        for (size_t i = 0; i < instance.sourceDiff.size(); i++, edgeFromSource++) {
+            Assert(instance.sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
+            if (instance.sourceDiff[i] == 0) continue;
+            residualCapacity[edgeFromSource] += instance.sourceDiff[i];
+            const Vertex to = graph.get(ToVertex, edgeFromSource);
+            if (isVertexInTree<FORWARD>(to)) continue;
+            const int add = residualCapacity[edgeFromSource];
+            const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
+            residualCapacity[edgeFromSource] = 0;
+            residualCapacity[edgeToSource] += add;
+            excess[to] += add;
+            if (distance[to] == 0) {
+                handleFreeVertexExcess(to); //TODO: Is this necessary? Free vertices are not in sink component.
+            } else {
+                handleSinkVertexExcess(to);
+            }
+        }
+
+        Edge edgeFromSink = graph.beginEdgeFrom(terminal[BACKWARD]);
+        for (size_t i = 0; i < instance.sinkDiff.size(); i++, edgeFromSink++) {
+            Assert(instance.sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
+            const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
+            const Vertex from = graph.get(ToVertex, edgeFromSink);
+            residualCapacity[edgeToSink] += instance.sinkDiff[i];
+            if (residualCapacity[edgeToSink] < 0) {
+                const int add = -residualCapacity[edgeToSink];
+                residualCapacity[edgeFromSink] -= add;
+                residualCapacity[edgeToSink] = 0;
+                excess[from] += add;
+                if (distance[from] == 0) {
+                    handleFreeVertexExcess(from);
+                } else if (isVertexInTree<BACKWARD>(from)) {
+                    handleSinkVertexExcess(from);
+                } else {
+                    handleSourceVertexExcess(from);
+                }
+            }
+            if (residualCapacity[edgeToSink] <= 0 && treeData.parentEdge[from] == edgeToSink) {
+                makeOrphan<BACKWARD>(from);
+            }
+        }
+        adoptOrphans<BACKWARD>();
+        drainExcesses<BACKWARD>();
+    }
+
+    // Turn vertex into a root
+    inline void handleSourceVertexExcess(const Vertex vertex) noexcept {
+        treeData.removeVertex(vertex);
+    }
+
+    // Add vertex as a root to the source tree and continue the BFS from there
+    inline void handleFreeVertexExcess(const Vertex vertex) noexcept {
+        setDistance<FORWARD>(vertex, maxDistance[FORWARD]);
+        nextQ[FORWARD].emplace_back(vertex);
+    }
+
+    // Register the excess for draining.
+    inline void handleSinkVertexExcess(const Vertex vertex) noexcept {
+        Assert(excess[vertex] > 0, "Vertex does not have excess!");
+        Assert(treeData.parentVertex[vertex] != noVertex, "Sink component is not a tree!");
+        excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+    }
+
     inline void runAfterInitialize() noexcept {
         while (true) {
             //TODO: Clever alternation
@@ -208,7 +269,29 @@ private:
             }
             if (!grow<BACKWARD>()) break;
         }
-        cut.compute(distance);
+        computeCut();
+    }
+
+    inline void computeCut() noexcept {
+        std::vector<bool>(n, false).swap(cut.inSinkComponent);
+        std::queue<Vertex> queue;
+        queue.push(terminal[BACKWARD]);
+        cut.inSinkComponent[terminal[BACKWARD]] = true;
+        while (!queue.empty()) {
+            const Vertex vertex = queue.front();
+            queue.pop();
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                const Edge edgeToSink = graph.get(ReverseEdge, edge);
+                if (!isEdgeResidual(edgeToSink)) continue;
+                if (!cut.inSinkComponent[to]) {
+                    queue.push(to);
+                    cut.inSinkComponent[to] = true;
+                }
+            }
+        }
+
+        Assert(!cut.inSinkComponent[terminal[FORWARD]], "No cut found!");
     }
 
     template<int DIRECTION>
@@ -254,11 +337,12 @@ private:
 
     inline int findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
         auto[sourceBottleneck, sourceRoot] = findBottleneckCapacity(sourceEndpoint);
-        auto[sinkBottleneck, sinkRoot] = findBottleneckCapacity(sinkEndpoint);
-        if (sourceRoot == terminal[FORWARD] && sinkRoot == terminal[BACKWARD]) return residualCapacity[edgeTowardsSink];
-        else if (sourceRoot == terminal[FORWARD]) return std::min(sourceBottleneck, residualCapacity[edgeTowardsSink]);
-        else if (sinkRoot == terminal[BACKWARD]) return std::min(sinkBottleneck, residualCapacity[edgeTowardsSink]);
-        return std::min({excess[sourceRoot], sourceBottleneck, residualCapacity[edgeTowardsSink], sinkBottleneck, -excess[sinkRoot]});
+        int bottleneck = std::min({excess[sourceRoot], sourceBottleneck, residualCapacity[edgeTowardsSink]});
+        if (sourceRoot != terminal[FORWARD]) {
+            auto[sinkBottleneck, sinkRoot] = findBottleneckCapacity(sinkEndpoint);
+            bottleneck = std::min(bottleneck, sinkBottleneck);
+        }
+        return bottleneck;
     }
 
     inline std::pair<int, Vertex> findBottleneckCapacity(const Vertex start) const noexcept {
@@ -324,6 +408,7 @@ private:
     }
     template<int DIRECTION>
     inline void makeOrphan(const Vertex vertex) noexcept {
+        if (getExcess<DIRECTION>(vertex) > 0) Assert(DIRECTION == BACKWARD, "");
         orphans[DIRECTION].push(vertex);
         treeData.removeVertex(vertex);
     }
@@ -558,6 +643,7 @@ private:
 
     inline void checkFlowConservation(const Vertex vertex) const noexcept {
         if (vertex == terminal[FORWARD] || vertex == terminal[BACKWARD]) return;
+        if (distance[vertex] < 0) Assert(excess[vertex] >= 0, "Vertex in sink component has a deficit!");
         Assert(getInflow(vertex) == excess[vertex], "Flow conservation not fulfilled!");
     }
 

@@ -147,7 +147,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline bool grow() {
+    inline bool grow() noexcept {
         std::swap(Q[DIRECTION], nextQ[DIRECTION]);
         maxDistance[DIRECTION]++;
         while (!Q[DIRECTION].empty()) {
