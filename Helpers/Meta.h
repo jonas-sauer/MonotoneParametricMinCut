@@ -154,4 +154,9 @@ namespace Meta {
 
     template<typename T>
     using PlainType = std::remove_pointer_t<std::remove_cvref_t<T>>;
+
+    // DERIVED
+
+    template<class T, class U>
+    concept Derived = std::is_base_of<U, T>::value;
 }

@@ -130,6 +130,10 @@ public:
         return flow;
     }
 
+    inline const std::vector<int>& getResidualCapacities() const noexcept {
+        return residualCapacity;
+    }
+
 private:
     template<int DIRECTION>
     inline void initialize() noexcept {

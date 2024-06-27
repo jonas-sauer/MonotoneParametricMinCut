@@ -23,7 +23,8 @@ using WithViaVertex = List<Attribute<ViaVertex, Vertex>>;
 using WithViaVertexAndWeight = List<Attribute<ViaVertex, Vertex>, Attribute<Weight, int>>;
 using WithReverseEdgesAndViaVertex = List<Attribute<ReverseEdge, Edge>, Attribute<ViaVertex, Vertex>>;
 using WithReverseEdgesAndWeight = List<Attribute<ReverseEdge, Edge>, Attribute<Weight, int>>;
-using WithReverseEdgesAndCapacity = List<Attribute<ReverseEdge, Edge>, Attribute<Capacity, int>>;
+template<typename CAP>
+using WithReverseEdgesAndCapacity = List<Attribute<ReverseEdge, Edge>, Attribute<Capacity, CAP>>;
 
 using TransferGraph = StaticGraph<WithCoordinates, WithTravelTime>;
 using DynamicTransferGraph = DynamicGraph<WithCoordinates, WithTravelTime>;
@@ -33,9 +34,11 @@ using SimpleDynamicGraph = DynamicGraph<NoVertexAttributes, NoEdgeAttributes>;
 using SimpleStaticGraph = StaticGraph<NoVertexAttributes, NoEdgeAttributes>;
 using SimpleEdgeList = EdgeList<NoVertexAttributes, NoEdgeAttributes>;
 
-using DynamicFlowGraph = DynamicGraph<NoVertexAttributes, WithReverseEdgesAndCapacity>;
-using StaticFlowGraph = StaticGraph<NoVertexAttributes, WithReverseEdgesAndCapacity>;
-using FlowGraphEdgeList = EdgeList<NoVertexAttributes, WithReverseEdgesAndCapacity>;
+using DynamicFlowGraph = DynamicGraph<NoVertexAttributes, WithReverseEdgesAndCapacity<int>>;
+using StaticFlowGraph = StaticGraph<NoVertexAttributes, WithReverseEdgesAndCapacity<int>>;
+using FlowGraphEdgeList = EdgeList<NoVertexAttributes, WithReverseEdgesAndCapacity<int>>;
+template<typename CAP>
+using ParametricFlowGraph = StaticGraph<NoVertexAttributes, WithReverseEdgesAndCapacity<CAP>>;
 
 using CHConstructionGraph = EdgeList<NoVertexAttributes, WithViaVertexAndWeight>;
 using CHCoreGraph = DynamicGraph<NoVertexAttributes, WithViaVertexAndWeight>;
