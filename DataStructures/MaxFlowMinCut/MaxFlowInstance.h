@@ -162,12 +162,12 @@ public:
         if (steps > 0) {
             for (const Edge edge : graph.edgesFrom(source)) {
                 const FlowType capacity = staticInstance.graph.get(Capacity, edge);
-                graph.set(Capacity, edge, FlowFunction(0, capacity / steps));
+                graph.set(Capacity, edge, FlowFunction(capacity / steps, 0));
             }
             for (const Edge edge : graph.edgesFrom(sink)) {
                 const Edge reverseEdge = graph.get(ReverseEdge, edge);
                 const FlowType capacity = staticInstance.graph.get(Capacity, reverseEdge);
-                graph.set(Capacity, reverseEdge, FlowFunction(capacity, -capacity / steps));
+                graph.set(Capacity, reverseEdge, FlowFunction(-capacity / steps, capacity));
             }
         }
     }
@@ -299,6 +299,7 @@ public:
         source(instance.source),
         sink(instance.sink),
         alpha(alpha),
+        currentCapacity(graph.numEdges()),
         sourceDiff(graph.outDegree(source), 0),
         sinkDiff(graph.outDegree(sink), 0) {
         for (const Edge edge : instance.graph.edges()) {
@@ -328,16 +329,18 @@ public:
         alpha = newAlpha;
         Edge edgeFromSource = graph.beginEdgeFrom(source);
         for (size_t i = 0; i < sourceDiff.size(); i++, edgeFromSource++) {
-            const int newCapacity = instance.getCapacity(edgeFromSource).eval(alpha);
+            const FlowType newCapacity = instance.getCapacity(edgeFromSource).eval(alpha);
             sourceDiff[i] = newCapacity - currentCapacity[edgeFromSource];
+            Assert(sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
             currentCapacity[edgeFromSource] = newCapacity;
         }
         Edge edgeFromSink = graph.beginEdgeFrom(sink);
         for (size_t i = 0; i < sinkDiff.size(); i++, edgeFromSink++) {
             const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
-            const int newCapacity = instance.getCapacity(edgeToSink).eval(alpha);
+            const FlowType newCapacity = instance.getCapacity(edgeToSink).eval(alpha);
             Assert(newCapacity >= 0, "Negative capacity!");
             sinkDiff[i] = newCapacity - currentCapacity[edgeToSink];
+            Assert(sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
             currentCapacity[edgeToSink] = newCapacity;
         }
     }

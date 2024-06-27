@@ -154,7 +154,7 @@ namespace pmf {
             return {-this->a, -this->b};
         }
 
-        linearFlowFunction operator=(const int rhs) {
+        linearFlowFunction& operator=(const int rhs) {
             a = 0;
             b = rhs;
             return *this;
@@ -174,6 +174,14 @@ namespace pmf {
 
         bool operator==(const linearFlowFunction &rhs) const {
             return (std::abs(this->a - rhs.a) < epsilon) && (std::abs(this->b - rhs.b) < epsilon);
+        }
+
+        inline void serialize(IO::Serialization& serialize) const noexcept {
+            serialize(a, b);
+        }
+
+        inline void deserialize(IO::Deserialization& deserialize) noexcept {
+            deserialize(a, b);
         }
 
     private:

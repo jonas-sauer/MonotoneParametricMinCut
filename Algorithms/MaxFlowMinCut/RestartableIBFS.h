@@ -383,7 +383,7 @@ private:
     inline void drainExcesses() noexcept {
         while (!excessVertices[DIRECTION].empty()) {
             const Vertex vertex = excessVertices[DIRECTION].front();
-            Assert(hasPositiveExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
+            Assert(hasNonNegativeExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
             drainExcess<DIRECTION>(vertex);
             adoptOrphans<DIRECTION>();
         }
@@ -394,7 +394,7 @@ private:
         while (treeData.parentVertex[vertex] != noVertex) {
             const Vertex parentVertex = treeData.parentVertex[vertex];
             const Edge edgeTowardsSink = treeData.parentEdge[vertex];
-            Assert(isEdgeResidual(edgeTowardsSink), "Tree edge is not residual!");
+            Assert(isEdgeResidualLax(edgeTowardsSink), "Tree edge is not residual!");
             const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
             const FlowType exc = getExcess<DIRECTION>(vertex);
             const FlowType res = residualCapacity[edgeTowardsSink];
@@ -536,7 +536,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline int getExcess(const Vertex vertex) const noexcept {
+    inline FlowType getExcess(const Vertex vertex) const noexcept {
         return (DIRECTION == FORWARD) ? -excess[vertex] : excess[vertex];
     }
 
@@ -560,6 +560,10 @@ private:
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
         return pmf::isNumberPositive(residualCapacity[edge]);
+    }
+
+    inline bool isEdgeResidualLax(const Edge edge) const noexcept {
+        return !pmf::isNumberNegative(residualCapacity[edge]);
     }
 
     template<int DIRECTION>

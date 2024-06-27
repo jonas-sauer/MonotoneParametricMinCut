@@ -229,6 +229,7 @@ private:
                 if (dist_[w] != INFTY) continue;
                 dist_[w] = dist_[v] + 1;
                 treeData_.addVertex(v, w, revE);
+                alphaQ_.push(rootAlpha_[w]);
                 queue.emplace_back(w);
             }
         }
@@ -237,7 +238,7 @@ private:
     void updateTree(const double nextAlpha) {
         assert(orphans_.empty());
         while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
-            const Vertex v(alphaQ_.pop() - &(rootAlpha_[0]));
+            const Vertex v(alphaQ_.front() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
             assert(e != noEdge);
             assert(!isEdgeResidual(e, nextAlpha));
@@ -253,6 +254,7 @@ private:
             const Vertex to = graph_.get(ToVertex, e);
             if (!isEdgeAdmissible(v, to)) continue;
             treeData_.addVertex(to, v, e);
+            alphaQ_.push(&(rootAlpha_[v]));
             currentEdge_[v] = e;
             return true;
         }
@@ -264,8 +266,6 @@ private:
         Edge e_min = noEdge;
         Vertex v_min = noVertex;
 
-        assert(currentEdge_[v] == graph_.endEdgeFrom(v));
-
         for (const Edge e : graph_.edgesFrom(v)) {
             if (!isEdgeResidual(e, nextAlpha)) continue;
             const Vertex to = graph_.get(ToVertex, e);
@@ -276,15 +276,15 @@ private:
             }
         }
 
-        if (d_min > graph_.numVertices() - 1) {
-            dist_[v] = d_min;
+        if (d_min > static_cast<uint>(n) - 1) {
             return false;
         }
 
         assert(d_min >= dist_[v]);
-        excessVertices_.increaseBucket(v, dist_[v], d_min + 1);
+        excessVertices_.increaseBucket(v, dist_[v], d_min + 1); //TODO Only if it has excess
         dist_[v] = d_min + 1;
         treeData_.addVertex(v_min, v, e_min);
+        alphaQ_.push(&(rootAlpha_[v]));
         currentEdge_[v] = e_min;
         return true;
     }
@@ -312,11 +312,18 @@ private:
         }
     }
 
+    void checkQueue() {
+        for (const Vertex v : graph_.vertices()) {
+            if (treeData_.edgeToParent_[v] == noEdge) continue;
+            assert(alphaQ_.contains(&rootAlpha_[v]));
+        }
+    }
+
     void drainExcess(const double nextAlpha) {
         while (!excessVertices_.empty()) {
             const Vertex v = excessVertices_.pop();
+            if (v == sink_) continue;
             assert(dist_[v] != INFTY);
-            assert(!(excess_at_vertex_[v] == FlowFunction(0)));
 
             const Edge e = treeData_.edgeToParent_[v];
             const Edge revE = graph_.get(ReverseEdge, e);
@@ -324,8 +331,10 @@ private:
 
             residualCapacity_[e] -= excess_at_vertex_[v];
             residualCapacity_[revE] += excess_at_vertex_[v];
-            excess_at_vertex_[w] += excess_at_vertex_[v];
-            excessVertices_.addVertex(w, dist_[w]);
+            if (w != sink_) {
+                excess_at_vertex_[w] += excess_at_vertex_[v];
+                excessVertices_.addVertex(w, dist_[w]);
+            }
             excess_at_vertex_[v] = FlowFunction(0);
             recalculateRootAlpha(v, e, nextAlpha);
         }
@@ -341,6 +350,7 @@ private:
         setResidualCapacity(e, newResidualCapacity);
         clearRootAlpha(from);
         orphans_.emplace_back(from);
+        assert(dist_[from] != INFTY);
     }
 
     void setResidualCapacity(const Edge e, const FlowFunction& newResidualCapacity) {
@@ -360,7 +370,7 @@ private:
 
     void clearRootAlpha(const Vertex v) {
         rootAlpha_[v].value_ = INFTY;
-        alphaQ_.remove(&rootAlpha_[v]);
+        alphaQ_.remove(&rootAlpha_[v]); //TODO Only if value was not already infty. Ensure that vertices with rootAlpha infty are never in the queue
     }
 
     bool isEdgeAdmissible(const Vertex from, const Vertex to) const {

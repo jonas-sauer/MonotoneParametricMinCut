@@ -230,7 +230,7 @@ public:
 
     virtual void execute() noexcept {
         ParametricInstance instance(getParameter("Instance file"));
-        ParametricIBFS algorithm(instance);
+        ParametricIBFS<ParametricInstance::FlowFunction> algorithm(instance);
         Timer timer;
         algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;

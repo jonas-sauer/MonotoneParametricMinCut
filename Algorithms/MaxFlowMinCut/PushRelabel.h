@@ -347,7 +347,7 @@ private:
     inline void makeVertexActive(const Vertex vertex) noexcept {
         if (vertex == sinkVertex) return;
         Assert(distance[vertex] < n, "Distance label too high!");
-        Assert(pmf::isNumberPositive(excess[vertex]), "Vertex does not have excess!");
+        Assert(excess[vertex] > 0, "Vertex does not have excess!");
         vertexBuckets.activateVertex(vertex, distance[vertex]);
     }
 
