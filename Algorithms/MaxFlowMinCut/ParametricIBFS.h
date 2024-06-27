@@ -19,6 +19,8 @@ class ParametricIBFS {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using FlowGraph = ParametricFlowGraph<FlowFunction>;
+    using StaticWrapper = ParametricToStaticMaxFlowInstanceWrapper<FlowFunction>;
+    using IBFSType = IBFS<StaticWrapper>;
 
 private:
     struct ExcessBuckets {
@@ -28,7 +30,7 @@ private:
 
         inline void addVertex(const Vertex vertex, const int dist) noexcept {
             if (positionOfVertex_[vertex] != -1) return;
-            if (dist >= buckets_.size()) buckets_.resize(dist + 1);
+            if (static_cast<size_t>(dist) >= buckets_.size()) buckets_.resize(dist + 1);
             positionOfVertex_[vertex] = buckets_[dist].size();
             buckets_[dist].emplace_back(vertex);
         }
@@ -45,13 +47,13 @@ private:
 
         inline void increaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
             Assert(newDist > oldDist, "Distance has not increased!");
-            Assert(static_cast<size_t>(positionOfVertex[vertex]) < buckets[oldDist].size(), "Vertex is not in bucket!");
-            Assert(buckets[oldDist][positionOfVertex[vertex]] == vertex, "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(positionOfVertex_[vertex]) < buckets_[oldDist].size(), "Vertex is not in bucket!");
+            Assert(buckets_[oldDist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
             const Vertex other = buckets_[oldDist].back();
             positionOfVertex_[other] = positionOfVertex_[vertex];
             buckets_[oldDist][positionOfVertex_[vertex]] = other;
             buckets_[oldDist].pop_back();
-            if (newDist >= buckets_.size()) buckets_.resize(newDist + 1);
+            if (static_cast<size_t>(newDist) >= buckets_.size()) buckets_.resize(newDist + 1);
             positionOfVertex_[vertex] = buckets_[newDist].size();
             buckets_[newDist].emplace_back(vertex);
         }
@@ -121,14 +123,17 @@ private:
     };
 
 public:
-    ParametricIBFS(const FlowGraph& graph, const double alphaMin, const double alphaMax, const Vertex source, const Vertex sink) :
-        graph_(graph),
+    ParametricIBFS(const ParametricMaxFlowInstance<FlowFunction>& instance) :
+        instance_(instance),
+        graph_(instance.graph),
+        source_(instance.source),
+        sink_(instance.sink),
+        alphaMin_(instance.alphaMin),
+        alphaMax_(instance.alphaMax),
         n(graph_.numVertices()),
-        alphaMin_(alphaMin),
-        alphaMax_(alphaMax),
-        source_(source),
-        sink_(sink),
-        residualCapacity_(graph_.get(Capacity)),
+        wrapper(instance, instance.alphaMin),
+        initialFlow(wrapper),
+        residualCapacity_(instance_.getCurrentCapacities()),
         dist_(n, INFTY),
         excessVertices_(n),
         thetaByVertex_(n, INFTY),
@@ -167,8 +172,6 @@ public:
 
 private:
     void initialize() {
-        //TODO Invalid initialization
-        IBFS initialFlow(graph_, source_, sink_, alphaMin_);
         initialFlow.run();
         const std::vector<double>& initialResidualCapacity = initialFlow.getResidualCapacities();
         // TODO Obtain source and sink component from initialFlow
@@ -182,7 +185,7 @@ private:
             for (const Edge e : graph_.edgesFrom(from)) {
                 const Vertex to = graph_.get(ToVertex, e);
                 if (dist_[to] == INFTY) continue;
-                const Edge revE = graph_.get(ToVertex, e);
+                const Edge revE = graph_.get(ReverseEdge, e);
                 if (dist_[from] == INFTY) {
                     if (dist_[to] == INFTY) continue;
                     // Cut edge
@@ -233,8 +236,8 @@ private:
 
     void updateTree(const double nextAlpha) {
         assert(orphans_.empty());
-        while (!alphaQ_->empty() && alphaQ_.front()->value == nextAlpha) {
-            const Vertex v = alphaQ_.pop() - &(rootAlpha_[0]);
+        while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
+            const Vertex v(alphaQ_.pop() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
             assert(e != noEdge);
             assert(!isEdgeResidual(e, nextAlpha));
@@ -261,7 +264,7 @@ private:
         Edge e_min = noEdge;
         Vertex v_min = noVertex;
 
-        assert(currentEdge[v] == graph.endEdgeFrom(v));
+        assert(currentEdge_[v] == graph_.endEdgeFrom(v));
 
         for (const Edge e : graph_.edgesFrom(v)) {
             if (!isEdgeResidual(e, nextAlpha)) continue;
@@ -369,10 +372,14 @@ private:
     }
 
 private:
+    const ParametricMaxFlowInstance<FlowFunction>& instance_;
     const FlowGraph& graph_;
+    const Vertex& source_, sink_;
+    const double& alphaMin_, alphaMax_;
     const int n;
-    const double alphaMin_, alphaMax_;
-    const Vertex source_, sink_;
+
+    StaticWrapper wrapper;
+    IBFSType initialFlow;
 
     std::vector<FlowFunction> residualCapacity_;
     std::vector<uint> dist_;

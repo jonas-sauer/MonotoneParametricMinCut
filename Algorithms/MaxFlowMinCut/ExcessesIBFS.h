@@ -10,8 +10,15 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
+template<typename MAX_FLOW_INSTANCE>
 class ExcessesIBFS {
 
+public:
+    using MaxFlowInstance = MAX_FLOW_INSTANCE;
+    using FlowType = MaxFlowInstance::FlowType;
+    using GraphType = MaxFlowInstance::GraphType;
+
+private:
     struct ExcessBuckets {
         ExcessBuckets(const int n) :
             buckets(n), positionOfVertex(n, -1), maxBucket(-1) {
@@ -149,7 +156,7 @@ public:
         graph(instance.graph),
         n(graph.numVertices()),
         terminal{instance.source, instance.sink},
-        residualCapacity(instance.currentCapacity),
+        residualCapacity(instance.getCurrentCapacities()),
         distance(n, 0),
         excess(n, 0),
         maxDistance{0, 0},
@@ -175,14 +182,14 @@ public:
     }
 
     //TODO: Maintain the flow value throughout the algorithm.
-    inline int getFlowValue() const noexcept {
-        int flow = 0;
+    inline FlowType getFlowValue() const noexcept {
+        FlowType flow = 0;
         for (const Vertex vertex : graph.vertices()) {
             if (cut.inSinkComponent[vertex]) continue;
             for (const Edge edge : graph.edgesFrom(vertex)) {
                 const Vertex to = graph.get(ToVertex, edge);
                 if (!cut.inSinkComponent[to]) continue;
-                Assert(residualCapacity[edge] == 0, "Cut edge is not saturated!");
+                Assert(!isEdgeResidual(edge), "Cut edge is not saturated!");
                 flow += instance.getCapacity(edge);
             }
         }
@@ -246,13 +253,13 @@ private:
 
     inline void augment(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) noexcept {
         const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
-        const int flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
+        const FlowType flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
         pushFlow<BACKWARD>(sourceEndpoint, sinkEndpoint, edgeTowardsSink, edgeTowardsSource, flow);
         registerAndDrainExcess<FORWARD>(sourceEndpoint);
         registerAndDrainExcess<BACKWARD>(sinkEndpoint);
     }
 
-    inline int findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
+    inline FlowType findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
         auto[sourceBottleneck, sourceRoot] = findBottleneckCapacity(sourceEndpoint);
         auto[sinkBottleneck, sinkRoot] = findBottleneckCapacity(sinkEndpoint);
         if (sourceRoot == terminal[FORWARD] && sinkRoot == terminal[BACKWARD]) return residualCapacity[edgeTowardsSink];
@@ -261,8 +268,8 @@ private:
         return std::min({excess[sourceRoot], sourceBottleneck, residualCapacity[edgeTowardsSink], sinkBottleneck, -excess[sinkRoot]});
     }
 
-    inline std::pair<int, Vertex> findBottleneckCapacity(const Vertex start) const noexcept {
-        int bottleneck = INFTY;
+    inline std::pair<FlowType, Vertex> findBottleneckCapacity(const Vertex start) const noexcept {
+        FlowType bottleneck = INFTY;
         Vertex vertex = start;
         while (treeData.parentVertex[vertex] != noVertex) {
             const Edge edge = treeData.parentEdge[vertex];
@@ -274,14 +281,14 @@ private:
 
     template<int DIRECTION>
     inline void registerAndDrainExcess(const Vertex start) noexcept {
-        const int exc = getExcess<DIRECTION>(start);
+        const FlowType exc = getExcess<DIRECTION>(start);
         if (exc < 0) return;
-        else if (exc == 0) {
-            makeOrphan<DIRECTION>(start);
-            adoptOrphans<DIRECTION>();
-        } else {
+        else if (pmf::isNumberPositive(exc)) {
             excessVertices[DIRECTION].addVertex(start, getDistance<DIRECTION>(start));
             drainExcesses<DIRECTION>();
+        } else {
+            makeOrphan<DIRECTION>(start);
+            adoptOrphans<DIRECTION>();
         }
     }
 
@@ -289,7 +296,7 @@ private:
     inline void drainExcesses() noexcept {
         while (!excessVertices[DIRECTION].empty()) {
             const Vertex vertex = excessVertices[DIRECTION].front();
-            Assert(excess[vertex] != 0, "Trying to drain zero excess!");
+            Assert(hasPositiveExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
             drainExcess<DIRECTION>(vertex);
             adoptOrphans<DIRECTION>();
         }
@@ -302,9 +309,9 @@ private:
             const Edge edgeTowardsSink = treeData.parentEdge[vertex];
             Assert(isEdgeResidual(edgeTowardsSink), "Tree edge is not residual!");
             const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
-            const int exc = getExcess<DIRECTION>(vertex);
-            const int res = residualCapacity[edgeTowardsSink];
-            const int flow = std::min(res, exc);
+            const FlowType exc = getExcess<DIRECTION>(vertex);
+            const FlowType res = residualCapacity[edgeTowardsSink];
+            const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
             if (flow == res) {
                 makeOrphan<DIRECTION>(vertex);
@@ -313,13 +320,13 @@ private:
                 excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             vertex = parentVertex;
-            if (getExcess<DIRECTION>(vertex) > 0) {
+            if (hasPositiveExcess<DIRECTION>(vertex)) {
                 excessVertices[DIRECTION].addVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             else Assert(treeData.parentVertex[vertex] == noVertex, "Non-root vertex has zero excess!");
         }
 
-        if (getExcess<DIRECTION>(vertex) >= 0)
+        if (hasNonNegativeExcess<DIRECTION>(vertex))
             makeOrphan<DIRECTION>(vertex);
     }
     template<int DIRECTION>
@@ -386,7 +393,7 @@ private:
         }
         if (newEdge == noEdge) return false;
         setDistance<DIRECTION>(orphan, newDistance + 1);
-        if (getExcess<DIRECTION>(orphan) > 0)
+        if (hasPositiveExcess<DIRECTION>(orphan))
             excessVertices[DIRECTION].increaseBucket(orphan, oldDistance, newDistance + 1);
         currentEdge[orphan] = newEdge;
         treeData.addVertex(newParent, orphan, newEdgeTowardsSink);
@@ -397,7 +404,7 @@ private:
 
     template<int DIRECTION>
     inline void removeOrphan(const Vertex orphan) noexcept {
-        if (getExcess<DIRECTION>(orphan) > 0) {
+        if (hasPositiveExcess<DIRECTION>(orphan)) {
             excessVertices[DIRECTION].removeVertex(orphan, getDistance<DIRECTION>(orphan));
             setDistance<!DIRECTION>(orphan, maxDistance[!DIRECTION]);
             nextQ[!DIRECTION].emplace_back(orphan);
@@ -408,7 +415,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline void pushFlow(const Vertex from, const Vertex to, const Edge edge, const Edge reverseEdge, const int flow) noexcept {
+    inline void pushFlow(const Vertex from, const Vertex to, const Edge edge, const Edge reverseEdge, const FlowType flow) noexcept {
         addExcess<DIRECTION>(from, -flow);
         addExcess<DIRECTION>(to, flow);
         residualCapacity[edge] -= flow;
@@ -442,12 +449,12 @@ private:
     }
 
     template<int DIRECTION>
-    inline int getExcess(const Vertex vertex) const noexcept {
+    inline FlowType getExcess(const Vertex vertex) const noexcept {
         return (DIRECTION == FORWARD) ? -excess[vertex] : excess[vertex];
     }
 
     template<int DIRECTION>
-    inline void addExcess(const Vertex vertex, const int add) noexcept {
+    inline void addExcess(const Vertex vertex, const FlowType add) noexcept {
         if (DIRECTION == FORWARD)
             excess[vertex] -= add;
         else
@@ -465,14 +472,24 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return residualCapacity[edge] > 0;
+        return pmf::isNumberPositive(residualCapacity[edge]);
+    }
+
+    template<int DIRECTION>
+    inline bool hasPositiveExcess(const Vertex vertex) const noexcept {
+        return pmf::isNumberPositive(getExcess<DIRECTION>(vertex));
+    }
+
+    template<int DIRECTION>
+    inline bool hasNonNegativeExcess(const Vertex vertex) const noexcept {
+        return !pmf::isNumberNegative(getExcess<DIRECTION>(vertex));
     }
 
     template<int DIRECTION>
     inline void checkBuckets() const noexcept {
         for (size_t i = 0; static_cast<int>(i) <= excessVertices[DIRECTION].maxBucket; i++) {
             for (const Vertex vertex : excessVertices[DIRECTION].buckets[i]) {
-                Assert(getExcess<DIRECTION>(vertex) > 0, "Vertex in bucket has no excess!");
+                Assert(hasPositiveExcess<DIRECTION>(vertex), "Vertex in bucket has no excess!");
                 Assert(getDistance<DIRECTION>(vertex) == int(i), "Vertex is in wrong bucket!");
             }
         }
@@ -547,8 +564,8 @@ private:
         }
     }
 
-    inline int getInflow(const Vertex vertex) const noexcept {
-        int inflow = 0;
+    inline FlowType getInflow(const Vertex vertex) const noexcept {
+        FlowType inflow = 0;
         for (const Edge edge : graph.edgesFrom(vertex)) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
             inflow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
@@ -577,15 +594,15 @@ private:
 
 private:
     const MaxFlowInstance& instance;
-    const StaticFlowGraph& graph;
+    const GraphType& graph;
     const int n;
     const Vertex terminal[2];
-    std::vector<int> residualCapacity;
+    std::vector<FlowType> residualCapacity;
     // positive for s-vertices, negative for t-vertices, 0 for n-vertices
     std::vector<int> distance;
     // positive for source roots, negative for sink roots
     // non-positive for other s-vertices, non-negative for other t-vertices
-    std::vector<int> excess;
+    std::vector<FlowType> excess;
     int maxDistance[2];
     std::vector<Edge> currentEdge; //TODO: Can be represented implicitly, but unclear if that saves time
     TreeData treeData;

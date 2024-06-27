@@ -343,7 +343,7 @@ namespace Vector {
         to.clear();
         to.reserve(from.size());
         for (const U& u : from) {
-            to.push_back(u);
+            to.emplace_back(u);
         }
     }
 

@@ -10,7 +10,13 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
+template<typename MAX_FLOW_INSTANCE>
 class PushRelabel {
+
+public:
+    using MaxFlowInstance = MAX_FLOW_INSTANCE;
+    using FlowType = MaxFlowInstance::FlowType;
+    using GraphType = MaxFlowInstance::GraphType;
 
 private:
     inline static constexpr int VertexToEdgeRatio = 12;
@@ -163,7 +169,7 @@ public:
         n(graph.numVertices()),
         sourceVertex(instance.source),
         sinkVertex(instance.sink),
-        residualCapacity(instance.currentCapacity),
+        residualCapacity(instance.getCurrentCapacities()),
         distance(n, 0),
         excess(n, 0),
         currentEdge(n, noEdge),
@@ -195,8 +201,8 @@ public:
         return cut.getSinkComponent();
     }
 
-    inline int getFlowValue() noexcept {
-        int flow = 0;
+    inline FlowType getFlowValue() noexcept {
+        FlowType flow = 0;
         for (const Edge edge : graph.edgesFrom(sinkVertex)) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
             flow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
@@ -209,7 +215,7 @@ private:
         vertexBuckets.initialize(sinkVertex);
         distance[sourceVertex] = distance.size();
         for (const Edge edge : graph.edgesFrom(sourceVertex)) {
-            const int capacity = instance.getCapacity(edge);
+            const FlowType capacity = instance.getCapacity(edge);
             if (capacity == 0) continue;
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
             residualCapacity[edge] = 0;
@@ -225,7 +231,7 @@ private:
         while (!vertexBuckets.empty()) {
             const Vertex vertex = vertexBuckets.pop();
             discharge(vertex);
-            if (distance[vertex] < n && excess[vertex] > 0)
+            if (distance[vertex] < n && pmf::isNumberPositive(excess[vertex]))
                 makeVertexActive(vertex);
 
             if (workSinceLastUpdate > workLimit) {
@@ -239,12 +245,13 @@ private:
 
     inline void updateCapacities() noexcept {
         Edge edgeFromSource = graph.beginEdgeFrom(sourceVertex);
-        for (size_t i = 0; i < instance.sourceDiff.size(); i++, edgeFromSource++) {
-            Assert(instance.sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
-            residualCapacity[edgeFromSource] += instance.sourceDiff[i];
+        const std::vector<FlowType>& sourceDiff = instance.getSourceDiff();
+        for (size_t i = 0; i < sourceDiff.size(); i++, edgeFromSource++) {
+            Assert(sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
+            residualCapacity[edgeFromSource] += sourceDiff[i];
             const Vertex to = graph.get(ToVertex, edgeFromSource);
-            if (distance[to] < n && residualCapacity[edgeFromSource] > 0) {
-                const int add = residualCapacity[edgeFromSource];
+            if (distance[to] < n && isEdgeResidual(edgeFromSource)) {
+                const FlowType add = residualCapacity[edgeFromSource];
                 const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
                 residualCapacity[edgeFromSource] = 0;
                 residualCapacity[edgeToSource] += add;
@@ -254,12 +261,13 @@ private:
         }
 
         Edge edgeFromSink = graph.beginEdgeFrom(sinkVertex);
-        for (size_t i = 0; i < instance.sinkDiff.size(); i++, edgeFromSink++) {
-            Assert(instance.sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
+        const std::vector<FlowType>& sinkDiff = instance.getSinkDiff();
+        for (size_t i = 0; i < sinkDiff.size(); i++, edgeFromSink++) {
+            Assert(sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
             const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
-            residualCapacity[edgeToSink] += instance.sinkDiff[i];
-            if (residualCapacity[edgeToSink] < 0) {
-                const int add = -residualCapacity[edgeToSink];
+            residualCapacity[edgeToSink] += sinkDiff[i];
+            if (pmf::isNumberNegative(residualCapacity[edgeToSink])) {
+                const FlowType add = -residualCapacity[edgeToSink];
                 const Vertex from = graph.get(ToVertex, edgeFromSink);
                 residualCapacity[edgeFromSink] -= add;
                 residualCapacity[edgeToSink] = 0;
@@ -293,12 +301,12 @@ private:
     }
 
     inline void pushFlow(const Vertex from, const Vertex to, const Edge edge) noexcept {
-        const int flow = std::min(excess[from], residualCapacity[edge]);
+        const FlowType flow = std::min(excess[from], residualCapacity[edge]);
         const Edge reverseEdge = graph.get(ReverseEdge, edge);
         pushFlow(from, to, edge, reverseEdge, flow);
     }
 
-    inline void pushFlow(const Vertex from, const Vertex to, const Edge edge, const Edge reverseEdge, const int flow) noexcept {
+    inline void pushFlow(const Vertex from, const Vertex to, const Edge edge, const Edge reverseEdge, const FlowType flow) noexcept {
         residualCapacity[edge] -= flow;
         residualCapacity[reverseEdge] += flow;
         excess[from] -= flow;
@@ -333,13 +341,13 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return residualCapacity[edge] > 0;
+        return pmf::isNumberPositive(residualCapacity[edge]);
     }
 
     inline void makeVertexActive(const Vertex vertex) noexcept {
         if (vertex == sinkVertex) return;
         Assert(distance[vertex] < n, "Distance label too high!");
-        Assert(excess[vertex] > 0, "Vertex does not have excess!");
+        Assert(pmf::isNumberPositive(excess[vertex]), "Vertex does not have excess!");
         vertexBuckets.activateVertex(vertex, distance[vertex]);
     }
 
@@ -389,8 +397,8 @@ private:
         }
     }
 
-    inline int getInflow(const Vertex vertex) const noexcept {
-        int inflow = 0;
+    inline FlowType getInflow(const Vertex vertex) const noexcept {
+        FlowType inflow = 0;
         for (const Edge edge : graph.edgesFrom(vertex)) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
             inflow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
@@ -411,13 +419,13 @@ private:
 
 private:
     const MaxFlowInstance& instance;
-    const StaticFlowGraph& graph;
+    const GraphType& graph;
     const int n;
     const Vertex sourceVertex;
     const Vertex sinkVertex;
-    std::vector<int> residualCapacity;
+    std::vector<FlowType> residualCapacity;
     std::vector<int> distance;
-    std::vector<int> excess;
+    std::vector<FlowType> excess;
     std::vector<Edge> currentEdge;
     VertexBuckets vertexBuckets;
     int workSinceLastUpdate;

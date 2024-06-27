@@ -48,6 +48,24 @@ namespace pmf {
         return a > epsilon;
     }
 
+    template<typename T>
+    bool isNumberPositive(const T a) {
+        if constexpr (std::is_floating_point<T>::value) {
+            return a > epsilon;
+        } else {
+            return a > 0;
+        }
+    }
+
+    template<typename T>
+    bool isNumberNegative(const T a) {
+        if constexpr (std::is_floating_point<T>::value) {
+            return a < -epsilon;
+        } else {
+            return a < 0;
+        }
+    }
+
     /**
      * Abstract class for functions to be used for parametric maxFlow
      */
@@ -57,30 +75,30 @@ namespace pmf {
          * @param minVal minimum value for the zero crossing
          * @return the zero crossing, std::numeric_limits<double>::infinity() if none exists
          */
-        virtual double getNextZeroCrossing(double minVal) {
+        virtual double getNextZeroCrossing(double) const {
             throw std::runtime_error("Flow function used directly, use class implementing flow function instead");
         };
 
-        [[nodiscard]] virtual double eval(double x) const {
+        [[nodiscard]] virtual double eval(double) const {
             throw std::runtime_error("Flow function used directly, use class implementing flow function instead");
         };
 
-        friend flowFunction &operator+(flowFunction lhs, const flowFunction &rhs) {
+        friend flowFunction &operator+(flowFunction, const flowFunction&) {
             throw std::runtime_error("Flow function used directly, use class implementing flow function instead");
         };
 
-        virtual flowFunction operator+=(const flowFunction& rhs) {
+        virtual flowFunction operator+=(const flowFunction&) {
             throw std::runtime_error("Flow function used directly, use class implementing flow function instead");
         };
 
-        virtual flowFunction operator-=(const flowFunction& rhs) {
+        virtual flowFunction operator-=(const flowFunction&) {
             throw std::runtime_error("Flow function used directly, use class implementing flow function instead");
         };
 
         /**
          * When overriding this operator float inaccuracy should be considered
          */
-        virtual bool operator==(const flowFunction &&rhs) const {
+        virtual bool operator==(const flowFunction &&) const {
             throw std::runtime_error("Flow function used directly, use class implementing flow function instead");
         };
     };
@@ -91,6 +109,8 @@ namespace pmf {
  */
     class linearFlowFunction : public flowFunction {
     public:
+        using FlowType = double;
+
         linearFlowFunction(double a, double b) : a(a), b(b) {};
 
         explicit linearFlowFunction(double b) : a(0), b(b) {};
@@ -132,6 +152,12 @@ namespace pmf {
 
         linearFlowFunction operator-() const {
             return {-this->a, -this->b};
+        }
+
+        linearFlowFunction operator=(const int rhs) {
+            a = 0;
+            b = rhs;
+            return *this;
         }
 
         linearFlowFunction operator+=(const linearFlowFunction &rhs) {

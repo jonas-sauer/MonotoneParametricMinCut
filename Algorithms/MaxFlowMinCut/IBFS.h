@@ -10,8 +10,14 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
+template<typename MAX_FLOW_INSTANCE>
 class IBFS {
+public:
+    using MaxFlowInstance = MAX_FLOW_INSTANCE;
+    using FlowType = MaxFlowInstance::FlowType;
+    using GraphType = MaxFlowInstance::GraphType;
 
+private:
     struct TreeData {
         TreeData(const size_t n) :
             parentEdge(n, noEdge),
@@ -97,7 +103,7 @@ public:
         graph(instance.graph),
         n(graph.numVertices()),
         terminal{instance.source, instance.sink},
-        residualCapacity(instance.currentCapacity),
+        residualCapacity(instance.getCurrentCapacities()),
         distance(n, 0),
         maxDistance{0, 0},
         currentEdge(n, noEdge),
@@ -121,8 +127,8 @@ public:
         return cut.getSinkComponent();
     }
 
-    inline int getFlowValue() noexcept {
-        int flow = 0;
+    inline FlowType getFlowValue() noexcept {
+        FlowType flow = 0;
         for (const Edge edge : graph.edgesFrom(terminal[BACKWARD])) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
             flow += instance.getCapacity(reverseEdge) - residualCapacity[reverseEdge];
@@ -130,7 +136,7 @@ public:
         return flow;
     }
 
-    inline const std::vector<int>& getResidualCapacities() const noexcept {
+    inline const std::vector<FlowType>& getResidualCapacities() const noexcept {
         return residualCapacity;
     }
 
@@ -181,21 +187,21 @@ private:
     }
 
     inline void augment(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) noexcept {
-        const int flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
+        const FlowType flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
         augmentPath(sourceEndpoint, sinkEndpoint, edgeTowardsSink, flow);
         adoptOrphans<FORWARD>();
         adoptOrphans<BACKWARD>();
     }
 
-    inline int findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
-        int bottleneck = residualCapacity[edgeTowardsSink];
+    inline FlowType findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
+        FlowType bottleneck = residualCapacity[edgeTowardsSink];
         findBottleneckCapacity<FORWARD>(sourceEndpoint, bottleneck);
         findBottleneckCapacity<BACKWARD>(sinkEndpoint, bottleneck);
         return bottleneck;
     }
 
     template<int DIRECTION>
-    inline void findBottleneckCapacity(Vertex vertex, int& bottleneck) const noexcept {
+    inline void findBottleneckCapacity(Vertex vertex, FlowType& bottleneck) const noexcept {
         while (vertex != terminal[DIRECTION]) {
             const Edge edge = treeData.parentEdge[vertex];
             bottleneck = std::min(bottleneck, residualCapacity[edge]);
@@ -203,7 +209,7 @@ private:
         }
     }
 
-    inline void augmentPath(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink, const int flow) noexcept {
+    inline void augmentPath(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink, const FlowType flow) noexcept {
         const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
         residualCapacity[edgeTowardsSink] -= flow;
         residualCapacity[edgeTowardsSource] += flow;
@@ -212,15 +218,15 @@ private:
     }
 
     template<int DIRECTION>
-    inline void augmentPath(Vertex vertex, const int flow) noexcept {
+    inline void augmentPath(Vertex vertex, const FlowType flow) noexcept {
         while (vertex != terminal[DIRECTION]) {
             const Edge edgeTowardsSink = treeData.parentEdge[vertex];
             const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
             const Vertex parentVertex = treeData.parentVertex[vertex];
-            if (residualCapacity[edgeTowardsSink] == flow)
-                makeOrphan<DIRECTION>(vertex);
             residualCapacity[edgeTowardsSink] -= flow;
             residualCapacity[edgeTowardsSource] += flow;
+            if (!isEdgeResidual(edgeTowardsSink))
+                makeOrphan<DIRECTION>(vertex);
             vertex = parentVertex;
         }
     }
@@ -331,7 +337,7 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return residualCapacity[edge] > 0;
+        return pmf::isNumberPositive(residualCapacity[edge]);
     }
 
     inline void checkDistanceInvariants(const bool allowOrphans = false) const noexcept {
@@ -378,10 +384,10 @@ private:
 
 private:
     const MaxFlowInstance& instance;
-    const StaticFlowGraph& graph;
+    const GraphType& graph;
     const int n;
     const Vertex terminal[2];
-    std::vector<int> residualCapacity;
+    std::vector<FlowType> residualCapacity;
     std::vector<int> distance; // 1 for source, -1 for sink, 0 for n-vertices
     int maxDistance[2];
     std::vector<Edge> currentEdge; //TODO: Can be represented implicitly, but unclear if that saves time

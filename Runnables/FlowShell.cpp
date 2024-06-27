@@ -11,11 +11,14 @@ int main(int argc, char** argv) {
     checkAsserts();
     Shell::Shell shell;
     new LoadMaxFlowInstanceFromDimacs(shell);
+    new MakeStaticMaxFlowInstanceParametric(shell);
+    new LoadParametricMaxFlowInstanceFromDimacs(shell);
     new RunPushRelabel(shell);
     new TestParametricPushRelabel(shell);
     new RunIBFS(shell);
     new RunExcessesIBFS(shell);
     new TestRestartableIBFS(shell);
+    new RunParametricIBFS(shell);
     shell.run();
     return 0;
 }

@@ -39,6 +39,8 @@ using StaticFlowGraph = StaticGraph<NoVertexAttributes, WithReverseEdgesAndCapac
 using FlowGraphEdgeList = EdgeList<NoVertexAttributes, WithReverseEdgesAndCapacity<int>>;
 template<typename CAP>
 using ParametricFlowGraph = StaticGraph<NoVertexAttributes, WithReverseEdgesAndCapacity<CAP>>;
+template<typename CAP>
+using ParametricFlowGraphEdgeList = EdgeList<NoVertexAttributes, WithReverseEdgesAndCapacity<CAP>>;
 
 using CHConstructionGraph = EdgeList<NoVertexAttributes, WithViaVertexAndWeight>;
 using CHCoreGraph = DynamicGraph<NoVertexAttributes, WithViaVertexAndWeight>;
