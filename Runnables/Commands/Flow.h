@@ -234,6 +234,6 @@ public:
         Timer timer;
         algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
-        std::cout << "#Breakpoints: " << algorithm.getBreakpoints() << std::endl;
+        std::cout << "#Breakpoints: " << algorithm.getBreakpoints().size() << std::endl;
     }
 };

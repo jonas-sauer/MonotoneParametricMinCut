@@ -151,14 +151,18 @@ public:
     void run() {
         initialize();
         double alpha = alphaMin_;
+        Timer timer;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
             assert(!alphaQ_.empty());
             assert(alphaQ_.front()->value_ > alpha);
+            timer.restart();
             alpha = alphaQ_.front()->value_;
+            std::cout << "Current parameter: " << alpha << std::endl;
             if (alpha > alphaMax_) return;
             updateTree(alpha);
             reconnectTree(alpha);
             drainExcess(alpha);
+            std::cout << "\tTook " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         }
     }
 
@@ -229,7 +233,6 @@ private:
                 if (dist_[w] != INFTY) continue;
                 dist_[w] = dist_[v] + 1;
                 treeData_.addVertex(v, w, revE);
-                alphaQ_.push(rootAlpha_[w]);
                 queue.emplace_back(w);
             }
         }
@@ -237,15 +240,18 @@ private:
 
     void updateTree(const double nextAlpha) {
         assert(orphans_.empty());
+        size_t numBottlenecks = 0;
         while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
             const Vertex v(alphaQ_.front() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
+            numBottlenecks++;
             assert(e != noEdge);
             assert(!isEdgeResidual(e, nextAlpha));
             const Vertex parent = graph_.get(ToVertex, e);
             removeTreeEdge(e, v, parent, nextAlpha);
             treeData_.removeChild(parent, v);
         }
+        std::cout << "\tBottlenecks: " << numBottlenecks << std::endl;
     }
 
     bool adoptWithSameDist(const Vertex v, const double nextAlpha) {
@@ -254,7 +260,6 @@ private:
             const Vertex to = graph_.get(ToVertex, e);
             if (!isEdgeAdmissible(v, to)) continue;
             treeData_.addVertex(to, v, e);
-            alphaQ_.push(&(rootAlpha_[v]));
             currentEdge_[v] = e;
             return true;
         }
@@ -284,12 +289,14 @@ private:
         excessVertices_.increaseBucket(v, dist_[v], d_min + 1); //TODO Only if it has excess
         dist_[v] = d_min + 1;
         treeData_.addVertex(v_min, v, e_min);
-        alphaQ_.push(&(rootAlpha_[v]));
         currentEdge_[v] = e_min;
         return true;
     }
 
+    //TODO: Adopt orphans in increasing order of distance
     void reconnectTree(const double nextAlpha) {
+        size_t moved = 0;
+        size_t relabeled = 0;
         while (!orphans_.empty()) {
             const Vertex v = orphans_.back();
             orphans_.pop_back();
@@ -301,8 +308,12 @@ private:
                 removeTreeEdge(e, child, v, nextAlpha);
             });
 
-            if (adoptWithNewDist(v, nextAlpha)) continue;
+            if (adoptWithNewDist(v, nextAlpha)) {
+                relabeled++;
+                continue;
+            }
 
+            moved++;
             excessVertices_.removeVertex(v, dist_[v]);
             dist_[v] = INFTY;
             thetaByVertex_[v] = nextAlpha;
@@ -310,11 +321,13 @@ private:
                 thetaBreakpoints_.emplace_back(nextAlpha);
             }
         }
+        std::cout << "\tMoved: " << moved << ", relabeled: " << relabeled << std::endl;
     }
 
     void checkQueue() {
         for (const Vertex v : graph_.vertices()) {
             if (treeData_.edgeToParent_[v] == noEdge) continue;
+            if (rootAlpha_[v] == INFTY) continue;
             assert(alphaQ_.contains(&rootAlpha_[v]));
         }
     }
@@ -364,13 +377,22 @@ private:
     }
 
     void recalculateRootAlpha(const Vertex v, const Edge e, const double alpha) {
+        const double oldValue = rootAlpha_[v].value_;
         rootAlpha_[v].value_ = getNextZeroCrossing(e, alpha);
-        alphaQ_.push(&rootAlpha_[v]);
+        if (rootAlpha_[v].value_ == INFTY) {
+            if (oldValue < INFTY) {
+                alphaQ_.remove(&rootAlpha_[v]);
+            }
+        }
+        else {
+            alphaQ_.push(&rootAlpha_[v]);
+        }
     }
 
     void clearRootAlpha(const Vertex v) {
+        if (rootAlpha_[v].value_ == INFTY) return;
         rootAlpha_[v].value_ = INFTY;
-        alphaQ_.remove(&rootAlpha_[v]); //TODO Only if value was not already infty. Ensure that vertices with rootAlpha infty are never in the queue
+        alphaQ_.remove(&rootAlpha_[v]);
     }
 
     bool isEdgeAdmissible(const Vertex from, const Vertex to) const {
