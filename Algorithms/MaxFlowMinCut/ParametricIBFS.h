@@ -75,6 +75,58 @@ private:
         std::vector<int> positionOfVertex_;
     };
 
+    struct OrphanBuckets {
+        OrphanBuckets(const int n) :
+           positionOfVertex_(n, -1), minBucket_(INFTY) {
+        }
+
+        inline void addVertex(const Vertex vertex, const int dist) noexcept {
+            if (positionOfVertex_[vertex] != -1) return;
+            if (static_cast<size_t>(dist) >= buckets_.size()) buckets_.resize(dist + 1);
+            positionOfVertex_[vertex] = buckets_[dist].size();
+            buckets_[dist].emplace_back(vertex);
+            minBucket_ = std::min(minBucket_, dist);
+        }
+
+        inline void decreaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
+            Assert(newDist < oldDist, "Distance has not increased!");
+            Assert(static_cast<size_t>(positionOfVertex_[vertex]) < buckets_[oldDist].size(), "Vertex is not in bucket!");
+            Assert(buckets_[oldDist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
+            const Vertex other = buckets_[oldDist].back();
+            positionOfVertex_[other] = positionOfVertex_[vertex];
+            buckets_[oldDist][positionOfVertex_[vertex]] = other;
+            buckets_[oldDist].pop_back();
+            if (static_cast<size_t>(newDist) >= buckets_.size()) buckets_.resize(newDist + 1);
+            positionOfVertex_[vertex] = buckets_[newDist].size();
+            buckets_[newDist].emplace_back(vertex);
+            if (static_cast<size_t>(oldDist) == buckets_.size() - 1) {
+                while (!buckets_.empty() && buckets_.back().empty()) buckets_.pop_back();
+            }
+            minBucket_ = std::min(minBucket_, newDist);
+        }
+
+        inline bool empty() const noexcept {
+            return buckets_.empty();
+        }
+
+        inline Vertex pop() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            const Vertex vertex = buckets_[minBucket_].back();
+            buckets_[minBucket_].pop_back();
+            positionOfVertex_[vertex] = -1;
+            while (static_cast<size_t>(minBucket_) < buckets_.size() && buckets_[minBucket_].empty()) minBucket_++;
+            if (static_cast<size_t>(minBucket_) == buckets_.size()) {
+                buckets_.clear();
+                minBucket_ = INFTY;
+            }
+            return vertex;
+        }
+
+        std::vector<std::vector<Vertex>> buckets_;
+        std::vector<int> positionOfVertex_;
+        int minBucket_;
+    };
+
     struct TreeData {
         TreeData(const size_t n) :
             edgeToParent_(n, noEdge),
@@ -142,6 +194,8 @@ public:
         currentEdge_(n, noEdge),
         rootAlpha_(n),
         alphaQ_(n),
+        orphans_(n),
+        threePassOrphans_(n),
         excess_at_vertex_(n, FlowFunction(0)) {
         for (const Vertex vertex : graph_.vertices()) {
             currentEdge_[vertex] = graph_.beginEdgeFrom(vertex);
@@ -151,18 +205,16 @@ public:
     void run() {
         initialize();
         double alpha = alphaMin_;
-        Timer timer;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
             assert(!alphaQ_.empty());
-            assert(alphaQ_.front()->value_ > alpha);
-            timer.restart();
+            //assert(alphaQ_.front()->value_ > alpha);
             alpha = alphaQ_.front()->value_;
-            std::cout << "Current parameter: " << alpha << std::endl;
             if (alpha > alphaMax_) return;
             updateTree(alpha);
-            reconnectTree(alpha);
+            //TODO Hybrid adoption
+            //reconnectTree(alpha);
+            reconnectTreeThreePass(alpha);
             drainExcess(alpha);
-            std::cout << "\tTook " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         }
     }
 
@@ -210,14 +262,6 @@ private:
         drainExcess(alphaMin_);
     }
 
-    void saturateEdgeInitial(const Edge e, const Edge revE, const Vertex to) {
-        const FlowFunction& capacity = graph_.get(Capacity, e);
-        residualCapacity_[e] = FlowFunction(0);
-        residualCapacity_[revE] = capacity + graph_.get(Capacity, revE);
-        excess_at_vertex_[to] += capacity - FlowFunction(capacity.eval(alphaMin_));
-        excessVertices_.addVertex(to, dist_[to]);
-    }
-
     void initializeSinkTree(const std::vector<double>& initialResidualCapacity) {
         std::deque<Vertex> queue(1, sink_);
         dist_[sink_] = 0;
@@ -238,20 +282,42 @@ private:
         }
     }
 
+    void saturateEdgeInitial(const Edge e, const Edge revE, const Vertex to) {
+        const FlowFunction& capacity = graph_.get(Capacity, e);
+        residualCapacity_[e] = FlowFunction(0);
+        residualCapacity_[revE] = capacity + graph_.get(Capacity, revE);
+        excess_at_vertex_[to] += capacity - FlowFunction(capacity.eval(alphaMin_));
+        excessVertices_.addVertex(to, dist_[to]);
+    }
+
     void updateTree(const double nextAlpha) {
         assert(orphans_.empty());
-        size_t numBottlenecks = 0;
+        assert(threePassOrphans_.empty());
         while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
             const Vertex v(alphaQ_.front() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
-            numBottlenecks++;
             assert(e != noEdge);
             assert(!isEdgeResidual(e, nextAlpha));
             const Vertex parent = graph_.get(ToVertex, e);
             removeTreeEdge(e, v, parent, nextAlpha);
             treeData_.removeChild(parent, v);
         }
-        std::cout << "\tBottlenecks: " << numBottlenecks << std::endl;
+    }
+
+    void reconnectTree(const double nextAlpha) {
+        while (!orphans_.empty()) {
+            const Vertex v = orphans_.pop();
+            if (adoptWithSameDist(v, nextAlpha)) continue;
+            treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
+                removeTreeEdge(e, child, v, nextAlpha);
+            });
+            if (adoptWithNewDist(v, nextAlpha)) continue;
+            dist_[v] = INFTY;
+            thetaByVertex_[v] = nextAlpha;
+            if (thetaBreakpoints_.back() != nextAlpha) {
+                thetaBreakpoints_.emplace_back(nextAlpha);
+            }
+        }
     }
 
     bool adoptWithSameDist(const Vertex v, const double nextAlpha) {
@@ -259,6 +325,7 @@ private:
             if (!isEdgeResidual(e, nextAlpha)) continue;
             const Vertex to = graph_.get(ToVertex, e);
             if (!isEdgeAdmissible(v, to)) continue;
+            excessVertices_.addVertex(v, dist_[v]);
             treeData_.addVertex(to, v, e);
             currentEdge_[v] = e;
             return true;
@@ -286,49 +353,111 @@ private:
         }
 
         assert(d_min >= dist_[v]);
-        excessVertices_.increaseBucket(v, dist_[v], d_min + 1); //TODO Only if it has excess
         dist_[v] = d_min + 1;
+        excessVertices_.addVertex(v, dist_[v]);
         treeData_.addVertex(v_min, v, e_min);
         currentEdge_[v] = e_min;
         return true;
     }
 
-    //TODO: Adopt orphans in increasing order of distance
-    void reconnectTree(const double nextAlpha) {
-        size_t moved = 0;
-        size_t relabeled = 0;
+    void reconnectTreeThreePass(const double nextAlpha) {
+        // Pass 1: Try to adopt orphans without changing their distance.
+        reconnectTreeFirstPass(nextAlpha);
+        // Passes 2 and 3: Go through orphans in increasing order of distance.
+        while (!threePassOrphans_.empty()) {
+            const Vertex v = threePassOrphans_.pop();
+            // edgeToParent_[v] is set iff pass 2 was successful.
+            if (treeData_.edgeToParent_[v] == noEdge) {
+                // Pass 2: Try to find a non-orphan parent for v with minimal distance.
+                // If this increases the distance of v, postpone pass 3 until the new bucket of v is scanned.
+                if (reconnectTreeSecondPass(v, nextAlpha)) continue;
+            }
+            if (treeData_.edgeToParent_[v] != noEdge) {
+                // Pass 3 (only if pass 2 succeeded): Finalize the adoption and update the distances of potential children.
+                reconnectTreeThirdPass(v, nextAlpha);
+            } else {
+                // If pass 2 failed, v leaves the sink component.
+                excessVertices_.removeVertex(v, dist_[v]);
+                dist_[v] = INFTY;
+                thetaByVertex_[v] = nextAlpha;
+                if (thetaBreakpoints_.back() != nextAlpha) {
+                    thetaBreakpoints_.emplace_back(nextAlpha);
+                }
+            }
+        }
+    }
+
+    // Go through orphans in increasing order of distance.
+    // If they can be adopted with the same distance, do so.
+    // Otherwise, increment their distance and add them to the orphan buckets for passes 2 and 3.
+    void reconnectTreeFirstPass(const double nextAlpha) {
         while (!orphans_.empty()) {
-            const Vertex v = orphans_.back();
-            orphans_.pop_back();
-
+            const Vertex v = orphans_.pop();
+            excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) continue;
-
-            //Children become orphaned, as they may have better options for a parent now
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
                 removeTreeEdge(e, child, v, nextAlpha);
             });
-
-            if (adoptWithNewDist(v, nextAlpha)) {
-                relabeled++;
-                continue;
-            }
-
-            moved++;
+            //TODO Clean up this mess
             excessVertices_.removeVertex(v, dist_[v]);
-            dist_[v] = INFTY;
-            thetaByVertex_[v] = nextAlpha;
-            if (thetaBreakpoints_.back() != nextAlpha) {
-                thetaBreakpoints_.emplace_back(nextAlpha);
-            }
+            dist_[v]++;
+            threePassOrphans_.addVertex(v, dist_[v]);
         }
-        std::cout << "\tMoved: " << moved << ", relabeled: " << relabeled << std::endl;
     }
 
-    void checkQueue() {
-        for (const Vertex v : graph_.vertices()) {
-            if (treeData_.edgeToParent_[v] == noEdge) continue;
-            if (rootAlpha_[v] == INFTY) continue;
-            assert(alphaQ_.contains(&rootAlpha_[v]));
+    // Try to find a non-orphan parent with minimal distance for v.
+    // This adoption is not necessarily optimal yet - it may be improved once other orphans re-enter the tree.
+    // Return true iff the adoption was successful and the distance increased.
+    bool reconnectTreeSecondPass(const Vertex v, const double nextAlpha) {
+        uint d_min = INFTY;
+        Edge e_min = noEdge;
+        Vertex v_min = noVertex;
+
+        for (const Edge e : graph_.edgesFrom(v)) {
+            if (!isEdgeResidual(e, nextAlpha)) continue;
+            const Vertex to = graph_.get(ToVertex, e);
+            // Don't allow unadopted orphans as parents.
+            // To distinguish between adopted and unadopted orphans, we temporarily set edgeToParent_ during the adoption.
+            // This will not necessarily be the final parent edge, so the child relation is not updated yet.
+            if (treeData_.edgeToParent_[to] == noEdge) continue;
+            if (dist_[to] < d_min) {
+                e_min = e;
+                d_min = dist_[to];
+                v_min = to;
+            }
+        }
+
+        if (d_min == INFTY) return false;
+        treeData_.edgeToParent_[v] = e_min;
+        if (d_min + 1 > dist_[v]) {
+            dist_[v] = d_min + 1;
+            threePassOrphans_.addVertex(v, dist_[v]);
+            return true;
+        }
+        return false;
+    }
+
+    void reconnectTreeThirdPass(const Vertex v, const double nextAlpha) {
+        // dist_[v] is correct at this point.
+        // Find the first admissible parent edge to ensure that currentEdge_ is set correctly.
+        for (const Edge e : graph_.edgesFrom(v)) {
+            if (!isEdgeResidual(e, nextAlpha)) continue;
+            const Vertex to = graph_.get(ToVertex, e);
+            if (!isEdgeAdmissible(v, to)) continue;
+            excessVertices_.addVertex(v, dist_[v]);
+            treeData_.addVertex(to, v, e);
+            currentEdge_[v] = e;
+            break;
+        }
+
+        // Update the distances of all potential children.
+        for (const Edge e : graph_.edgesFrom(v)) {
+            const Vertex from = graph_.get(ToVertex, e);
+            if (dist_[from] == INFTY || dist_[from] <= dist_[v] + 1) continue;
+            const Edge rev = graph_.get(ReverseEdge, e);
+            if (!isEdgeResidual(rev, nextAlpha)) continue;
+            threePassOrphans_.decreaseBucket(from, dist_[from], dist_[v] + 1);
+            dist_[from] = dist_[v] + 1;
         }
     }
 
@@ -356,13 +485,13 @@ private:
     void removeTreeEdge(const Edge e, const Vertex from, const Vertex to, const double nextAlpha) {
         const FlowFunction& oldResidualCapacity = residualCapacity_[e];
         const FlowFunction newResidualCapacity(residualCapacity_[e].eval(nextAlpha));
+        //Don't add orphan to excessVertices_ yet. Wait until it has been adopted.
         excess_at_vertex_[from] += newResidualCapacity - oldResidualCapacity;
-        excessVertices_.addVertex(from, dist_[from]);
         excess_at_vertex_[to] += oldResidualCapacity - newResidualCapacity;
         excessVertices_.addVertex(to, dist_[to]);
         setResidualCapacity(e, newResidualCapacity);
         clearRootAlpha(from);
-        orphans_.emplace_back(from);
+        orphans_.addVertex(from, dist_[from]);
         assert(dist_[from] != INFTY);
     }
 
@@ -379,6 +508,7 @@ private:
     void recalculateRootAlpha(const Vertex v, const Edge e, const double alpha) {
         const double oldValue = rootAlpha_[v].value_;
         rootAlpha_[v].value_ = getNextZeroCrossing(e, alpha);
+        //assert(rootAlpha_[v].value_ > alpha);
         if (rootAlpha_[v].value_ == INFTY) {
             if (oldValue < INFTY) {
                 alphaQ_.remove(&rootAlpha_[v]);
@@ -403,6 +533,35 @@ private:
         return pmf::doubleIsPositive(residualCapacity_[edge].eval(alpha));
     }
 
+    void checkTree(const bool allowOrphans = false) const {
+        for (const Vertex v : graph_.vertices()) {
+            if (dist_[v] == INFTY || v == sink_) continue;
+            const Edge edge = treeData_.edgeToParent_[v];
+            if(edge == noEdge) {
+                assert(allowOrphans);
+                continue;
+            }
+            const Vertex parent = graph_.get(ToVertex, edge);
+            assert(dist_[parent] <= dist_[v] - 1);
+        }
+    }
+
+    void checkQueue() {
+        for (const Vertex v : graph_.vertices()) {
+            if (treeData_.edgeToParent_[v] == noEdge) continue;
+            if (rootAlpha_[v] == INFTY) continue;
+            assert(alphaQ_.contains(&rootAlpha_[v]));
+        }
+    }
+
+    void checkExcessBuckets() {
+        for (size_t i = 0; i < excessVertices_.buckets_.size(); i++) {
+            for (const Vertex v : excessVertices_.buckets_[i]) {
+                assert(dist_[v] == i);
+            }
+        }
+    }
+
 private:
     const ParametricMaxFlowInstance<FlowFunction>& instance_;
     const FlowGraph& graph_;
@@ -425,7 +584,8 @@ private:
     std::vector<RootAlphaLabel> rootAlpha_;
     ExternalKHeap<2, RootAlphaLabel> alphaQ_;
 
-    std::vector<Vertex> orphans_;
+    OrphanBuckets orphans_;
+    OrphanBuckets threePassOrphans_;
 
     std::vector<FlowFunction> excess_at_vertex_;
 };
