@@ -100,25 +100,26 @@ public:
     }
 };
 
-//TODO: Do this properly once we have true parametric instances
 class TestParametricPushRelabel : public ParameterizedCommand {
 
 public:
     TestParametricPushRelabel(BasicShell& shell) :
-    ParameterizedCommand(shell, "testParametricPushRelabel", "temp") {
+    ParameterizedCommand(shell, "testParametricPushRelabel", "Compares restartable push-relabel to regular push-relabel on the given graph.") {
         addParameter("Instance file");
+        addParameter("Steps");
     }
 
     virtual void execute() noexcept {
-        StaticInstance staticInstance(getParameter("Instance file"));
-        ParametricInstance instance(staticInstance, 10);
-        ParametricWrapper wrapper(instance, 0);
+        ParametricInstance instance(getParameter("Instance file"));
+        ParametricWrapper wrapper(instance);
         PushRelabel<ParametricWrapper> algorithm(wrapper);
         run(algorithm, false);
 
-        for (int i = 1; i <= instance.alphaMax; i++) {
-            std::cout << "Instance " << i << std::endl;
-            wrapper.setAlpha(i);
+        const int steps = getParameter<int>("Steps");
+        for (int i = 1; i <= steps; i++) {
+            const double alpha = instance.alphaMin + i * (instance.alphaMax - instance.alphaMin) / steps;
+            std::cout << "Alpha: " << alpha << std::endl;
+            wrapper.setAlpha(alpha);
             run(algorithm, true);
             PushRelabel<ParametricWrapper> newAlgorithm(wrapper);
             run(newAlgorithm, false);
@@ -180,25 +181,26 @@ public:
     }
 };
 
-//TODO: Do this properly once we have true parametric instances
 class TestRestartableIBFS : public ParameterizedCommand {
 
 public:
     TestRestartableIBFS(BasicShell& shell) :
-        ParameterizedCommand(shell, "testRestartableIBFS", "temp") {
+        ParameterizedCommand(shell, "testRestartableIBFS", "Compares restartable IBFS to regular IBFS on the given graph.") {
         addParameter("Instance file");
+        addParameter("Steps");
     }
 
     virtual void execute() noexcept {
-        StaticInstance staticInstance(getParameter("Instance file"));
-        ParametricInstance instance(staticInstance, 10);
-        ParametricWrapper wrapper(instance, 0);
+        ParametricInstance instance(getParameter("Instance file"));
+        ParametricWrapper wrapper(instance);
         RestartableIBFS<ParametricWrapper> algorithm(wrapper);
         run(algorithm, false);
 
-        for (int i = 1; i <= instance.alphaMax; i++) {
-            std::cout << "Instance " << i << std::endl;
-            wrapper.setAlpha(i);
+        const int steps = getParameter<int>("Steps");
+        for (int i = 1; i <= steps; i++) {
+            const double alpha = instance.alphaMin + i * (instance.alphaMax - instance.alphaMin) / steps;
+            std::cout << "Alpha: " << alpha << std::endl;
+            wrapper.setAlpha(alpha);
             run(algorithm, true);
             RestartableIBFS<ParametricWrapper> newAlgorithm(wrapper);
             run(newAlgorithm, false);
@@ -235,5 +237,43 @@ public:
         algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         std::cout << "#Breakpoints: " << algorithm.getBreakpoints().size() << std::endl;
+    }
+};
+
+class TestParametricIBFS : public ParameterizedCommand {
+
+public:
+    TestParametricIBFS(BasicShell& shell) :
+        ParameterizedCommand(shell, "testParametricIBFS", "Compares Parametric IBFS to restartable IBFS on the given graph.") {
+        addParameter("Instance file");
+    }
+
+    virtual void execute() noexcept {
+        ParametricInstance instance(getParameter("Instance file"));
+        ParametricIBFS<ParametricInstance::FlowFunction> algorithm(instance);
+        Timer timer;
+        algorithm.run();
+        const std::vector<double>& breakpoints = algorithm.getBreakpoints();
+        std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
+        std::cout << "#Breakpoints: " << breakpoints.size() << std::endl;
+        compare<RestartableIBFS<ParametricWrapper>>(instance, algorithm, breakpoints);
+    }
+
+private:
+    template<typename RESTARTABLE_ALGORITHM>
+    inline void compare(const ParametricInstance& instance, const ParametricIBFS<ParametricInstance::FlowFunction>& parametricAlgorithm, const std::vector<double>& breakpoints) const noexcept {
+        ParametricWrapper wrapper(instance);
+        RESTARTABLE_ALGORITHM restartableAlgorithm(wrapper);
+        for (size_t i = 0; i < breakpoints.size(); i++) {
+            if (i == 0) {
+                restartableAlgorithm.run();
+            } else {
+                wrapper.setAlpha(breakpoints[i]);
+                restartableAlgorithm.continueAfterUpdate();
+            }
+            std::cout << "Breakpoint: " << breakpoints[i] << std::endl;
+            std::cout << "\tSink component (parametric vs. restartable): " << parametricAlgorithm.getSinkComponent(breakpoints[i]).size() << " vs. " << restartableAlgorithm.getSinkComponent().size() << std::endl;
+            std::cout << "\tFlow value (parametric vs. restartable): " << parametricAlgorithm.getFlowValue(breakpoints[i]) << " vs. " << restartableAlgorithm.getFlowValue() << std::endl;
+        }
     }
 };

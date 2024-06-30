@@ -307,6 +307,10 @@ public:
         }
     }
 
+    ParametricToStaticMaxFlowInstanceWrapper(const InstanceType& instance) :
+        ParametricToStaticMaxFlowInstanceWrapper(instance, instance.alphaMin) {}
+
+
     inline const FlowType& getCapacity(const Edge edge) const noexcept {
         return currentCapacity[edge];
     }

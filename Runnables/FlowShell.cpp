@@ -19,6 +19,7 @@ int main(int argc, char** argv) {
     new RunExcessesIBFS(shell);
     new TestRestartableIBFS(shell);
     new RunParametricIBFS(shell);
+    new TestParametricIBFS(shell);
     shell.run();
     return 0;
 }

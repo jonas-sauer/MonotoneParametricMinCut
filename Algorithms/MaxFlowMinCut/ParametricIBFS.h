@@ -80,23 +80,44 @@ private:
            positionOfVertex_(n, -1), minBucket_(INFTY) {
         }
 
+        inline void assertVertexInBucket(const Vertex vertex, const int dist) const noexcept {
+            Assert(positionOfVertex_[vertex] != -1, "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(dist) < buckets_.size(), "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(positionOfVertex_[vertex]) < buckets_[dist].size(), "Vertex is not in bucket!");
+            Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
+        }
+
         inline void addVertex(const Vertex vertex, const int dist) noexcept {
-            if (positionOfVertex_[vertex] != -1) return;
+            if (positionOfVertex_[vertex] != -1) {
+                assertVertexInBucket(vertex, dist);
+                return;
+            }
             if (static_cast<size_t>(dist) >= buckets_.size()) buckets_.resize(dist + 1);
             positionOfVertex_[vertex] = buckets_[dist].size();
             buckets_[dist].emplace_back(vertex);
             minBucket_ = std::min(minBucket_, dist);
         }
 
-        inline void decreaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
-            Assert(newDist < oldDist, "Distance has not increased!");
-            Assert(static_cast<size_t>(positionOfVertex_[vertex]) < buckets_[oldDist].size(), "Vertex is not in bucket!");
-            Assert(buckets_[oldDist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
+        /*inline void increaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
+            Assert(newDist > oldDist, "Distance has not increased!");
+            assertVertexInBucket(vertex, oldDist);
             const Vertex other = buckets_[oldDist].back();
             positionOfVertex_[other] = positionOfVertex_[vertex];
             buckets_[oldDist][positionOfVertex_[vertex]] = other;
             buckets_[oldDist].pop_back();
             if (static_cast<size_t>(newDist) >= buckets_.size()) buckets_.resize(newDist + 1);
+            positionOfVertex_[vertex] = buckets_[newDist].size();
+            buckets_[newDist].emplace_back(vertex);
+            while (static_cast<size_t>(minBucket_) < buckets_.size() && buckets_[minBucket_].empty()) minBucket_++;
+        }*/
+
+        inline void decreaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
+            Assert(newDist < oldDist, "Distance has not decreased!");
+            assertVertexInBucket(vertex, oldDist);
+            const Vertex other = buckets_[oldDist].back();
+            positionOfVertex_[other] = positionOfVertex_[vertex];
+            buckets_[oldDist][positionOfVertex_[vertex]] = other;
+            buckets_[oldDist].pop_back();
             positionOfVertex_[vertex] = buckets_[newDist].size();
             buckets_[newDist].emplace_back(vertex);
             if (static_cast<size_t>(oldDist) == buckets_.size() - 1) {
@@ -226,6 +247,28 @@ public:
         return thetaByVertex_;
     }
 
+    std::vector<Vertex> getSinkComponent(const double alpha) const {
+        std::vector<Vertex> sinkComponent;
+        for (const Vertex vertex : graph_.vertices()) {
+            if (thetaByVertex_[vertex] <= alpha) continue;
+            sinkComponent.emplace_back(vertex);
+        }
+        return sinkComponent;
+    }
+
+    double getFlowValue(const double alpha) const {
+        double flow = 0;
+        for (const Vertex from : graph_.vertices()) {
+            if (thetaByVertex_[from] > alpha) continue;
+            for (const Edge edge : graph_.edgesFrom(from)) {
+                const Vertex to = graph_.get(ToVertex, edge);
+                if (thetaByVertex_[to] <= alpha) continue;
+                flow += instance_.getCapacity(edge, alpha);
+            }
+        }
+        return flow;
+    }
+
 private:
     void initialize() {
         initialFlow.run();
@@ -305,19 +348,27 @@ private:
     }
 
     void reconnectTree(const double nextAlpha) {
+        std::vector<Vertex> moved;
         while (!orphans_.empty()) {
             const Vertex v = orphans_.pop();
+            excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) continue;
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
                 removeTreeEdge(e, child, v, nextAlpha);
             });
+            excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithNewDist(v, nextAlpha)) continue;
+            moved.emplace_back(v);
             dist_[v] = INFTY;
             thetaByVertex_[v] = nextAlpha;
             if (thetaBreakpoints_.back() != nextAlpha) {
                 thetaBreakpoints_.emplace_back(nextAlpha);
             }
         }
+        for (const Vertex v : moved) {
+            assertDisconnected(v, nextAlpha);
+        }
+        //std::cout << nextAlpha << ", " << moved.size() << std::endl;
     }
 
     bool adoptWithSameDist(const Vertex v, const double nextAlpha) {
@@ -363,6 +414,7 @@ private:
     void reconnectTreeThreePass(const double nextAlpha) {
         // Pass 1: Try to adopt orphans without changing their distance.
         reconnectTreeFirstPass(nextAlpha);
+        std::vector<Vertex> moved;
         // Passes 2 and 3: Go through orphans in increasing order of distance.
         while (!threePassOrphans_.empty()) {
             const Vertex v = threePassOrphans_.pop();
@@ -370,20 +422,41 @@ private:
             if (treeData_.edgeToParent_[v] == noEdge) {
                 // Pass 2: Try to find a non-orphan parent for v with minimal distance.
                 // If this increases the distance of v, postpone pass 3 until the new bucket of v is scanned.
-                if (reconnectTreeSecondPass(v, nextAlpha)) continue;
+                //std::cout << "Second pass of " << v << " with distance " << dist_[v] << std::endl;
+                if (reconnectTreeSecondPass(v, nextAlpha)) {
+                    //std::cout << "Distance increased to " << dist_[v] << std::endl;
+                    continue;
+                }
             }
             if (treeData_.edgeToParent_[v] != noEdge) {
                 // Pass 3 (only if pass 2 succeeded): Finalize the adoption and update the distances of potential children.
+                //std::cout << "Third pass of " << v << " with distance " << dist_[v] << std::endl;
                 reconnectTreeThirdPass(v, nextAlpha);
             } else {
                 // If pass 2 failed, v leaves the sink component.
-                excessVertices_.removeVertex(v, dist_[v]);
-                dist_[v] = INFTY;
-                thetaByVertex_[v] = nextAlpha;
-                if (thetaBreakpoints_.back() != nextAlpha) {
-                    thetaBreakpoints_.emplace_back(nextAlpha);
-                }
+                moved.emplace_back(v); //TODO: Do this properly
             }
+        }
+        for (const Vertex v : moved) {
+            if (treeData_.edgeToParent_[v] != noEdge) continue;
+            excessVertices_.removeVertex(v, dist_[v]);
+            dist_[v] = INFTY;
+            thetaByVertex_[v] = nextAlpha;
+            if (thetaBreakpoints_.back() != nextAlpha) {
+                thetaBreakpoints_.emplace_back(nextAlpha);
+            }
+        }
+        for (const Vertex v : moved) {
+            if (treeData_.edgeToParent_[v] != noEdge) continue;
+            assertDisconnected(v, nextAlpha);
+        }
+    }
+
+    void assertDisconnected(const Vertex v, const double alpha) {
+        for (const Edge edge : graph_.edgesFrom(v)) {
+            if (!isEdgeResidual(edge, alpha)) continue;
+            const Vertex to = graph_.get(ToVertex, edge);
+            assert(dist_[to] == INFTY);
         }
     }
 
@@ -395,6 +468,7 @@ private:
             const Vertex v = orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) continue;
+            //std::cout << "First pass of " << v << " with distance " << dist_[v] << " failed!" << std::endl;
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
                 removeTreeEdge(e, child, v, nextAlpha);
             });
@@ -427,8 +501,12 @@ private:
             }
         }
 
-        if (d_min == INFTY) return false;
+        if (d_min == INFTY) {
+            //std::cout << "Adoption failed" << std::endl;
+            return false;
+        }
         treeData_.edgeToParent_[v] = e_min;
+        //std::cout << "Set parent to " << v_min << " with " << dist_[v_min];
         if (d_min + 1 > dist_[v]) {
             dist_[v] = d_min + 1;
             threePassOrphans_.addVertex(v, dist_[v]);
@@ -444,6 +522,7 @@ private:
             if (!isEdgeResidual(e, nextAlpha)) continue;
             const Vertex to = graph_.get(ToVertex, e);
             if (!isEdgeAdmissible(v, to)) continue;
+            if (treeData_.edgeToParent_[to] == noEdge) continue;
             excessVertices_.addVertex(v, dist_[v]);
             treeData_.addVertex(to, v, e);
             currentEdge_[v] = e;
@@ -453,15 +532,33 @@ private:
         // Update the distances of all potential children.
         for (const Edge e : graph_.edgesFrom(v)) {
             const Vertex from = graph_.get(ToVertex, e);
-            if (dist_[from] == INFTY || dist_[from] <= dist_[v] + 1) continue;
+            if (dist_[from] == INFTY) continue;
+            const bool isFree = treeData_.edgeToParent_[from] == noEdge;
+            const bool isDistanceGreater = dist_[from] > dist_[v] + 1;
+            if (!isFree && !isDistanceGreater) continue;
             const Edge rev = graph_.get(ReverseEdge, e);
             if (!isEdgeResidual(rev, nextAlpha)) continue;
-            threePassOrphans_.decreaseBucket(from, dist_[from], dist_[v] + 1);
+            if (isDistanceGreater) {
+                //std::cout << "Decrease distance of " << from << " from " << dist_[from] << " to " << dist_[v] + 1 << std::endl;
+                threePassOrphans_.decreaseBucket(from, dist_[from], dist_[v] + 1);
+            } else {
+                assert(isFree);
+                //std::cout << "Re-add orphan " << from << " from " << dist_[from] << " to " << dist_[v] + 1 << std::endl;
+                if (dist_[from] == dist_[v]) {
+                    // TODO This is incorrect but the paper claims that this is done?
+                    //threePassOrphans_.increaseBucket(from, dist_[from], dist_[v] + 1);
+                    continue;
+                } else if (dist_[from] < dist_[v]) {
+                    threePassOrphans_.addVertex(from, dist_[v] + 1);
+                }
+            }
+            treeData_.edgeToParent_[from] = rev;
             dist_[from] = dist_[v] + 1;
         }
     }
 
     void drainExcess(const double nextAlpha) {
+        //checkTree(false,nextAlpha);
         while (!excessVertices_.empty()) {
             const Vertex v = excessVertices_.pop();
             if (v == sink_) continue;
@@ -533,16 +630,22 @@ private:
         return pmf::doubleIsPositive(residualCapacity_[edge].eval(alpha));
     }
 
-    void checkTree(const bool allowOrphans = false) const {
+    void checkTree(const bool allowOrphans, const double alpha) const {
         for (const Vertex v : graph_.vertices()) {
             if (dist_[v] == INFTY || v == sink_) continue;
             const Edge edge = treeData_.edgeToParent_[v];
-            if(edge == noEdge) {
+            if (edge == noEdge) {
                 assert(allowOrphans);
                 continue;
             }
             const Vertex parent = graph_.get(ToVertex, edge);
-            assert(dist_[parent] <= dist_[v] - 1);
+            assert(dist_[parent] == dist_[v] - 1);
+            for (const Edge e : graph_.edgesFrom(v)) {
+                const Vertex to = graph_.get(ToVertex, e);
+                if (!isEdgeResidual(e, alpha)) continue;
+                assert(dist_[to] >= dist_[v] - 1);
+            }
+
         }
     }
 
