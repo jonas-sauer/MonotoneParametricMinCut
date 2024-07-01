@@ -532,7 +532,7 @@ private:
         // Update the distances of all potential children.
         for (const Edge e : graph_.edgesFrom(v)) {
             const Vertex from = graph_.get(ToVertex, e);
-            if (dist_[from] == INFTY) continue;
+            if (dist_[from] == INFTY || from == sink_) continue;
             const bool isFree = treeData_.edgeToParent_[from] == noEdge;
             const bool isDistanceGreater = dist_[from] > dist_[v] + 1;
             if (!isFree && !isDistanceGreater) continue;
