@@ -184,6 +184,11 @@ namespace pmf {
             deserialize(a, b);
         }
 
+        inline friend std::ostream& operator<<(std::ostream& out, const linearFlowFunction& f) noexcept {
+            out << f.a << "*x+" << f.b;
+            return out;
+        }
+
     private:
         double a, b;
     };

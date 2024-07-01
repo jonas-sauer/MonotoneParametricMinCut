@@ -580,22 +580,19 @@ private:
     }
 
     void removeTreeEdge(const Edge e, const Vertex from, const Vertex to, const double nextAlpha) {
-        const FlowFunction& oldResidualCapacity = residualCapacity_[e];
+        const Edge rev = graph_.get(ReverseEdge, e);
+        const FlowFunction oldResidualCapacity = residualCapacity_[e];
         const FlowFunction newResidualCapacity(residualCapacity_[e].eval(nextAlpha));
+        const FlowFunction add = newResidualCapacity - oldResidualCapacity;
         //Don't add orphan to excessVertices_ yet. Wait until it has been adopted.
-        excess_at_vertex_[from] += newResidualCapacity - oldResidualCapacity;
-        excess_at_vertex_[to] += oldResidualCapacity - newResidualCapacity;
+        excess_at_vertex_[from] += add;
+        excess_at_vertex_[to] -= add;
+        residualCapacity_[e] = newResidualCapacity;
+        residualCapacity_[rev] -= add;
         excessVertices_.addVertex(to, dist_[to]);
-        setResidualCapacity(e, newResidualCapacity);
         clearRootAlpha(from);
         orphans_.addVertex(from, dist_[from]);
         assert(dist_[from] != INFTY);
-    }
-
-    void setResidualCapacity(const Edge e, const FlowFunction& newResidualCapacity) {
-        residualCapacity_[e] = newResidualCapacity;
-        const Edge revE = graph_.get(ReverseEdge, e);
-        residualCapacity_[revE] = -newResidualCapacity;
     }
 
     double getNextZeroCrossing(const Edge e, const double alpha) const {
@@ -663,6 +660,49 @@ private:
                 assert(dist_[v] == i);
             }
         }
+    }
+
+    inline void checkCapacityConstraints(const double alpha) const noexcept {
+        for (const Edge edge : graph_.edges()) {
+            Assert(!pmf::isNumberNegative(residualCapacity_[edge].eval(alpha)), "Capacity constraint violated!");
+        }
+    }
+
+    inline void checkFlowConservation(const bool allowExcesses = false) const noexcept {
+        for (const Vertex vertex : graph_.vertices()) {
+            checkFlowConservation(vertex, allowExcesses);
+        }
+    }
+
+    inline void checkFlowConservation(const double alpha, const bool allowExcesses = false) const noexcept {
+        for (const Vertex vertex : graph_.vertices()) {
+            checkFlowConservation(vertex, alpha, allowExcesses);
+        }
+    }
+
+    inline FlowFunction getInflow(const Vertex vertex) const noexcept {
+        FlowFunction inflow(0);
+        for (const Edge edge : graph_.edgesFrom(vertex)) {
+            const Edge reverseEdge = graph_.get(ReverseEdge, edge);
+            inflow += instance_.getCapacity(reverseEdge) - residualCapacity_[reverseEdge];
+        }
+        return inflow;
+    }
+
+    inline void checkFlowConservation(const Vertex vertex, const bool allowExcesses = false) const noexcept {
+        if (vertex == source_ || vertex == sink_) return;
+        if (!allowExcesses) Assert(excess_at_vertex_[vertex] == FlowFunction(0), "Vertex " << vertex << " has excess!");
+        const FlowFunction inflow = getInflow(vertex);
+        const FlowFunction netInflow = inflow - excess_at_vertex_[vertex];
+        Assert(netInflow == FlowFunction(0), "Flow conservation not fulfilled!");
+    }
+
+    inline void checkFlowConservation(const Vertex vertex, const double alpha, const bool allowExcesses = false) const noexcept {
+        if (vertex == source_ || vertex == sink_) return;
+        if (!allowExcesses) Assert(excess_at_vertex_[vertex] == FlowFunction(0), "Vertex " << vertex << " has excess!");
+        const FlowFunction inflow = getInflow(vertex);
+        const FlowFunction netInflow = inflow - excess_at_vertex_[vertex];
+        Assert(pmf::doubleEqualAbs(netInflow.eval(alpha), 0), "Flow conservation not fulfilled!");
     }
 
 private:
