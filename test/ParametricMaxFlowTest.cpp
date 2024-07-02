@@ -135,15 +135,9 @@ TEST(parametricMaxFlow, largeTestIBFS) {
 
 TEST(parametricMaxFlow, profilingTest) {
 #ifdef NDEBUG
-    uint n = 100000;
-
-    writeParametricTestFile("randomInstance_" + std::to_string(n) + ".max", n);
-
-    ParametricMaxFlowInstance<pmf::linearFlowFunction> graph;
-    graph.fromDimacs("../../test/instances/randomInstance_" + std::to_string(n) + ".max");
-
-    ParametricIBFS<pmf::linearFlowFunction> algo(graph);
-
+    const uint n = 100000;
+    const ParametricInstance instance = createRandomParametricInstance(n);
+    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
 
 #endif

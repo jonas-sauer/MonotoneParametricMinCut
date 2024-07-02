@@ -260,8 +260,8 @@ public:
                 } else {
                     const Vertex from(String::lexicalCast<size_t>(tokens[1]) - 1);
                     const Vertex to(String::lexicalCast<size_t>(tokens[2]) - 1);
-                    const FlowType capacityB = String::lexicalCast<FlowType>(tokens[3]);
-                    const FlowType capacityA = String::lexicalCast<FlowType>(tokens[4]);
+                    const FlowType capacityA = String::lexicalCast<FlowType>(tokens[3]);
+                    const FlowType capacityB = String::lexicalCast<FlowType>(tokens[4]);
                     if (!temp.isVertex(from)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
