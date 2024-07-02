@@ -110,10 +110,11 @@ namespace pmf {
     class linearFlowFunction : public flowFunction {
     public:
         using FlowType = double;
+        inline static constexpr double CONST_INF = INFTY;
 
-        linearFlowFunction(double a, double b) : a(a), b(b) {};
+        linearFlowFunction(double a, double b) : a(std::min(a, CONST_INF)), b(std::min(b, CONST_INF)) {};
 
-        explicit linearFlowFunction(double b) : a(0), b(b) {};
+        explicit linearFlowFunction(double b) : a(0), b(std::min(b, CONST_INF)) {};
 
         explicit linearFlowFunction() : a(0), b(0) {};
 
@@ -122,11 +123,12 @@ namespace pmf {
                 if (b == 0) {
                     return minVal;
                 } else {
-                    return std::numeric_limits<double>::infinity();
+                    return CONST_INF;
                 }
             }
+            if (b >= CONST_INF) return CONST_INF;
             double crossing = -(b / a);
-            if (minVal > crossing) return std::numeric_limits<double>::infinity();
+            if (minVal > crossing) return CONST_INF;
             else return crossing;
         }
 
@@ -135,18 +137,25 @@ namespace pmf {
         }
 
         [[nodiscard]] double eval(double x) const override {
+            if (b == CONST_INF) return CONST_INF;
             return x * a + b;
         }
 
         friend linearFlowFunction operator+(linearFlowFunction lhs, const linearFlowFunction &rhs) {
             lhs.a += rhs.a;
-            lhs.b += rhs.b;
+            if (lhs.b == CONST_INF || rhs.b == CONST_INF) {
+                lhs.b = CONST_INF;
+            } else {
+                lhs.b += rhs.b;
+            }
             return lhs;
         }
 
         friend linearFlowFunction operator-(linearFlowFunction lhs, const linearFlowFunction &rhs) {
             lhs.a -= rhs.a;
-            lhs.b -= rhs.b;
+            if (lhs.b != CONST_INF) {
+                lhs.b -= rhs.b;
+            }
             return lhs;
         }
 
@@ -162,13 +171,19 @@ namespace pmf {
 
         linearFlowFunction operator+=(const linearFlowFunction &rhs) {
             a += rhs.a;
-            b += rhs.b;
+            if (b == CONST_INF || rhs.b == CONST_INF) {
+                b = CONST_INF;
+            } else {
+                b += rhs.b;
+            }
             return *this;
         }
 
         linearFlowFunction operator-=(const linearFlowFunction &rhs) {
             a -= rhs.a;
-            b -= rhs.b;
+            if (b != CONST_INF) {
+                b -= rhs.b;
+            }
             return *this;
         }
 

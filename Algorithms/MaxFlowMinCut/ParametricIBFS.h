@@ -227,8 +227,8 @@ public:
         initialize();
         double alpha = alphaMin_;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
-            assert(!alphaQ_.empty());
-            //assert(alphaQ_.front()->value_ > alpha);
+            if (alphaQ_.empty()) return;
+            assert(alphaQ_.front()->value_ > alpha);
             alpha = alphaQ_.front()->value_;
             if (alpha > alphaMax_) return;
             updateTree(alpha);
@@ -272,7 +272,7 @@ public:
 private:
     void initialize() {
         initialFlow.run();
-        const std::vector<double>& initialResidualCapacity = initialFlow.getResidualCapacities();
+        const std::vector<double>& initialResidualCapacity = initialFlow.getCleanResidualCapacities();
         // TODO Obtain source and sink component from initialFlow
         initializeSinkTree(initialResidualCapacity);
 

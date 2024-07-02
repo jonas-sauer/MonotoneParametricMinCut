@@ -140,6 +140,14 @@ public:
         return residualCapacity;
     }
 
+    inline std::vector<FlowType> getCleanResidualCapacities() const noexcept {
+        std::vector<FlowType> result = getResidualCapacities();
+        for (size_t i = 0; i < result.size(); i++) {
+            if (result[i] > INFTY - 1000) result[i] = INFTY;
+        }
+        return result;
+    }
+
 private:
     template<int DIRECTION>
     inline void initialize() noexcept {
