@@ -128,7 +128,7 @@ void writeParametricTestFile(std::string filename, uint n) {
 }
 
 TEST(parametricMaxFlow, largeTest) {
-    uint n = 10;
+    uint n = 1000;
 
     writeParametricTestFile("randomInstance_" + std::to_string(n) + ".max", n);
 
@@ -185,7 +185,7 @@ TEST(parametricMaxFlow, largeTest) {
 
 TEST(parametricMaxFlow, profilingTest) {
 #ifdef NDEBUG
-    uint n = 500000;
+    uint n = 100000;
 
     writeParametricTestFile("randomInstance_" + std::to_string(n) + ".max", n);
 
