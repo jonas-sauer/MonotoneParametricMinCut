@@ -66,6 +66,15 @@ namespace pmf {
         }
     }
 
+    template<typename T>
+    bool areNumbersEqual(const T a, const T b) {
+        if constexpr (std::is_floating_point<T>::value) {
+            return std::abs(a - b) < epsilon;
+        } else {
+            return a == b;
+        }
+    }
+
     /**
      * Abstract class for functions to be used for parametric maxFlow
      */

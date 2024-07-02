@@ -125,10 +125,12 @@ void largeTest(const uint n) {
     }
 }
 
-TEST(parametricMaxFlow, largeTest) {
-    const uint n = 1000;
-    largeTest<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(n);
-    largeTest<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(n);
+TEST(parametricMaxFlow, largeTestPushRelabel) {
+    largeTest<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(1000);
+}
+
+TEST(parametricMaxFlow, largeTestIBFS) {
+    largeTest<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(1000);
 }
 
 TEST(parametricMaxFlow, profilingTest) {

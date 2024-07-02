@@ -400,10 +400,10 @@ private:
             const FlowType res = residualCapacity[edgeTowardsSink];
             const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
-            if (flow == res) {
+            if (pmf::areNumbersEqual(flow, res)) {
                 makeOrphan<DIRECTION>(vertex);
             }
-            if (flow == exc) {
+            if (pmf::areNumbersEqual(flow, exc)) {
                 excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             vertex = parentVertex;
