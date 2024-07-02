@@ -147,7 +147,7 @@ public:
     using FlowType = FlowFunction::FlowType;
     using GraphType = ParametricFlowGraph<FlowFunction>;
 
-    ParametricMaxFlowInstance() : source(noVertex), sink(noVertex), alphaMin(0), alphaMax(0) {}
+    ParametricMaxFlowInstance() : source(noVertex), sink(noVertex), alphaMin(0), alphaMax(INFTY) {}
 
     explicit ParametricMaxFlowInstance(const std::string& fileName) {
         deserialize(fileName);

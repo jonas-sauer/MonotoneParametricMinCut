@@ -52,3 +52,12 @@ add_dependencies(MapServers ${MAP_SERVERS})
 #UnitTests
 add_executable(UnitTests Runnables/UnitTests.cpp)
 target_link_libraries(UnitTests PUBLIC OpenMP::OpenMP_CXX)
+
+# tests
+option(TESTS "Build the tests" ON)
+if (TESTS)
+    enable_testing()
+    add_subdirectory(libraries/googletest)
+    include(GoogleTest)
+    add_subdirectory(test)
+endif ()

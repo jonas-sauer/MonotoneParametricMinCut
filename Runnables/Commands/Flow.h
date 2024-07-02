@@ -256,7 +256,7 @@ public:
         const std::vector<double>& breakpoints = algorithm.getBreakpoints();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         std::cout << "#Breakpoints: " << breakpoints.size() << std::endl;
-        compare<RestartableIBFS<ParametricWrapper>>(instance, algorithm, breakpoints);
+        compare<PushRelabel<ParametricWrapper>>(instance, algorithm, breakpoints);
     }
 
 private:
