@@ -156,6 +156,10 @@ public:
 
     ParametricMaxFlowInstance() : source(noVertex), sink(noVertex), alphaMin(0), alphaMax(INFTY) {}
 
+    ParametricMaxFlowInstance(const GraphType& graph, const Vertex source, const Vertex sink, const double alphaMin, const double alphaMax) :
+        graph(graph), source(source), sink(sink), alphaMin(alphaMin), alphaMax(alphaMax) {
+    }
+
     explicit ParametricMaxFlowInstance(const std::string& fileName) {
         deserialize(fileName);
     }
@@ -335,7 +339,7 @@ public:
     }
 
     inline void setAlpha(const double newAlpha) noexcept {
-        Assert(newAlpha > alpha, "Parameter did not increase!");
+        Assert(newAlpha >= alpha, "Parameter did not increase!");
         Assert(newAlpha <= instance.alphaMax, "Parameter out of range!");
         alpha = newAlpha;
         Edge edgeFromSource = graph.beginEdgeFrom(source);
