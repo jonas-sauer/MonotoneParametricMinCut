@@ -54,3 +54,4 @@ Runnables/UnitTests
 Runnables/UnrestrictedWalkingShell
 Runnables/ValidationShell
 Runnables/Standalones/Build
+test/instances/randomInstance*

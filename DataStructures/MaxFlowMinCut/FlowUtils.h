@@ -133,7 +133,7 @@ namespace pmf {
         }
 
         std::string toString() {
-            return "f(x) = " + std::to_string(a) + "*x + " + std::to_string(b);
+            return std::to_string(a) + " " + std::to_string(b);
         }
 
         [[nodiscard]] double eval(double x) const override {

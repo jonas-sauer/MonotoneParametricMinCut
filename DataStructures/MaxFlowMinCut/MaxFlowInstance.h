@@ -134,6 +134,13 @@ public:
         Graph::move(std::move(temp), graph);
     }
 
+    template<bool VERBOSE = true>
+    inline void fromEdgeList(const ParametricFlowGraphEdgeList<FlowType> &edgeList, Vertex s, Vertex t) noexcept {
+        source = s;
+        sink = t;
+        Graph::copy(edgeList, graph);
+    }
+
 public:
     GraphType graph;
     Vertex source;

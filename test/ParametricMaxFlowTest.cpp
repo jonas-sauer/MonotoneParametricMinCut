@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <random>
+#include <fstream>
 
 #include "../Algorithms/MaxFlowMinCut/IBFS.h"
 #include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
@@ -45,7 +46,7 @@ edgeVectorToStaticGraph(uint n, std::vector<std::pair<std::pair<uint, uint>, pmf
 TEST(parametricMaxFlow, smallTest) {
     ParametricMaxFlowInstance<pmf::linearFlowFunction> graph;
 
-    graph.fromDimacs("../../test/smallTest");
+    graph.fromDimacs("../../test/instances/smallTest");
 
     ParametricIBFS<pmf::linearFlowFunction> algo(graph);
 
@@ -64,9 +65,17 @@ TEST(parametricMaxFlow, smallTest) {
     EXPECT_DOUBLE_EQ(vertexThetas[4], INFTY);
 }
 
-/*
-TEST(parametricMaxFlow, largeTest) {
-    uint n = 10000;
+void writeParametricTestFile(std::string filename, uint n) {
+    std::ifstream file("../../test/instances/" + filename);
+
+    if (file.good()) {
+        std::cout << "Test has already been generated" << std::endl;
+        return;
+    }
+
+    file.close();
+
+    std::ofstream outFile("../../test/instances/" + filename);
 
     std::mt19937 rng(42);
     std::uniform_int_distribution<int> disN(2, bigNum);
@@ -110,31 +119,82 @@ TEST(parametricMaxFlow, largeTest) {
         }
     }
 
-    pmf::linearFlowGraph graph = edgeVectorToStaticGraph(n, edges);
+    outFile << "p pmax " << n << " " << edges.size() << std::endl;
+    outFile << "n 1 s" << std::endl;
+    outFile << "n 2 t" << std::endl;
+    for (auto e : edges) {
+        outFile << "a " + std::to_string(e.first.first + 1) + " " + std::to_string(e.first.second + 1) + " " + e.second.toString() << std::endl;
+    }
+}
 
-    ParametricIBFS algo(graph, 0.0, 1.0, Vertex(0), Vertex(1));
+TEST(parametricMaxFlow, largeTest) {
+    uint n = 10;
+
+    writeParametricTestFile("randomInstance_" + std::to_string(n) + ".max", n);
+
+    ParametricMaxFlowInstance<pmf::linearFlowFunction> graph;
+    graph.fromDimacs("../../test/instances/randomInstance_" + std::to_string(n) + ".max");
+
+    ParametricIBFS<pmf::linearFlowFunction> algo(graph);
 
     algo.run();
 
     for (double breakPoint: algo.getBreakpoints())
         std::cout << "Breakpoint at " << breakPoint << std::endl;
 
-    for (uint i = 0; i <= 10; i++) {
-        IBFS staticAlgo(graph, Vertex(0), Vertex(1), static_cast<double >(i) * 0.1);
+    for (double breakPoint : algo.getBreakpoints()) {
+        if (breakPoint > 1)
+            break;
+
+        std::cout << "Manually checking breakpoint " << breakPoint << std::endl;
+
+        ParametricFlowGraphEdgeList<double> temp;
+        temp.addVertices(graph.graph.numVertices());
+
+        for (Vertex v : graph.graph.vertices()) {
+            for (Edge e : graph.graph.edgesFrom(v)) {
+                Vertex w = graph.graph.get(ToVertex, e);
+                if (v < w) {
+                    Edge eNew = temp.addEdge(v, w);
+                    Edge eRev = temp.addEdge(w, v);
+                    temp.set(Capacity, eNew, graph.getCapacity(e).eval(breakPoint));
+                    temp.set(Capacity, eRev, graph.getCapacity(graph.graph.get(ReverseEdge, e)).eval(breakPoint));
+                    temp.set(ReverseEdge, eNew, eRev);
+                    temp.set(ReverseEdge, eRev, eNew);
+                }
+            }
+        }
+
+        StaticMaxFlowInstance<double> staticGraph;
+        staticGraph.fromEdgeList(temp, Vertex(0), Vertex(1));
+
+        IBFS<StaticMaxFlowInstance<double>> staticAlgo(staticGraph);
 
         staticAlgo.run();
 
         for (Vertex v: staticAlgo.getSourceComponent()) {
-            std::cout << "For alpha = " << static_cast<double >(i) * 0.1 << " vertex " << v
-                      << " is in the source component" << std::endl;
-            EXPECT_LE(algo.getVertexThetas()[v], static_cast<double >(i) * 0.1);
+            EXPECT_LE(algo.getVertexThetas()[v], breakPoint);
         }
 
         for (Vertex v: staticAlgo.getSinkComponent()) {
-            std::cout << "For alpha = " << static_cast<double >(i) * 0.1 << " vertex " << v
-                      << " is in the sink component" << std::endl;
-            EXPECT_GT(algo.getVertexThetas()[v], static_cast<double >(i) * 0.1);
+            EXPECT_GT(algo.getVertexThetas()[v], breakPoint);
         }
     }
 }
-*/
+
+
+TEST(parametricMaxFlow, profilingTest) {
+#ifdef NDEBUG
+    uint n = 500000;
+
+    writeParametricTestFile("randomInstance_" + std::to_string(n) + ".max", n);
+
+    ParametricMaxFlowInstance<pmf::linearFlowFunction> graph;
+    graph.fromDimacs("../../test/instances/randomInstance_" + std::to_string(n) + ".max");
+
+    ParametricIBFS<pmf::linearFlowFunction> algo(graph);
+
+    algo.run();
+
+#endif
+}
