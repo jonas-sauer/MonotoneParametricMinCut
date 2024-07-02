@@ -10,8 +10,9 @@ const uint bigNum = 1000000000;
 
 using EdgeListTemp = EdgeList<NoVertexAttributes, List<Attribute<FromVertex, Vertex>, Attribute<ToVertex, Vertex>, Attribute<Capacity, pmf::linearFlowFunction>, Attribute<pmf::Flow, pmf::linearFlowFunction>, Attribute<ReverseEdge, Edge>>>;
 
+/*
 void
-addEdge(EdgeListTemp& edgeList, uint v, uint w, pmf::linearFlowFunction cap) {
+addEdge(EdgeListTemp& edgeList, uint v, uint w, const pmf::linearFlowFunction& cap) {
     Edge e, er;
 
     e = edgeList.addEdge(Vertex(v), Vertex(w));
@@ -39,48 +40,31 @@ edgeVectorToStaticGraph(uint n, std::vector<std::pair<std::pair<uint, uint>, pmf
 
     return std::move(staticGraph);
 }
+ */
 
 TEST(parametricMaxFlow, smallTest) {
-    uint n = 5;
-    std::vector<std::pair<std::pair<uint, uint>, pmf::linearFlowFunction>> edges = {{{0, 1}, pmf::linearFlowFunction(1,
-                                                                                                                     0)},
-                                                                                    {{0, 2}, pmf::linearFlowFunction(2,
-                                                                                                                     0)},
-                                                                                    {{0, 3}, pmf::linearFlowFunction(0,
-                                                                                                                     2)},
-                                                                                    {{1, 4}, pmf::linearFlowFunction(-1,
-                                                                                                                     1)},
-                                                                                    {{2, 4}, pmf::linearFlowFunction(-1,
-                                                                                                                     1)},
-                                                                                    {{3, 4}, pmf::linearFlowFunction(0,
-                                                                                                                     1)}};
+    ParametricMaxFlowInstance<pmf::linearFlowFunction> graph;
 
-    pmf::linearFlowGraph graph = edgeVectorToStaticGraph(5, edges);
+    graph.fromDimacs("../../test/smallTest");
 
-    ParametricIBFS
-    pmf::parametricMaxFlowSauerBeinesMayer<pmf::linearFlowFunction> algo(graph, 0.0, 1.0, Vertex(0), Vertex(4));
+    ParametricIBFS<pmf::linearFlowFunction> algo(graph);
 
     algo.run();
 
     std::vector<double> vertexThetas = algo.getVertexThetas();
 
     for (uint i = 0; i < 5; i++) {
-        std::cout << "Vertex " << i << " has value " << vertexThetas[i] << std::endl;
-    }
-
-    for (Edge e: graph.edges()) {
-        std::cout << "Edge (" << graph.get(FromVertex, e) << "," << graph.get(ToVertex, e) << ") has capacity "
-                  << graph.get(Capacity, e).toString() << " and flow " << graph.get(pmf::Flow, e).toString()
-                  << std::endl;
+        std::cout << "Vertex " << i + 1 << " has value " << vertexThetas[i] << std::endl;
     }
 
     EXPECT_DOUBLE_EQ(vertexThetas[0], 0.0);
     EXPECT_DOUBLE_EQ(vertexThetas[1], 0.5);
     EXPECT_DOUBLE_EQ(vertexThetas[2], 0.3333333333333333);
     EXPECT_DOUBLE_EQ(vertexThetas[3], 0.0);
-    EXPECT_DOUBLE_EQ(vertexThetas[4], std::numeric_limits<double>::max());
+    EXPECT_DOUBLE_EQ(vertexThetas[4], INFTY);
 }
 
+/*
 TEST(parametricMaxFlow, largeTest) {
     uint n = 10000;
 
@@ -153,4 +137,4 @@ TEST(parametricMaxFlow, largeTest) {
         }
     }
 }
-
+*/

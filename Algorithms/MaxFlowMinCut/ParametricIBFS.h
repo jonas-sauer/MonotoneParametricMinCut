@@ -227,6 +227,8 @@ public:
         initialize();
         double alpha = alphaMin_;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
+            if (alphaQ_.empty())
+                break;
             assert(!alphaQ_.empty());
             //assert(alphaQ_.front()->value_ > alpha);
             alpha = alphaQ_.front()->value_;
@@ -291,8 +293,8 @@ private:
                     saturateEdgeInitial(e, revE, to);
                 } else if (to == sink_) {
                     if (initialResidualCapacity[e] > 0) {
-                        residualCapacity_[e] = FlowFunction(initialResidualCapacity[e]);
-                        residualCapacity_[revE] = FlowFunction(initialResidualCapacity[revE]);
+                        residualCapacity_[e] = graph_.get(Capacity, e) - FlowFunction(graph_.get(Capacity, e).eval(alphaMin_) - initialResidualCapacity[e]);
+                        residualCapacity_[revE] = graph_.get(Capacity, revE) - FlowFunction(graph_.get(Capacity, revE).eval(alphaMin_) - initialResidualCapacity[revE]);
                     } else {
                         saturateEdgeInitial(e, revE, to);
                     }
