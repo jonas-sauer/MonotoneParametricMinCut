@@ -137,12 +137,6 @@ public:
     struct Cut {
         Cut(const int n) : inSinkComponent(n, false) {}
 
-        inline void compute(const std::vector<int>& dist) {
-            for (size_t i = 0; i < dist.size(); i++) {
-                inSinkComponent[i] = static_cast<size_t>(dist[i]) < inSinkComponent.size();
-            }
-        }
-
         inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
@@ -239,8 +233,30 @@ private:
                 workSinceLastUpdate = 0;
             }
         }
-        //TODO: Not necessarily sink-minimal?
-        cut.compute(distance);
+        computeCut();
+    }
+
+    //TODO: Can this be done faster?
+    inline void computeCut() noexcept {
+        std::vector<bool>(n, false).swap(cut.inSinkComponent);
+        std::queue<Vertex> queue;
+        queue.push(sinkVertex);
+        cut.inSinkComponent[sinkVertex] = true;
+        while (!queue.empty()) {
+            const Vertex vertex = queue.front();
+            queue.pop();
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                const Edge edgeToSink = graph.get(ReverseEdge, edge);
+                if (!isEdgeResidual(edgeToSink)) continue;
+                if (!cut.inSinkComponent[to]) {
+                    queue.push(to);
+                    cut.inSinkComponent[to] = true;
+                }
+            }
+        }
+
+        Assert(!cut.inSinkComponent[sourceVertex], "No cut found!");
     }
 
     inline void updateCapacities() noexcept {
