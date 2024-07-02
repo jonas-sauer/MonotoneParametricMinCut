@@ -133,7 +133,7 @@ namespace pmf {
         }
 
         std::string toString() {
-            return std::to_string(a) + " " + std::to_string(b);
+            return std::to_string(b) + " " + std::to_string(a);
         }
 
         [[nodiscard]] double eval(double x) const override {
