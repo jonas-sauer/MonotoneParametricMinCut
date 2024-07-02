@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.25)
 project(RoutingFramework)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -60,4 +60,17 @@ if (TESTS)
     add_subdirectory(libraries/googletest)
     include(GoogleTest)
     add_subdirectory(test)
+endif ()
+
+# benchmark
+option(BENCHMARK "Additional Code" OFF)
+if (BENCHMARK)
+    add_subdirectory(libraries/googlebenchmark)
+    add_executable(test_benchmark)
+    target_include_directories(test_benchmark
+            PRIVATE
+            ${PROJECT_SOURCE_DIR}/include
+            )
+    target_link_libraries(test_benchmark
+            benchmark::benchmark)
 endif ()
