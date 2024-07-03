@@ -98,19 +98,6 @@ private:
             minBucket_ = std::min(minBucket_, dist);
         }
 
-        /*inline void increaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
-            Assert(newDist > oldDist, "Distance has not increased!");
-            assertVertexInBucket(vertex, oldDist);
-            const Vertex other = buckets_[oldDist].back();
-            positionOfVertex_[other] = positionOfVertex_[vertex];
-            buckets_[oldDist][positionOfVertex_[vertex]] = other;
-            buckets_[oldDist].pop_back();
-            if (static_cast<size_t>(newDist) >= buckets_.size()) buckets_.resize(newDist + 1);
-            positionOfVertex_[vertex] = buckets_[newDist].size();
-            buckets_[newDist].emplace_back(vertex);
-            while (static_cast<size_t>(minBucket_) < buckets_.size() && buckets_[minBucket_].empty()) minBucket_++;
-        }*/
-
         inline void decreaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
             Assert(newDist < oldDist, "Distance has not decreased!");
             assertVertexInBucket(vertex, oldDist);
@@ -223,7 +210,7 @@ public:
         }
     };
 
-    void run() {
+    inline void run() noexcept {
         initialize();
         double alpha = alphaMin_;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
@@ -239,15 +226,15 @@ public:
         }
     }
 
-    const std::vector<double>& getBreakpoints() const {
+    inline const std::vector<double>& getBreakpoints() const noexcept {
         return thetaBreakpoints_;
     };
 
-    const std::vector<double>& getVertexThetas() const {
+    inline const std::vector<double>& getVertexThetas() const noexcept {
         return thetaByVertex_;
     }
 
-    std::vector<Vertex> getSinkComponent(const double alpha) const {
+    inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
         std::vector<Vertex> sinkComponent;
         for (const Vertex vertex : graph_.vertices()) {
             if (thetaByVertex_[vertex] <= alpha) continue;
@@ -256,7 +243,7 @@ public:
         return sinkComponent;
     }
 
-    double getFlowValue(const double alpha) const {
+    inline double getFlowValue(const double alpha) const noexcept {
         double flow = 0;
         for (const Vertex from : graph_.vertices()) {
             if (thetaByVertex_[from] > alpha) continue;
@@ -270,7 +257,7 @@ public:
     }
 
 private:
-    void initialize() {
+    inline void initialize() noexcept {
         initialFlow.run();
         const std::vector<double>& initialResidualCapacity = initialFlow.getCleanResidualCapacities();
         // TODO Obtain source and sink component from initialFlow
@@ -305,7 +292,7 @@ private:
         drainExcess(alphaMin_);
     }
 
-    void initializeSinkTree(const std::vector<double>& initialResidualCapacity) {
+    inline void initializeSinkTree(const std::vector<double>& initialResidualCapacity) noexcept {
         std::deque<Vertex> queue(1, sink_);
         dist_[sink_] = 0;
 
@@ -325,7 +312,7 @@ private:
         }
     }
 
-    void saturateEdgeInitial(const Edge e, const Edge revE, const Vertex to) {
+    inline void saturateEdgeInitial(const Edge e, const Edge revE, const Vertex to) noexcept {
         const FlowFunction& capacity = graph_.get(Capacity, e);
         residualCapacity_[e] = FlowFunction(0);
         residualCapacity_[revE] = capacity + graph_.get(Capacity, revE);
@@ -333,7 +320,7 @@ private:
         excessVertices_.addVertex(to, dist_[to]);
     }
 
-    void updateTree(const double nextAlpha) {
+    inline void updateTree(const double nextAlpha) noexcept {
         assert(orphans_.empty());
         assert(threePassOrphans_.empty());
         while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
@@ -347,7 +334,7 @@ private:
         }
     }
 
-    void reconnectTree(const double nextAlpha) {
+    inline void reconnectTree(const double nextAlpha) noexcept {
         std::vector<Vertex> moved;
         while (!orphans_.empty()) {
             const Vertex v = orphans_.pop();
@@ -365,13 +352,9 @@ private:
                 thetaBreakpoints_.emplace_back(nextAlpha);
             }
         }
-        for (const Vertex v : moved) {
-            assertDisconnected(v, nextAlpha);
-        }
-        //std::cout << nextAlpha << ", " << moved.size() << std::endl;
     }
 
-    bool adoptWithSameDist(const Vertex v, const double nextAlpha) {
+    inline bool adoptWithSameDist(const Vertex v, const double nextAlpha) noexcept {
         for (Edge e = currentEdge_[v]; e < graph_.endEdgeFrom(v); e++) {
             if (!isEdgeResidual(e, nextAlpha)) continue;
             const Vertex to = graph_.get(ToVertex, e);
@@ -384,7 +367,7 @@ private:
         return false;
     }
 
-    bool adoptWithNewDist(const Vertex v, const double nextAlpha) {
+    inline bool adoptWithNewDist(const Vertex v, const double nextAlpha) noexcept {
         uint d_min = INFTY;
         Edge e_min = noEdge;
         Vertex v_min = noVertex;
@@ -411,7 +394,7 @@ private:
         return true;
     }
 
-    void reconnectTreeThreePass(const double nextAlpha) {
+    inline void reconnectTreeThreePass(const double nextAlpha) noexcept {
         // Pass 1: Try to adopt orphans without changing their distance.
         reconnectTreeFirstPass(nextAlpha);
         std::vector<Vertex> moved;
@@ -446,24 +429,12 @@ private:
                 thetaBreakpoints_.emplace_back(nextAlpha);
             }
         }
-        for (const Vertex v : moved) {
-            if (treeData_.edgeToParent_[v] != noEdge) continue;
-            assertDisconnected(v, nextAlpha);
-        }
-    }
-
-    void assertDisconnected(const Vertex v, const double alpha) {
-        for (const Edge edge : graph_.edgesFrom(v)) {
-            if (!isEdgeResidual(edge, alpha)) continue;
-            const Vertex to = graph_.get(ToVertex, edge);
-            assert(dist_[to] == INFTY);
-        }
     }
 
     // Go through orphans in increasing order of distance.
     // If they can be adopted with the same distance, do so.
     // Otherwise, increment their distance and add them to the orphan buckets for passes 2 and 3.
-    void reconnectTreeFirstPass(const double nextAlpha) {
+    inline void reconnectTreeFirstPass(const double nextAlpha) noexcept {
         while (!orphans_.empty()) {
             const Vertex v = orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
@@ -482,7 +453,7 @@ private:
     // Try to find a non-orphan parent with minimal distance for v.
     // This adoption is not necessarily optimal yet - it may be improved once other orphans re-enter the tree.
     // Return true iff the adoption was successful and the distance increased.
-    bool reconnectTreeSecondPass(const Vertex v, const double nextAlpha) {
+    inline bool reconnectTreeSecondPass(const Vertex v, const double nextAlpha) noexcept {
         uint d_min = INFTY;
         Edge e_min = noEdge;
         Vertex v_min = noVertex;
@@ -515,7 +486,7 @@ private:
         return false;
     }
 
-    void reconnectTreeThirdPass(const Vertex v, const double nextAlpha) {
+    inline void reconnectTreeThirdPass(const Vertex v, const double nextAlpha) noexcept {
         // dist_[v] is correct at this point.
         // Find the first admissible parent edge to ensure that currentEdge_ is set correctly.
         for (const Edge e : graph_.edgesFrom(v)) {
@@ -557,8 +528,7 @@ private:
         }
     }
 
-    void drainExcess(const double nextAlpha) {
-        //checkTree(false,nextAlpha);
+    inline void drainExcess(const double nextAlpha) noexcept {
         while (!excessVertices_.empty()) {
             const Vertex v = excessVertices_.pop();
             if (v == sink_) continue;
@@ -579,7 +549,7 @@ private:
         }
     }
 
-    void removeTreeEdge(const Edge e, const Vertex from, const Vertex to, const double nextAlpha) {
+    inline void removeTreeEdge(const Edge e, const Vertex from, const Vertex to, const double nextAlpha) noexcept {
         const Edge rev = graph_.get(ReverseEdge, e);
         const FlowFunction oldResidualCapacity = residualCapacity_[e];
         const FlowFunction newResidualCapacity(residualCapacity_[e].eval(nextAlpha));
@@ -595,11 +565,11 @@ private:
         assert(dist_[from] != INFTY);
     }
 
-    double getNextZeroCrossing(const Edge e, const double alpha) const {
+    inline double getNextZeroCrossing(const Edge e, const double alpha) const noexcept {
         return residualCapacity_[e].getNextZeroCrossing(alpha);
     }
 
-    void recalculateRootAlpha(const Vertex v, const Edge e, const double alpha) {
+    inline void recalculateRootAlpha(const Vertex v, const Edge e, const double alpha) noexcept {
         const double oldValue = rootAlpha_[v].value_;
         rootAlpha_[v].value_ = getNextZeroCrossing(e, alpha);
         //assert(rootAlpha_[v].value_ > alpha);
@@ -613,21 +583,21 @@ private:
         }
     }
 
-    void clearRootAlpha(const Vertex v) {
+    inline void clearRootAlpha(const Vertex v) noexcept {
         if (rootAlpha_[v].value_ == INFTY) return;
         rootAlpha_[v].value_ = INFTY;
         alphaQ_.remove(&rootAlpha_[v]);
     }
 
-    bool isEdgeAdmissible(const Vertex from, const Vertex to) const {
+    inline bool isEdgeAdmissible(const Vertex from, const Vertex to) const noexcept {
         return dist_[from] == dist_[to] + 1;
     }
 
-    bool isEdgeResidual(const Edge edge, const double alpha) const {
+    inline bool isEdgeResidual(const Edge edge, const double alpha) const noexcept {
         return pmf::doubleIsPositive(residualCapacity_[edge].eval(alpha));
     }
 
-    void checkTree(const bool allowOrphans, const double alpha) const {
+    inline void checkTree(const bool allowOrphans, const double alpha) const noexcept {
         for (const Vertex v : graph_.vertices()) {
             if (dist_[v] == INFTY || v == sink_) continue;
             const Edge edge = treeData_.edgeToParent_[v];
@@ -646,7 +616,7 @@ private:
         }
     }
 
-    void checkQueue() {
+    inline void checkQueue() noexcept {
         for (const Vertex v : graph_.vertices()) {
             if (treeData_.edgeToParent_[v] == noEdge) continue;
             if (rootAlpha_[v] == INFTY) continue;
@@ -654,7 +624,7 @@ private:
         }
     }
 
-    void checkExcessBuckets() {
+    inline void checkExcessBuckets() noexcept {
         for (size_t i = 0; i < excessVertices_.buckets_.size(); i++) {
             for (const Vertex v : excessVertices_.buckets_[i]) {
                 assert(dist_[v] == i);
@@ -704,6 +674,15 @@ private:
         const FlowFunction netInflow = inflow - excess_at_vertex_[vertex];
         Assert(pmf::doubleEqualAbs(netInflow.eval(alpha), 0), "Flow conservation not fulfilled!");
     }
+
+    inline void checkDisconnected(const Vertex v, const double alpha) const noexcept {
+        for (const Edge edge : graph_.edgesFrom(v)) {
+            if (!isEdgeResidual(edge, alpha)) continue;
+            const Vertex to = graph_.get(ToVertex, edge);
+            Assert(dist_[to] == INFTY, "Vertex " << v << " is not disconnected from sink component!");
+        }
+    }
+
 
 private:
     const ParametricMaxFlowInstance<FlowFunction>& instance_;

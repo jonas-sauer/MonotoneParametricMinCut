@@ -70,6 +70,66 @@ private:
         int maxBucket;
     };
 
+    struct OrphanBuckets {
+        OrphanBuckets(const int n) :
+            positionOfVertex_(n, -1), minBucket_(INFTY) {
+        }
+
+        inline void assertVertexInBucket(const Vertex vertex, const int dist) const noexcept {
+            Assert(positionOfVertex_[vertex] != -1, "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(dist) < buckets_.size(), "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(positionOfVertex_[vertex]) < buckets_[dist].size(), "Vertex is not in bucket!");
+            Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
+        }
+
+        inline void addVertex(const Vertex vertex, const int dist) noexcept {
+            if (positionOfVertex_[vertex] != -1) {
+                assertVertexInBucket(vertex, dist);
+                return;
+            }
+            if (static_cast<size_t>(dist) >= buckets_.size()) buckets_.resize(dist + 1);
+            positionOfVertex_[vertex] = buckets_[dist].size();
+            buckets_[dist].emplace_back(vertex);
+            minBucket_ = std::min(minBucket_, dist);
+        }
+
+        inline void decreaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
+            Assert(newDist < oldDist, "Distance has not decreased!");
+            assertVertexInBucket(vertex, oldDist);
+            const Vertex other = buckets_[oldDist].back();
+            positionOfVertex_[other] = positionOfVertex_[vertex];
+            buckets_[oldDist][positionOfVertex_[vertex]] = other;
+            buckets_[oldDist].pop_back();
+            positionOfVertex_[vertex] = buckets_[newDist].size();
+            buckets_[newDist].emplace_back(vertex);
+            if (static_cast<size_t>(oldDist) == buckets_.size() - 1) {
+                while (!buckets_.empty() && buckets_.back().empty()) buckets_.pop_back();
+            }
+            minBucket_ = std::min(minBucket_, newDist);
+        }
+
+        inline bool empty() const noexcept {
+            return buckets_.empty();
+        }
+
+        inline Vertex pop() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            const Vertex vertex = buckets_[minBucket_].back();
+            buckets_[minBucket_].pop_back();
+            positionOfVertex_[vertex] = -1;
+            while (static_cast<size_t>(minBucket_) < buckets_.size() && buckets_[minBucket_].empty()) minBucket_++;
+            if (static_cast<size_t>(minBucket_) == buckets_.size()) {
+                buckets_.clear();
+                minBucket_ = INFTY;
+            }
+            return vertex;
+        }
+
+        std::vector<std::vector<Vertex>> buckets_;
+        std::vector<int> positionOfVertex_;
+        int minBucket_;
+    };
+
     struct TreeData {
         TreeData(const size_t n) :
             parentEdge(n, noEdge),
@@ -157,6 +217,8 @@ public:
         currentEdge(n, noEdge),
         treeData(n),
         excessVertices{ExcessBuckets(n), ExcessBuckets(n)},
+        orphans{n, n},
+        threePassOrphans{n, n},
         cut(n) {
     }
 
@@ -247,7 +309,7 @@ private:
                 makeOrphan<BACKWARD>(from);
             }
         }
-        adoptOrphans<BACKWARD>();
+        adoptOrphansThreePass<BACKWARD>();
         drainExcesses<BACKWARD>();
     }
 
@@ -264,9 +326,11 @@ private:
 
     // Register the excess for draining.
     inline void handleSinkVertexExcess(const Vertex vertex) noexcept {
-        Assert(hasPositiveExcess<BACKWARD>(vertex), "Vertex does not have excess!");
+        Assert(getExcess<BACKWARD>(vertex), "Vertex does not have excess!");
         Assert(treeData.parentVertex[vertex] != noVertex, "Sink component is not a tree!");
-        excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+        if (hasPositiveExcess<BACKWARD>(vertex)) {
+            excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+        }
     }
 
     inline void runAfterInitialize() noexcept {
@@ -375,7 +439,7 @@ private:
         }
         else {
             makeOrphan<DIRECTION>(start);
-            adoptOrphans<DIRECTION>();
+            adoptOrphansThreePass<DIRECTION>();
         }
     }
 
@@ -385,7 +449,7 @@ private:
             const Vertex vertex = excessVertices[DIRECTION].front();
             Assert(hasNonNegativeExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
             drainExcess<DIRECTION>(vertex);
-            adoptOrphans<DIRECTION>();
+            adoptOrphansThreePass<DIRECTION>();
         }
     }
 
@@ -416,30 +480,160 @@ private:
         if (hasNonNegativeExcess<DIRECTION>(vertex))
             makeOrphan<DIRECTION>(vertex);
     }
+
     template<int DIRECTION>
     inline void makeOrphan(const Vertex vertex) noexcept {
-        orphans[DIRECTION].push(vertex);
+        orphans[DIRECTION].addVertex(vertex, getDistance<DIRECTION>(vertex));
         treeData.removeVertex(vertex);
     }
 
-    //TODO: Adopt orphans in increasing order of distance
-    //TODO: Three-pass/hybrid adoption
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
         while (!orphans[DIRECTION].empty()) {
-            const Vertex orphan = orphans[DIRECTION].front();
-            orphans[DIRECTION].pop();
+            const Vertex orphan = orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
             if (getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION]) {
                 removeOrphan<DIRECTION>(orphan);
                 continue;
             }
             treeData.removeChildren(orphan, [&](const Vertex child) {
-                orphans[DIRECTION].push(child);
+                orphans[DIRECTION].addVertex(child, getDistance<DIRECTION>(child));
             });
             if (!adoptWithNewDistance<DIRECTION>(orphan)) {
                 removeOrphan<DIRECTION>(orphan);
             }
+        }
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansThreePass() noexcept {
+        adoptOrphansFirstPass<DIRECTION>();
+        std::vector<Vertex> moved;
+        while (!threePassOrphans[DIRECTION].empty()) {
+            const Vertex vertex = threePassOrphans[DIRECTION].pop();
+            if (treeData.parentEdge[vertex] == noEdge) {
+                //std::cout << "Second pass of " << vertex << " with distance " << distance[vertex] << std::endl;
+                if (adoptOrphansSecondPass<DIRECTION>(vertex)) {
+                    //std::cout << "Distance increased to " << distance[vertex] << std::endl;
+                    continue;
+                }
+            }
+            if (treeData.parentEdge[vertex] != noEdge) {
+                //std::cout << "Third pass of " << vertex << " with distance " << distance[vertex] << " and max distance " << maxDistance[DIRECTION] << std::endl;
+                adoptOrphansThirdPass<DIRECTION>(vertex);
+            } else {
+                moved.emplace_back(vertex); //TODO: Do this properly
+            }
+        }
+        for (const Vertex vertex : moved) {
+            if (treeData.parentEdge[vertex] != noEdge) continue;
+            //std::cout << "Remove "<< vertex << " with excess " << excess[vertex] << std::endl;
+            removeOrphan<DIRECTION>(vertex);
+        }
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansFirstPass() noexcept {
+        while (!orphans[DIRECTION].empty()) {
+            const Vertex vertex = orphans[DIRECTION].pop();
+            excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex)); //TODO
+            if (adoptWithSameDistance<DIRECTION>(vertex)) continue;
+            //std::cout << "First pass of " << vertex << " with distance " << distance[vertex] << " failed!" << std::endl;
+            //TODO Max distance check?
+            treeData.removeChildren(vertex, [&](const Vertex child) {
+                orphans[DIRECTION].addVertex(child, getDistance<DIRECTION>(child));
+            });
+            //TODO Clean up this mess
+            excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
+            const int newDistance = getDistance<DIRECTION>(vertex) + 1;
+            setDistance<DIRECTION>(vertex, newDistance);
+            threePassOrphans[DIRECTION].addVertex(vertex, newDistance);
+        }
+    }
+
+    template<int DIRECTION>
+    inline bool adoptOrphansSecondPass(const Vertex orphan) noexcept {
+        int newDistance = maxDistance[DIRECTION];
+        Edge newEdge = noEdge;
+        Edge newEdgeTowardsSink = noEdge;
+        Vertex newParent = noVertex;
+        for (const Edge edge : graph.edgesFrom(orphan)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            const Vertex from = graph.get(ToVertex, edge);
+            //TODO Can we identify orphans by checking the parent edge? Might just be a root
+            if (!isVertexInTree<DIRECTION>(from) || treeData.parentEdge[from] == noEdge) continue;
+            const int fromDistance = getDistance<DIRECTION>(from);
+            if (fromDistance < newDistance) {
+                newDistance = fromDistance;
+                newEdge = edge;
+                newEdgeTowardsSink = edgeTowardsSink;
+                newParent = from;
+            }
+        }
+        if (newEdge == noEdge) {
+            //std::cout << "Adoption failed" << std::endl;
+            return false;
+        }
+        treeData.parentEdge[orphan] = newEdgeTowardsSink;
+        if (newDistance + 1 > getDistance<DIRECTION>(orphan)) {
+            setDistance<DIRECTION>(orphan, newDistance + 1);
+            threePassOrphans[DIRECTION].addVertex(orphan, newDistance + 1);
+            return true;
+        }
+        return false;
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansThirdPass(const Vertex vertex) noexcept {
+        bool found = false;
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            const Vertex from = graph.get(ToVertex, edge);
+            if (!isEdgeAdmissible<DIRECTION>(vertex, from)) continue;
+            if (treeData.parentEdge[from] == noEdge) continue;
+            const int dist = getDistance<DIRECTION>(vertex);
+            if (hasPositiveExcess<DIRECTION>(vertex))
+                excessVertices[DIRECTION].addVertex(vertex, dist);
+            treeData.addVertex(from, vertex, edgeTowardsSink);
+            currentEdge[vertex] = edge;
+            if (dist == maxDistance[DIRECTION]) {
+                nextQ[DIRECTION].emplace_back(vertex);
+            }
+            found = true;
+            break;
+        }
+        assert(found);
+
+        //Don't try to adopt children beyond maxDistance. This will be done in the growth steps.
+        if (getDistance<DIRECTION>(vertex) == maxDistance[DIRECTION]) return;
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Vertex from = graph.get(ToVertex, edge);
+            if (from == terminal[DIRECTION] || isVertexInTree<!DIRECTION>(from)) continue;
+            const bool isFree = treeData.parentEdge[from] == noEdge;
+            const int fromDist = getDistance<DIRECTION>(from);
+            const int vDist = getDistance<DIRECTION>(vertex);
+            const bool isDistanceGreater = fromDist > vDist + 1;
+            if (!isFree && !isDistanceGreater) continue;
+            const Edge edgeTowardsSink = getForwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            if (isDistanceGreater) {
+                //std::cout << "Decrease distance of " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
+                threePassOrphans[DIRECTION].decreaseBucket(from, fromDist, vDist + 1);
+            } else {
+                assert(isFree);
+                //std::cout << "Re-add orphan " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
+                if (fromDist == vDist) {
+                    // TODO This is incorrect but the paper claims that this is done?
+                    //threePassOrphans[DIRECTION].increaseBucket(from, fromDist, vDist + 1);
+                    continue;
+                } else if (fromDist < vDist) {
+                    threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
+                }
+            }
+            treeData.parentEdge[from] = edgeTowardsSink;
+            setDistance<DIRECTION>(from, vDist + 1);
         }
     }
 
@@ -518,7 +712,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline Edge getBackwardEdge(const Edge edge) noexcept {
+    inline Edge getBackwardEdge(const Edge edge) const noexcept {
         if (DIRECTION == FORWARD)
             return graph.get(ReverseEdge, edge);
         else
@@ -549,7 +743,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline bool isVertexInTree(const Vertex vertex) noexcept {
+    inline bool isVertexInTree(const Vertex vertex) const noexcept {
         return getDistance<DIRECTION>(vertex) > 0;
     }
 
@@ -586,6 +780,29 @@ private:
         }
     }
 
+    template<int DIRECTION>
+    inline void checkTree() const noexcept {
+        for (const Vertex v : graph.vertices()) {
+            checkTree<DIRECTION>(v);
+        }
+    }
+
+    template<int DIRECTION>
+    inline void checkTree(const Vertex v) const noexcept {
+        if (!isVertexInTree<DIRECTION>(v)) return;
+        const Edge edge = treeData.parentEdge[v];
+        if (edge == noEdge) return;
+        const Vertex parent = treeData.parentVertex[v];
+        assert(getDistance<DIRECTION>(parent) == getDistance<DIRECTION>(v) - 1);
+        for (const Edge e : graph.edgesFrom(v)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(e);
+            const Vertex to = graph.get(ToVertex, e);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            if (!isVertexInTree<DIRECTION>(to)) continue;
+            assert(getDistance<DIRECTION>(to) >= getDistance<DIRECTION>(v) - 1);
+        }
+    }
+
     inline void checkDistanceInvariants(const bool allowOrphans = false) const noexcept {
         for (const Vertex vertex : graph.vertices()) {
             checkDistanceInvariants(vertex, allowOrphans);
@@ -595,12 +812,12 @@ private:
     inline void checkDistanceInvariants(const Vertex vertex, const bool allowOrphans = false) const noexcept {
         const Vertex parent = treeData.parentVertex[vertex];
         if (abs(distance[vertex]) <= 1) {
-            Ensure(parent == noVertex, "Vertex " << vertex << " with distance <= 1 has parent " << parent << "!");
+            Assert(parent == noVertex, "Vertex " << vertex << " with distance <= 1 has parent " << parent << "!");
         } else {
             if (!graph.isVertex(parent)) {
-                Ensure(allowOrphans, "Vertex " << vertex << " has an invalid parent!");
+                Assert(allowOrphans, "Vertex " << vertex << " has an invalid parent!");
             } else {
-                Ensure(abs(distance[vertex]) == abs(distance[parent]) + 1, "Distance of " << vertex << " is " << distance[vertex] << ", but distance of " << parent << " is " << distance[parent] << "!");
+                Assert(abs(distance[vertex]) >= abs(distance[parent]) + 1, "Distance of " << vertex << " is " << distance[vertex] << ", but distance of " << parent << " is " << distance[parent] << "!");
             }
         }
     }
@@ -696,11 +913,12 @@ private:
     // non-positive for other s-vertices, non-negative for other t-vertices
     std::vector<FlowType> excess;
     int maxDistance[2];
-    std::vector<Edge> currentEdge; //TODO: Can be represented implicitly, but unclear if that saves time
+    std::vector<Edge> currentEdge;
     TreeData treeData;
     std::vector<Vertex> Q[2];
     std::vector<Vertex> nextQ[2];
     ExcessBuckets excessVertices[2];
-    std::queue<Vertex> orphans[2];
+    OrphanBuckets orphans[2];
+    OrphanBuckets threePassOrphans[2];
     Cut cut;
 };

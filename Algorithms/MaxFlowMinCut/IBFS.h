@@ -69,6 +69,66 @@ private:
         std::vector<Vertex> prevSibling;
     };
 
+    struct OrphanBuckets {
+        OrphanBuckets(const int n) :
+            positionOfVertex_(n, -1), minBucket_(INFTY) {
+        }
+
+        inline void assertVertexInBucket(const Vertex vertex, const int dist) const noexcept {
+            Assert(positionOfVertex_[vertex] != -1, "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(dist) < buckets_.size(), "Vertex is not in bucket!");
+            Assert(static_cast<size_t>(positionOfVertex_[vertex]) < buckets_[dist].size(), "Vertex is not in bucket!");
+            Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
+        }
+
+        inline void addVertex(const Vertex vertex, const int dist) noexcept {
+            if (positionOfVertex_[vertex] != -1) {
+                assertVertexInBucket(vertex, dist);
+                return;
+            }
+            if (static_cast<size_t>(dist) >= buckets_.size()) buckets_.resize(dist + 1);
+            positionOfVertex_[vertex] = buckets_[dist].size();
+            buckets_[dist].emplace_back(vertex);
+            minBucket_ = std::min(minBucket_, dist);
+        }
+
+        inline void decreaseBucket(const Vertex vertex, const int oldDist, const int newDist) noexcept {
+            Assert(newDist < oldDist, "Distance has not decreased!");
+            assertVertexInBucket(vertex, oldDist);
+            const Vertex other = buckets_[oldDist].back();
+            positionOfVertex_[other] = positionOfVertex_[vertex];
+            buckets_[oldDist][positionOfVertex_[vertex]] = other;
+            buckets_[oldDist].pop_back();
+            positionOfVertex_[vertex] = buckets_[newDist].size();
+            buckets_[newDist].emplace_back(vertex);
+            if (static_cast<size_t>(oldDist) == buckets_.size() - 1) {
+                while (!buckets_.empty() && buckets_.back().empty()) buckets_.pop_back();
+            }
+            minBucket_ = std::min(minBucket_, newDist);
+        }
+
+        inline bool empty() const noexcept {
+            return buckets_.empty();
+        }
+
+        inline Vertex pop() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            const Vertex vertex = buckets_[minBucket_].back();
+            buckets_[minBucket_].pop_back();
+            positionOfVertex_[vertex] = -1;
+            while (static_cast<size_t>(minBucket_) < buckets_.size() && buckets_[minBucket_].empty()) minBucket_++;
+            if (static_cast<size_t>(minBucket_) == buckets_.size()) {
+                buckets_.clear();
+                minBucket_ = INFTY;
+            }
+            return vertex;
+        }
+
+        std::vector<std::vector<Vertex>> buckets_;
+        std::vector<int> positionOfVertex_;
+        int minBucket_;
+    };
+
     struct Cut {
         Cut(const int n) : inSinkComponent(n, false) {}
 
@@ -108,6 +168,7 @@ public:
         maxDistance{0, 0},
         currentEdge(n, noEdge),
         treeData(n),
+        orphans{n, n},
         cut(n) {
     }
 
@@ -241,23 +302,21 @@ private:
 
     template<int DIRECTION>
     inline void makeOrphan(const Vertex vertex) noexcept {
-        orphans[DIRECTION].push(vertex);
+        orphans[DIRECTION].addVertex(vertex, getDistance<DIRECTION>(vertex));
         treeData.removeVertex(vertex);
     }
 
-    //TODO: Adopt orphans in increasing order of distance
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
         while (!orphans[DIRECTION].empty()) {
-            const Vertex orphan = orphans[DIRECTION].front();
-            orphans[DIRECTION].pop();
+            const Vertex orphan = orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
             if (getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION]) {
                 distance[orphan] = 0;
                 continue;
             }
             treeData.removeChildren(orphan, [&](const Vertex child) {
-                orphans[DIRECTION].push(child);
+                orphans[DIRECTION].addVertex(child, getDistance<DIRECTION>(child));
             });
             if (!adoptWithNewDistance<DIRECTION>(orphan))
                 distance[orphan] = 0;
@@ -398,10 +457,10 @@ private:
     std::vector<FlowType> residualCapacity;
     std::vector<int> distance; // 1 for source, -1 for sink, 0 for n-vertices
     int maxDistance[2];
-    std::vector<Edge> currentEdge; //TODO: Can be represented implicitly, but unclear if that saves time
+    std::vector<Edge> currentEdge;
     TreeData treeData;
     std::queue<Vertex> Q[2];
     std::queue<Vertex> nextQ[2];
-    std::queue<Vertex> orphans[2];
+    OrphanBuckets orphans[2];
     Cut cut;
 };

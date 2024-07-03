@@ -3,6 +3,7 @@
 #include <random>
 #include <fstream>
 
+#include "../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/IBFS.h"
 #include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/PushRelabel.h"
@@ -84,6 +85,53 @@ ParametricInstance createRandomParametricInstance(const uint n) {
     return {graph, Vertex(0), Vertex(1), 0.0, 1.0};
 }
 
+TEST(parametricMaxFlow, largeTestStatic) {
+    const ParametricInstance instance = createRandomParametricInstance(1000);
+    ParametricWrapper wrapper(instance);
+    const size_t steps = 10;
+    for (size_t i = 0; i <= steps; i++) {
+        const double alpha = instance.alphaMin + static_cast<double>(i) * (instance.alphaMax - instance.alphaMin)/steps;
+        wrapper.setAlpha(alpha);
+        IBFS<ParametricWrapper> ibfs(wrapper);
+        ibfs.run();
+        ExcessesIBFS<ParametricWrapper> eibfs(wrapper);
+        eibfs.run();
+        PushRelabel<ParametricWrapper> prf(wrapper);
+        prf.run();
+
+        EXPECT_NEAR(ibfs.getFlowValue(), eibfs.getFlowValue(), pmf::epsilon);
+        EXPECT_NEAR(ibfs.getFlowValue(), prf.getFlowValue(), pmf::epsilon);
+        EXPECT_EQ(ibfs.getSinkComponent(), eibfs.getSinkComponent());
+        EXPECT_EQ(ibfs.getSinkComponent(), prf.getSinkComponent());
+    }
+}
+
+TEST(parametricMaxFlow, largeTestRestartable) {
+    const ParametricInstance instance = createRandomParametricInstance(1000);
+    ParametricWrapper wrapper(instance);
+    PushRelabel<ParametricWrapper> prf(wrapper);
+    RestartableIBFS<ParametricWrapper> restartableIbfs(wrapper);
+    const size_t steps = 10;
+    for (size_t i = 0; i <= steps; i++) {
+        const double alpha = instance.alphaMin + static_cast<double>(i) * (instance.alphaMax - instance.alphaMin)/steps;
+        wrapper.setAlpha(alpha);
+        IBFS<ParametricWrapper> ibfs(wrapper);
+        ibfs.run();
+        if (i == 0) {
+            restartableIbfs.run();
+            prf.run();
+        } else {
+            restartableIbfs.continueAfterUpdate();
+            prf.continueAfterUpdate();
+        }
+
+        EXPECT_NEAR(ibfs.getFlowValue(), restartableIbfs.getFlowValue(), pmf::epsilon);
+        EXPECT_NEAR(ibfs.getFlowValue(), prf.getFlowValue(), pmf::epsilon);
+        EXPECT_EQ(ibfs.getSinkComponent(), restartableIbfs.getSinkComponent());
+        EXPECT_EQ(ibfs.getSinkComponent(), prf.getSinkComponent());
+    }
+}
+
 template<typename STATIC_ALGO, typename RESTARTABLE_ALGO>
 void largeTest(const uint n) {
     const ParametricInstance instance = createRandomParametricInstance(n);
@@ -125,20 +173,10 @@ void largeTest(const uint n) {
     }
 }
 
-TEST(parametricMaxFlow, largeTestPushRelabel) {
+TEST(parametricMaxFlow, largeTestParametricPushRelabel) {
     largeTest<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(1000);
 }
 
-TEST(parametricMaxFlow, largeTestIBFS) {
+TEST(parametricMaxFlow, largeTestParametricRestartableIBFS) {
     largeTest<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(1000);
-}
-
-TEST(parametricMaxFlow, profilingTest) {
-#ifdef NDEBUG
-    const uint n = 100000;
-    const ParametricInstance instance = createRandomParametricInstance(n);
-    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
-    algo.run();
-
-#endif
 }
