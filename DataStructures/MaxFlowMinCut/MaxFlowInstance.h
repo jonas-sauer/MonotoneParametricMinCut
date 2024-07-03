@@ -81,6 +81,7 @@ public:
                 } else {
                     vertexCount = String::lexicalCast<size_t>(tokens[2]);
                     edgeCount = String::lexicalCast<size_t>(tokens[3]);
+                    temp.reserve(vertexCount, edgeCount);
                     temp.addVertices(vertexCount);
                     if constexpr (VERBOSE) bar.init(edgeCount);
                 }
@@ -127,18 +128,13 @@ public:
             std::cout << "WARNING, found " << temp.numEdges() << " edges, but " << edgeCount << " edges were declared." << std::endl;
         }
 
-        for (const auto [edge, from] : temp.edgesWithFromVertex()) {
-            if (temp.hasReverseEdge(edge)) continue;
-            temp.addReverseEdge(edge).set(Capacity, 0);
+        DynamicParametricFlowGraph<FlowType> dynamicGraph;
+        Graph::move(std::move(temp), dynamicGraph);
+        for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
+            if (dynamicGraph.hasReverseEdge(edge)) continue;
+            dynamicGraph.addReverseEdge(edge).set(Capacity, 0);
         }
-        Graph::move(std::move(temp), graph);
-    }
-
-    template<bool VERBOSE = true>
-    inline void fromEdgeList(const ParametricFlowGraphEdgeList<FlowType> &edgeList, Vertex s, Vertex t) noexcept {
-        source = s;
-        sink = t;
-        Graph::copy(edgeList, graph);
+        Graph::move(std::move(dynamicGraph), graph);
     }
 
 public:
@@ -233,6 +229,7 @@ public:
                 } else {
                     vertexCount = String::lexicalCast<size_t>(tokens[2]);
                     edgeCount = String::lexicalCast<size_t>(tokens[3]);
+                    temp.reserve(vertexCount, edgeCount);
                     temp.addVertices(vertexCount);
                     if constexpr (VERBOSE) bar.init(edgeCount);
                 }
@@ -280,11 +277,13 @@ public:
             std::cout << "WARNING, found " << temp.numEdges() << " edges, but " << edgeCount << " edges were declared." << std::endl;
         }
 
-        for (const auto [edge, from] : temp.edgesWithFromVertex()) {
-            if (temp.hasReverseEdge(edge)) continue;
-            temp.addReverseEdge(edge).set(Capacity, FlowFunction(0));
+        DynamicParametricFlowGraph<FlowFunction> dynamicGraph;
+        Graph::move(std::move(temp), dynamicGraph);
+        for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
+            if (dynamicGraph.hasReverseEdge(edge)) continue;
+            dynamicGraph.addReverseEdge(edge).set(Capacity, FlowFunction(0));
         }
-        Graph::move(std::move(temp), graph);
+        Graph::move(std::move(dynamicGraph), graph);
     }
 
 public:
