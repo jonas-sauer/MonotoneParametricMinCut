@@ -247,9 +247,12 @@ public:
     //TODO: Maintain the flow value throughout the algorithm.
     inline FlowType getFlowValue() const noexcept {
         FlowType flow = 0;
-        for (const auto [edge, from] : graph.edgesWithFromVertex()) {
-            const Vertex to = graph.get(ToVertex, edge);
-            if (distance[from] >= 0 && distance[to] < 0) flow += instance.getCapacity(edge) - residualCapacity[edge];
+        for (const Vertex from : cut.getSourceComponent()) {
+            for (const Edge edge : graph.edgesFrom(from)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                if (!cut.inSinkComponent[to]) continue;
+                flow += instance.getCapacity(edge);
+            }
         }
         return flow;
     }
@@ -326,11 +329,9 @@ private:
 
     // Register the excess for draining.
     inline void handleSinkVertexExcess(const Vertex vertex) noexcept {
-        Assert(getExcess<BACKWARD>(vertex), "Vertex does not have excess!");
+        Assert(getExcess<BACKWARD>(vertex) > 0, "Vertex does not have excess!");
         Assert(treeData.parentVertex[vertex] != noVertex, "Sink component is not a tree!");
-        if (hasPositiveExcess<BACKWARD>(vertex)) {
-            excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
-        }
+        excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
     }
 
     inline void runAfterInitialize() noexcept {
@@ -433,7 +434,7 @@ private:
     inline void registerAndDrainExcess(const Vertex start) noexcept {
         const FlowType exc = getExcess<DIRECTION>(start);
         if (exc < 0) return;
-        else if (pmf::isNumberPositive(exc)) {
+        else if (exc > 0) {
             excessVertices[DIRECTION].addVertex(start, getDistance<DIRECTION>(start));
             drainExcesses<DIRECTION>();
         }
@@ -471,7 +472,7 @@ private:
                 excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             vertex = parentVertex;
-            if (hasPositiveExcess<DIRECTION>(vertex)) {
+            if (getExcess<DIRECTION>(vertex) > 0) {
                 excessVertices[DIRECTION].addVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             else Assert(treeData.parentVertex[vertex] == noVertex, "Non-root vertex has zero excess!");
@@ -594,7 +595,7 @@ private:
             if (!isEdgeAdmissible<DIRECTION>(vertex, from)) continue;
             if (treeData.parentEdge[from] == noEdge) continue;
             const int dist = getDistance<DIRECTION>(vertex);
-            if (hasPositiveExcess<DIRECTION>(vertex))
+            if (getExcess<DIRECTION>(vertex) > 0)
                 excessVertices[DIRECTION].addVertex(vertex, dist);
             treeData.addVertex(from, vertex, edgeTowardsSink);
             currentEdge[vertex] = edge;
@@ -674,7 +675,7 @@ private:
         }
         if (newEdge == noEdge) return false;
         setDistance<DIRECTION>(orphan, newDistance + 1);
-        if (hasPositiveExcess<DIRECTION>(orphan))
+        if (getExcess<DIRECTION>(orphan) > 0)
             excessVertices[DIRECTION].increaseBucket(orphan, oldDistance, newDistance + 1);
         currentEdge[orphan] = newEdge;
         treeData.addVertex(newParent, orphan, newEdgeTowardsSink);
@@ -685,7 +686,7 @@ private:
 
     template<int DIRECTION>
     inline void removeOrphan(const Vertex orphan) noexcept {
-        if (hasPositiveExcess<DIRECTION>(orphan)) {
+        if (getExcess<DIRECTION>(orphan) > 0) {
             excessVertices[DIRECTION].removeVertex(orphan, getDistance<DIRECTION>(orphan));
             setDistance<!DIRECTION>(orphan, maxDistance[!DIRECTION]);
             nextQ[!DIRECTION].emplace_back(orphan);
@@ -761,11 +762,6 @@ private:
     }
 
     template<int DIRECTION>
-    inline bool hasPositiveExcess(const Vertex vertex) const noexcept {
-        return pmf::isNumberPositive(getExcess<DIRECTION>(vertex));
-    }
-
-    template<int DIRECTION>
     inline bool hasNonNegativeExcess(const Vertex vertex) const noexcept {
         return !pmf::isNumberNegative(getExcess<DIRECTION>(vertex));
     }
@@ -774,7 +770,7 @@ private:
     inline void checkBuckets() const noexcept {
         for (size_t i = 0; static_cast<int>(i) <= excessVertices[DIRECTION].maxBucket; i++) {
             for (const Vertex vertex : excessVertices[DIRECTION].buckets[i]) {
-                Assert(hasPositiveExcess<DIRECTION>(vertex), "Vertex in bucket has no excess!");
+                Assert(getExcess<DIRECTION>(vertex) > 0, "Vertex in bucket has no excess!");
                 Assert(getDistance<DIRECTION>(vertex) == int(i), "Vertex is in wrong bucket!");
             }
         }
@@ -884,7 +880,8 @@ private:
     inline void checkFlowConservation(const Vertex vertex) const noexcept {
         if (vertex == terminal[FORWARD] || vertex == terminal[BACKWARD]) return;
         if (distance[vertex] < 0) Assert(excess[vertex] >= 0, "Vertex in sink component has a deficit!");
-        Assert(getInflow(vertex) == excess[vertex], "Flow conservation not fulfilled!");
+        const FlowType inflow = getInflow(vertex);
+        Assert(pmf::areNumbersEqual(inflow, excess[vertex]), "Flow conservation not fulfilled!");
     }
 
     inline void checkCapacityConstraints() const noexcept {
