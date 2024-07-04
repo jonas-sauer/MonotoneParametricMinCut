@@ -41,6 +41,14 @@ public:
         while (beginIndex < endIndex && !flag[endIndex - 1]) endIndex--;
     }
 
+    SparseRange(const Element begin, const Element end, const std::vector<bool>& flag) :
+        flag(&flag),
+        beginIndex(begin),
+        endIndex(end) {
+        while (beginIndex < endIndex && !flag[beginIndex]) beginIndex++;
+        while (beginIndex < endIndex && !flag[endIndex - 1]) endIndex--;
+    }
+
     SparseRange(const std::vector<bool>&&) = delete;
 
     inline Iterator begin() const noexcept {
@@ -48,7 +56,7 @@ public:
     }
 
     inline Iterator end() const noexcept {
-        return Iterator(flag, (flag) ? Element(flag->size()) : beginIndex);
+        return Iterator(flag, endIndex);
     }
 
     inline bool empty() const noexcept {
@@ -56,7 +64,7 @@ public:
     }
 
     inline size_t size() const noexcept {
-        return (flag) ? Vector::count(*flag, true) : 0;
+        return (flag) ? std::count(flag->begin(), flag->end(), true) : 0;
     }
 
     inline Element operator[](const size_t i) const noexcept {
