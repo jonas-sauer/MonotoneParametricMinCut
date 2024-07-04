@@ -274,6 +274,26 @@ private:
             std::cout << "Breakpoint: " << breakpoints[i] << std::endl;
             std::cout << "\tSink component (parametric vs. restartable): " << parametricAlgorithm.getSinkComponent(breakpoints[i]).size() << " vs. " << restartableAlgorithm.getSinkComponent().size() << std::endl;
             std::cout << "\tFlow value (parametric vs. restartable): " << parametricAlgorithm.getFlowValue(breakpoints[i]) << " vs. " << restartableAlgorithm.getFlowValue() << std::endl;
+            compare(parametricAlgorithm.getSinkComponent(breakpoints[i]), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
+        }
+    }
+
+    inline void compare(const std::vector<Vertex>& a, const std::vector<Vertex>& b, const size_t n) const noexcept {
+        std::vector<bool> inA(n, false);
+        std::vector<bool> inB(n, false);
+        for (const Vertex v : a) {
+            inA[v] = true;
+        }
+        for (const Vertex v : b) {
+            inB[v] = true;
+        }
+        for (const Vertex v : a) {
+            if (inB[v]) continue;
+            std::cout << "Vertex " << v << " is in A but not B" << std::endl;
+        }
+        for (const Vertex v : b) {
+            if (inA[v]) continue;
+            std::cout << "Vertex " << v << " is in B but not A" << std::endl;
         }
     }
 };
