@@ -295,7 +295,7 @@ public:
 };
 
 template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
-class ParametricToStaticMaxFlowInstanceWrapper {
+class RestartableMaxFlowWrapper {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using InstanceType = ParametricMaxFlowInstance<FlowFunction>;
@@ -303,7 +303,7 @@ public:
     using FlowType = InstanceType::FlowType;
 
 public:
-    ParametricToStaticMaxFlowInstanceWrapper(const InstanceType& instance, const double alpha) :
+    RestartableMaxFlowWrapper(const InstanceType& instance, const double alpha) :
         instance(instance),
         graph(instance.graph),
         source(instance.source),
@@ -317,8 +317,8 @@ public:
         }
     }
 
-    ParametricToStaticMaxFlowInstanceWrapper(const InstanceType& instance) :
-        ParametricToStaticMaxFlowInstanceWrapper(instance, instance.alphaMin) {}
+    RestartableMaxFlowWrapper(const InstanceType& instance) :
+        RestartableMaxFlowWrapper(instance, instance.alphaMin) {}
 
 
     inline const FlowType& getCapacity(const Edge edge) const noexcept {
@@ -368,4 +368,67 @@ public:
     std::vector<FlowType> currentCapacity;
     std::vector<FlowType> sourceDiff;
     std::vector<FlowType> sinkDiff;
+};
+
+template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
+class ChordSchemeMaxFlowWrapper {
+public:
+    using FlowFunction = FLOW_FUNCTION;
+    using InstanceType = ParametricMaxFlowInstance<FlowFunction>;
+    using GraphType = InstanceType::GraphType;
+    using FlowType = InstanceType::FlowType;
+
+public:
+    ChordSchemeMaxFlowWrapper(const InstanceType& instance, const double alpha) :
+        instance(instance),
+        graph(instance.graph),
+        source(instance.source),
+        sink(instance.sink),
+        alpha(alpha),
+        currentCapacity(graph.numEdges()) {
+        for (const Edge edge : instance.graph.edges()) {
+            currentCapacity[edge] = instance.getCapacity(edge, alpha);
+        }
+    }
+
+    ChordSchemeMaxFlowWrapper(const InstanceType& instance) :
+        ChordSchemeMaxFlowWrapper(instance, instance.alphaMin) {}
+
+    inline const FlowType& getCapacity(const Edge edge) const noexcept {
+        return currentCapacity[edge];
+    }
+
+    inline FlowFunction getCapacity(const std::vector<Edge>& edges) const noexcept {
+        FlowFunction result(0);
+        for (const Edge edge : edges) {
+            result += graph.get(Capacity, edge);
+        }
+        return result;
+    }
+
+    inline const std::vector<FlowType>& getCurrentCapacities() const noexcept {
+        return currentCapacity;
+    }
+
+    inline void setAlpha(const double newAlpha) noexcept {
+        Assert(newAlpha >= instance.alphaMin, "Parameter out of range!");
+        Assert(newAlpha <= instance.alphaMax, "Parameter out of range!");
+        alpha = newAlpha;
+        for (const Edge edge : graph.edgesFrom(source)) {
+            currentCapacity[edge] = instance.getCapacity(edge).eval(alpha);
+        }
+        for (const Edge edge : graph.edgesFrom(sink)) {
+            const Edge edgeToSink = graph.get(ReverseEdge, edge);
+            currentCapacity[edgeToSink] = instance.getCapacity(edgeToSink).eval(alpha);
+            Assert(currentCapacity[edgeToSink] >= 0, "Negative capacity!");
+        }
+    }
+
+public:
+    const InstanceType& instance;
+    const GraphType& graph;
+    const Vertex& source;
+    const Vertex& sink;
+    double alpha;
+    std::vector<FlowType> currentCapacity;
 };

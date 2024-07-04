@@ -12,7 +12,7 @@
 using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
 using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
-using ParametricWrapper = ParametricToStaticMaxFlowInstanceWrapper<pmf::linearFlowFunction>;
+using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
 
 TEST(parametricMaxFlow, smallTest) {
     ParametricInstance instance;

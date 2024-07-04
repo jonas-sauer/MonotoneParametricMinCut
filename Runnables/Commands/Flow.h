@@ -13,6 +13,7 @@
 
 #include "../../DataStructures/Graph/Graph.h"
 #include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
+#include "../../Algorithms/MaxFlowMinCut/ChordScheme.h"
 #include "../../Algorithms/MaxFlowMinCut/PushRelabel.h"
 #include "../../Algorithms/MaxFlowMinCut/IBFS.h"
 #include "../../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
@@ -24,7 +25,7 @@ using namespace Shell;
 
 using StaticInstance = StaticMaxFlowInstance<int>;
 using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
-using ParametricWrapper = ParametricToStaticMaxFlowInstanceWrapper<pmf::linearFlowFunction>;
+using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
 
 class LoadMaxFlowInstanceFromDimacs : public ParameterizedCommand {
 
@@ -241,6 +242,39 @@ public:
     }
 };
 
+
+inline void compareSinkComponents(const double breakpoint, const std::vector<Vertex>& a, const std::vector<Vertex>& b, const size_t n) noexcept {
+    bool header = false;
+    std::vector<bool> inA(n, false);
+    std::vector<bool> inB(n, false);
+    for (const Vertex v : a) {
+        inA[v] = true;
+    }
+    for (const Vertex v : b) {
+        inB[v] = true;
+    }
+    for (const Vertex v : a) {
+        if (inB[v]) continue;
+        if (!header) {
+            std::cout << "Breakpoint " << breakpoint << ":" << std::endl;
+            header = true;
+        }
+        std::cout << "\tVertex " << v << " is in parametric but not restartable" << std::endl;
+    }
+    for (const Vertex v : b) {
+        if (inA[v]) continue;
+        if (!header) {
+            std::cout << "Breakpoint " << breakpoint << ":" << std::endl;
+            header = true;
+        }
+        std::cout << "Vertex " << v << " is in restartable but not parametric" << std::endl;
+    }
+}
+
+inline bool areFlowValuesEqual(const double a, const double b) noexcept {
+    return abs(a - b) <= 0.01;
+}
+
 class TestParametricIBFS : public ParameterizedCommand {
 
 public:
@@ -283,7 +317,7 @@ private:
                 restartableAlgorithm.continueAfterUpdate();
             }
             restartableTime += timer.elapsedMicroseconds();
-            if (!pmf::areNumbersEqual(parametricAlgorithm.getFlowValue(breakpoints[i]), restartableAlgorithm.getFlowValue())) {
+            if (!areFlowValuesEqual(parametricAlgorithm.getFlowValue(breakpoints[i]), restartableAlgorithm.getFlowValue())) {
                 std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
                 std::cout << "Flow values for breakpoint " << breakpoints[i] << " are not equal! ";
                 std::cout << "Parametric: " << parametricAlgorithm.getFlowValue(breakpoints[i]) << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
@@ -293,32 +327,63 @@ private:
         }
         std::cout << "Restartable time: " << String::musToString(restartableTime) << std::endl;
     }
+};
 
-    inline void compareSinkComponents(const double breakpoint, const std::vector<Vertex>& a, const std::vector<Vertex>& b, const size_t n) const noexcept {
-        bool header = false;
-        std::vector<bool> inA(n, false);
-        std::vector<bool> inB(n, false);
-        for (const Vertex v : a) {
-            inA[v] = true;
+class TestChordScheme : public ParameterizedCommand {
+
+public:
+    TestChordScheme(BasicShell& shell) :
+        ParameterizedCommand(shell, "testChordScheme", "Solves the given parametric max-flow instance with the chord scheme.") {
+        addParameter("Instance file");
+        addParameter("Precision");
+        addParameter("Restartable algorithm", {"Push-Relabel", "IBFS"});
+    }
+
+    using Algorithm = ChordScheme<pmf::linearFlowFunction>;
+    using Solution = Algorithm::Solution;
+
+    virtual void execute() noexcept {
+        ParametricInstance instance(getParameter("Instance file"));
+        const double precision = std::pow(10, -getParameter<int>("Precision"));
+        Algorithm chordScheme(instance, precision);
+        Timer timer;
+        chordScheme.run();
+        const std::vector<Solution>& solutions = chordScheme.getSolutions();
+        std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
+        std::cout << "Solutions: " << solutions.size() << std::endl;
+        if (getParameter("Restartable algorithm") == "Push-Relabel") {
+            compare<PushRelabel<ParametricWrapper>>(instance, solutions);
+        } else {
+            compare<RestartableIBFS<ParametricWrapper>>(instance, solutions);
         }
-        for (const Vertex v : b) {
-            inB[v] = true;
-        }
-        for (const Vertex v : a) {
-            if (inB[v]) continue;
-            if (!header) {
-                std::cout << "Breakpoint " << breakpoint << ":" << std::endl;
-                header = true;
+    }
+
+private:
+    template<typename RESTARTABLE_ALGORITHM>
+    inline void compare(const ParametricInstance& instance, const std::vector<Solution>& solutions) const noexcept {
+        ParametricWrapper wrapper(instance);
+        RESTARTABLE_ALGORITHM restartableAlgorithm(wrapper);
+        Progress progress(solutions.size());
+        Timer timer;
+        double restartableTime = 0;
+        for (size_t i = 0; i < solutions.size(); i++) {
+            if (solutions[i].breakpoint == INFTY) break; //TODO: Handle this
+            timer.restart();
+            if (i == 0) {
+                restartableAlgorithm.run();
+            } else {
+                wrapper.setAlpha(solutions[i].breakpoint);
+                restartableAlgorithm.continueAfterUpdate();
             }
-            std::cout << "\tVertex " << v << " is in parametric but not restartable" << std::endl;
-        }
-        for (const Vertex v : b) {
-            if (inA[v]) continue;
-            if (!header) {
-                std::cout << "Breakpoint " << breakpoint << ":" << std::endl;
-                header = true;
+            restartableTime += timer.elapsedMicroseconds();
+            if (!areFlowValuesEqual(solutions[i].flowValue, restartableAlgorithm.getFlowValue())) {
+                std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
+                std::cout << "Flow values for breakpoint " << solutions[i].breakpoint << " are not equal! ";
+                std::cout << "Parametric: " << solutions[i].flowValue << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
             }
-            std::cout << "Vertex " << v << " is in restartable but not parametric" << std::endl;
+            compareSinkComponents(solutions[i].breakpoint, solutions[i].sinkComponent, restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
+            progress++;
         }
+        std::cout << "Restartable time: " << String::musToString(restartableTime) << std::endl;
     }
 };

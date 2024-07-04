@@ -195,6 +195,19 @@ public:
         return cut.getSinkComponent();
     }
 
+    inline std::vector<Edge> getCutEdges() const noexcept {
+        std::vector<Edge> edges;
+        for (const Vertex vertex : graph.vertices()) {
+            if (cut.inSinkComponent[vertex]) continue;
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                if (!cut.inSinkComponent[to]) continue;
+                edges.emplace_back(edge);
+            }
+        }
+        return edges;
+    }
+
     inline FlowType getFlowValue() noexcept {
         FlowType flow = 0;
         for (const Edge edge : graph.edgesFrom(sinkVertex)) {

@@ -19,7 +19,7 @@ class ParametricIBFS {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using FlowGraph = ParametricFlowGraph<FlowFunction>;
-    using StaticWrapper = ParametricToStaticMaxFlowInstanceWrapper<FlowFunction>;
+    using StaticWrapper = RestartableMaxFlowWrapper<FlowFunction>;
     using IBFSType = IBFS<StaticWrapper>;
 
 private:

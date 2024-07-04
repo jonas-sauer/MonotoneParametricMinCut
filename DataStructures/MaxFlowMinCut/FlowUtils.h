@@ -146,8 +146,13 @@ namespace pmf {
         }
 
         [[nodiscard]] double eval(double x) const override {
+            if (x == CONST_INF) return a;
             if (b == CONST_INF) return CONST_INF;
             return x * a + b;
+        }
+
+        friend double findIntersectionPoint(const linearFlowFunction& lhs, const linearFlowFunction& rhs) {
+            return (rhs.b - lhs.b)/(lhs.a - rhs.a);
         }
 
         friend linearFlowFunction operator+(linearFlowFunction lhs, const linearFlowFunction &rhs) {
