@@ -18,6 +18,7 @@
 #include "../../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
 #include "../../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
 #include "../../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
+#include "../../Helpers/Console/Progress.h"
 
 using namespace Shell;
 
@@ -244,8 +245,9 @@ class TestParametricIBFS : public ParameterizedCommand {
 
 public:
     TestParametricIBFS(BasicShell& shell) :
-        ParameterizedCommand(shell, "testParametricIBFS", "Compares Parametric IBFS to restartable IBFS on the given graph.") {
+        ParameterizedCommand(shell, "testParametricIBFS", "Compares Parametric IBFS to a restartable algorithm (Push-Relabel or IBFS) on the given graph.") {
         addParameter("Instance file");
+        addParameter("Restartable algorithm", {"Push-Relabel", "IBFS"});
     }
 
     virtual void execute() noexcept {
@@ -256,7 +258,12 @@ public:
         const std::vector<double>& breakpoints = algorithm.getBreakpoints();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
         std::cout << "#Breakpoints: " << breakpoints.size() << std::endl;
-        compare<RestartableIBFS<ParametricWrapper>>(instance, algorithm, breakpoints);
+        if (getParameter("Restartable algorithm") == "Push-Relabel") {
+            compare<PushRelabel<ParametricWrapper>>(instance, algorithm, breakpoints);
+        } else {
+            compare<RestartableIBFS<ParametricWrapper>>(instance, algorithm, breakpoints);
+        }
+
     }
 
 private:
@@ -264,21 +271,29 @@ private:
     inline void compare(const ParametricInstance& instance, const ParametricIBFS<ParametricInstance::FlowFunction>& parametricAlgorithm, const std::vector<double>& breakpoints) const noexcept {
         ParametricWrapper wrapper(instance);
         RESTARTABLE_ALGORITHM restartableAlgorithm(wrapper);
+        Progress progress(breakpoints.size());
+        Timer timer;
+        double restartableTime = 0;
         for (size_t i = 0; i < breakpoints.size(); i++) {
+            timer.restart();
             if (i == 0) {
                 restartableAlgorithm.run();
             } else {
                 wrapper.setAlpha(breakpoints[i]);
                 restartableAlgorithm.continueAfterUpdate();
             }
-            std::cout << "Breakpoint: " << breakpoints[i] << std::endl;
-            std::cout << "\tSink component (parametric vs. restartable): " << parametricAlgorithm.getSinkComponent(breakpoints[i]).size() << " vs. " << restartableAlgorithm.getSinkComponent().size() << std::endl;
-            std::cout << "\tFlow value (parametric vs. restartable): " << parametricAlgorithm.getFlowValue(breakpoints[i]) << " vs. " << restartableAlgorithm.getFlowValue() << std::endl;
-            compare(parametricAlgorithm.getSinkComponent(breakpoints[i]), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
+            restartableTime += timer.elapsedMicroseconds();
+            if (!pmf::areNumbersEqual(parametricAlgorithm.getFlowValue(breakpoints[i]), restartableAlgorithm.getFlowValue())) {
+                std::cout << "Flow values for breakpoint " << breakpoints[i] << " are not equal! Parametric: " << parametricAlgorithm.getFlowValue(breakpoints[i]) << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
+            }
+            compareSinkComponents(breakpoints[i], parametricAlgorithm.getSinkComponent(breakpoints[i]), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
+            progress++;
         }
+        std::cout << "Restartable time: " << String::musToString(restartableTime) << std::endl;
     }
 
-    inline void compare(const std::vector<Vertex>& a, const std::vector<Vertex>& b, const size_t n) const noexcept {
+    inline void compareSinkComponents(const double breakpoint, const std::vector<Vertex>& a, const std::vector<Vertex>& b, const size_t n) const noexcept {
+        bool header = false;
         std::vector<bool> inA(n, false);
         std::vector<bool> inB(n, false);
         for (const Vertex v : a) {
@@ -289,11 +304,19 @@ private:
         }
         for (const Vertex v : a) {
             if (inB[v]) continue;
-            std::cout << "Vertex " << v << " is in A but not B" << std::endl;
+            if (!header) {
+                std::cout << "Breakpoint " << breakpoint << ":" << std::endl;
+                header = true;
+            }
+            std::cout << "\tVertex " << v << " is in parametric but not restartable" << std::endl;
         }
         for (const Vertex v : b) {
             if (inA[v]) continue;
-            std::cout << "Vertex " << v << " is in B but not A" << std::endl;
+            if (!header) {
+                std::cout << "Breakpoint " << breakpoint << ":" << std::endl;
+                header = true;
+            }
+            std::cout << "Vertex " << v << " is in restartable but not parametric" << std::endl;
         }
     }
 };
