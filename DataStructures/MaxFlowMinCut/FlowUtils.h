@@ -129,7 +129,7 @@ namespace pmf {
 
         double getNextZeroCrossing(double minVal) const override {
             if (a == 0) {
-                if (b == 0) {
+                if (b <= epsilon) {
                     return minVal;
                 } else {
                     return CONST_INF;

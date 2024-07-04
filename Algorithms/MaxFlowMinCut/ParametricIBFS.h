@@ -215,7 +215,7 @@ public:
         double alpha = alphaMin_;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
             if (alphaQ_.empty()) return;
-            assert(alphaQ_.front()->value_ > alpha);
+            assert(alphaQ_.front()->value_ >= alpha);
             alpha = alphaQ_.front()->value_;
             if (alpha > alphaMax_) return;
             updateTree(alpha);
@@ -290,6 +290,46 @@ private:
         }
 
         drainExcess(alphaMin_);
+
+#ifndef NDEBUG
+        for (Vertex v : graph_.vertices()) {
+            if (v == source_)
+                continue;
+            for (Edge e : graph_.edgesFrom(v)) {
+                if (thetaByVertex_[v] == alphaMin_ || thetaByVertex_[graph_.get(ToVertex, e)] == alphaMin_)
+                    continue;
+                if (graph_.get(ToVertex, e) != sink_) {
+                    std::cout << "Edge connecting " << v << " and " << graph_.get(ToVertex, e) << std::endl;
+                    std::cout << "Residual capacity of edge " << e << " is " << residualCapacity_[e].eval(instance_.alphaMin) << ", initial residual capacity is " << initialResidualCapacity[e] << std::endl;
+                    std::cout << "Residual capacity of reverse edge " << e << " is " << residualCapacity_[instance_.graph.get(ReverseEdge, e)].eval(instance_.alphaMin) << ", initial residual capacity is " << initialResidualCapacity[instance_.graph.get(ReverseEdge, e)] << std::endl;
+                    std::cout << "Capacity of edge " << e << " is " << graph_.get(Capacity, e) << " and " << graph_.get(Capacity, graph_.get(ReverseEdge, e)) << " for reverse edge" << std::endl;
+                    assert(pmf::doubleEqualAbs(residualCapacity_[e].eval(instance_.alphaMin), initialResidualCapacity[e]));
+                }
+            }
+        }
+
+        for (Vertex v : initialFlow.getSinkComponent()) {
+            if (v != instance_.sink && treeData_.edgeToParent_[v] == noEdge) {
+                std::cout << "Vertex " << v << " in initial flow sink, but not parametric flow sink" << std::endl;
+            }
+        }
+
+        std::vector<bool> initialSource(n, false);
+        for (Vertex v : initialFlow.getSourceComponent())
+            initialSource[v] = true;
+
+        for (Vertex v : initialFlow.getSourceComponent()) {
+            if (v != instance_.source && treeData_.edgeToParent_[v] != noEdge) {
+                for (Vertex w = v; initialSource[w]; w = graph_.get(ToVertex, treeData_.edgeToParent_[w])) {
+                    std::cout << "Vertex " << w << " in initial flow source, but not parametric flow source" << std::endl;
+                    std::cout << "Residual capacity of parent edge " << residualCapacity_[treeData_.edgeToParent_[w]].eval(alphaMin_) << " and initial residual capacity is " << initialResidualCapacity[treeData_.edgeToParent_[w]] <<  std::endl;
+                }
+                std::cout << std::endl << "Reached shared sink component" << std::endl << std::endl;
+            }
+        }
+#endif
+
+
     }
 
     inline void initializeSinkTree(const std::vector<double>& initialResidualCapacity) noexcept {

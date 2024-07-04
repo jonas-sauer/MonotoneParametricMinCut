@@ -14,6 +14,7 @@ using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
 using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
 using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
 
+
 TEST(parametricMaxFlow, smallTest) {
     ParametricInstance instance;
     instance.fromDimacs("../../test/instances/smallTest");
@@ -179,4 +180,73 @@ TEST(parametricMaxFlow, largeTestParametricPushRelabel) {
 
 TEST(parametricMaxFlow, largeTestParametricRestartableIBFS) {
     largeTest<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(1000);
+}
+
+
+TEST(parametricMaxFlow, ahremTest) {
+    ParametricInstance instance;
+    instance.fromDimacs("../../test/instances/ahrem.max");
+
+    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
+    algo.run();
+
+    for (const double breakPoint : algo.getBreakpoints())
+        std::cout << "Breakpoint at " << breakPoint << std::endl;
+
+    ParametricWrapper wrapper(instance);
+
+    for (const double breakPoint : algo.getBreakpoints()) {
+        std::cout << "Checking breakpoint " << breakPoint << std::endl;
+
+        wrapper.setAlpha(breakPoint);
+        PushRelabel<ParametricWrapper> staticAlgo(wrapper);
+        staticAlgo.run();
+
+        EXPECT_NEAR(algo.getFlowValue(breakPoint), staticAlgo.getFlowValue(), 1e-5);
+        EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
+
+        for (const Vertex v : staticAlgo.getSourceComponent()) {
+            EXPECT_LE(algo.getVertexThetas()[v], breakPoint);
+            if (algo.getVertexThetas()[v] > breakPoint)
+                std::cout << "v = " << v << std::endl;
+        }
+
+        for (const Vertex v : staticAlgo.getSinkComponent()) {
+            EXPECT_GT(algo.getVertexThetas()[v], breakPoint);
+        }
+    }
+}
+
+TEST(parametricMaxFlow, bonnTest) {
+    ParametricInstance instance;
+    instance.fromDimacs("../../test/instances/bonn.max");
+
+    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
+    algo.run();
+
+    for (const double breakPoint : algo.getBreakpoints())
+        std::cout << "Breakpoint at " << breakPoint << std::endl;
+
+    ParametricWrapper wrapper(instance);
+
+    for (const double breakPoint : algo.getBreakpoints()) {
+        std::cout << "Checking breakpoint " << breakPoint << std::endl;
+
+        wrapper.setAlpha(breakPoint);
+        PushRelabel<ParametricWrapper> staticAlgo(wrapper);
+        staticAlgo.run();
+
+        EXPECT_NEAR(algo.getFlowValue(breakPoint), staticAlgo.getFlowValue(), 1e-5);
+        EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
+
+        for (const Vertex v : staticAlgo.getSourceComponent()) {
+            EXPECT_LE(algo.getVertexThetas()[v], breakPoint);
+            if (algo.getVertexThetas()[v] > breakPoint)
+                std::cout << "v = " << v << std::endl;
+        }
+
+        for (const Vertex v : staticAlgo.getSinkComponent()) {
+            EXPECT_GT(algo.getVertexThetas()[v], breakPoint);
+        }
+    }
 }
