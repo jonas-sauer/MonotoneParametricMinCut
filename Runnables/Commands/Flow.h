@@ -284,7 +284,9 @@ private:
             }
             restartableTime += timer.elapsedMicroseconds();
             if (!pmf::areNumbersEqual(parametricAlgorithm.getFlowValue(breakpoints[i]), restartableAlgorithm.getFlowValue())) {
-                std::cout << "Flow values for breakpoint " << breakpoints[i] << " are not equal! Parametric: " << parametricAlgorithm.getFlowValue(breakpoints[i]) << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
+                std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
+                std::cout << "Flow values for breakpoint " << breakpoints[i] << " are not equal! ";
+                std::cout << "Parametric: " << parametricAlgorithm.getFlowValue(breakpoints[i]) << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
             }
             compareSinkComponents(breakpoints[i], parametricAlgorithm.getSinkComponent(breakpoints[i]), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
             progress++;

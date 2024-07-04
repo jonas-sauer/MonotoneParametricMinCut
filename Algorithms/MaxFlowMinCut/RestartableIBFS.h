@@ -475,6 +475,7 @@ private:
         treeData.removeVertex(vertex);
     }
 
+    //TODO Hybrid adoption
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
         while (!orphans[DIRECTION].empty()) {
@@ -524,7 +525,7 @@ private:
     inline void adoptOrphansFirstPass() noexcept {
         while (!orphans[DIRECTION].empty()) {
             const Vertex vertex = orphans[DIRECTION].pop();
-            excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex)); //TODO
+            excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             if (adoptWithSameDistance<DIRECTION>(vertex)) continue;
             //std::cout << "First pass of " << vertex << " with distance " << distance[vertex] << " failed!" << std::endl;
             //TODO Max distance check?
@@ -574,7 +575,6 @@ private:
 
     template<int DIRECTION>
     inline void adoptOrphansThirdPass(const Vertex vertex) noexcept {
-        bool found = false;
         for (const Edge edge : graph.edgesFrom(vertex)) {
             const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
             if (!isEdgeResidual(edgeTowardsSink)) continue;
@@ -589,10 +589,8 @@ private:
             if (dist == maxDistance[DIRECTION]) {
                 nextQ[DIRECTION].emplace_back(vertex);
             }
-            found = true;
             break;
         }
-        assert(found);
 
         //Don't try to adopt children beyond maxDistance. This will be done in the growth steps.
         if (getDistance<DIRECTION>(vertex) == maxDistance[DIRECTION]) return;
