@@ -272,17 +272,12 @@ private:
             if (sourceDiff[i] == 0) continue;
             residualCapacity[edgeFromSource] += sourceDiff[i];
             const Vertex to = graph.get(ToVertex, edgeFromSource);
-            if (isVertexInTree<FORWARD>(to)) continue;
             const FlowType add = residualCapacity[edgeFromSource];
             const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
             residualCapacity[edgeFromSource] = 0;
             residualCapacity[edgeToSource] += add;
             excess[to] += add;
-            if (distance[to] == 0) {
-                handleFreeVertexExcess(to); //TODO: Is this necessary? Free vertices are not in sink component.
-            } else {
-                handleSinkVertexExcess(to);
-            }
+            handleUpdateExcess(to);
         }
 
         Edge edgeFromSink = graph.beginEdgeFrom(terminal[BACKWARD]);
@@ -297,13 +292,7 @@ private:
                 residualCapacity[edgeFromSink] -= add;
                 residualCapacity[edgeToSink] = 0;
                 excess[from] += add;
-                if (distance[from] == 0) {
-                    handleFreeVertexExcess(from);
-                } else if (isVertexInTree<BACKWARD>(from)) {
-                    handleSinkVertexExcess(from);
-                } else {
-                    handleSourceVertexExcess(from);
-                }
+                handleUpdateExcess(from);
             }
             if (!pmf::isNumberPositive(residualCapacity[edgeToSink]) && treeData.parentEdge[from] == edgeToSink) {
                 makeOrphan<BACKWARD>(from);
@@ -313,23 +302,21 @@ private:
         drainExcesses<BACKWARD>();
     }
 
-    // Turn vertex into a root
-    inline void handleSourceVertexExcess(const Vertex vertex) noexcept {
-        treeData.removeVertex(vertex);
-    }
-
-    // Add vertex as a root to the source tree and continue the BFS from there
-    inline void handleFreeVertexExcess(const Vertex vertex) noexcept {
-        setDistance<FORWARD>(vertex, maxDistance[FORWARD]);
-        nextQ[FORWARD].emplace_back(vertex);
-    }
-
-    // Register the excess for draining.
-    inline void handleSinkVertexExcess(const Vertex vertex) noexcept {
-        Assert(getExcess<BACKWARD>(vertex), "Vertex does not have excess!");
-        Assert(treeData.parentVertex[vertex] != noVertex, "Sink component is not a tree!");
-        if (hasPositiveExcess<BACKWARD>(vertex)) {
-            excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+    inline void handleUpdateExcess(const Vertex vertex) noexcept {
+        if (distance[vertex] == 0) {
+            // Add vertex as a root to the source tree and continue the BFS from there
+            setDistance<FORWARD>(vertex, maxDistance[FORWARD]);
+            nextQ[FORWARD].emplace_back(vertex);
+        } else if (isVertexInTree<BACKWARD>(vertex)) {
+            // Register the excess for draining.
+            Assert(getExcess<BACKWARD>(vertex), "Vertex does not have excess!");
+            Assert(treeData.parentVertex[vertex] != noVertex, "Sink component is not a tree!");
+            if (hasPositiveExcess<BACKWARD>(vertex)) {
+                excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+            }
+        } else {
+            // Turn vertex into a root
+            treeData.removeVertex(vertex);
         }
     }
 
@@ -561,8 +548,8 @@ private:
             const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
             if (!isEdgeResidual(edgeTowardsSink)) continue;
             const Vertex from = graph.get(ToVertex, edge);
-            //TODO Can we identify orphans by checking the parent edge? Might just be a root
-            if (!isVertexInTree<DIRECTION>(from) || treeData.parentEdge[from] == noEdge) continue;
+            if (!isVertexInTree<DIRECTION>(from)) continue;
+            if (isVertexFree<DIRECTION>(from)) continue;
             const int fromDistance = getDistance<DIRECTION>(from);
             if (fromDistance < newDistance) {
                 newDistance = fromDistance;
@@ -592,7 +579,7 @@ private:
             if (!isEdgeResidual(edgeTowardsSink)) continue;
             const Vertex from = graph.get(ToVertex, edge);
             if (!isEdgeAdmissible<DIRECTION>(vertex, from)) continue;
-            if (treeData.parentEdge[from] == noEdge) continue;
+            if (isVertexFree<DIRECTION>(from)) continue;
             const int dist = getDistance<DIRECTION>(vertex);
             if (hasPositiveExcess<DIRECTION>(vertex))
                 excessVertices[DIRECTION].addVertex(vertex, dist);
@@ -611,7 +598,7 @@ private:
         for (const Edge edge : graph.edgesFrom(vertex)) {
             const Vertex from = graph.get(ToVertex, edge);
             if (from == terminal[DIRECTION] || isVertexInTree<!DIRECTION>(from)) continue;
-            const bool isFree = treeData.parentEdge[from] == noEdge;
+            const bool isFree = isVertexFree<DIRECTION>(from);
             const int fromDist = getDistance<DIRECTION>(from);
             const int vDist = getDistance<DIRECTION>(vertex);
             const bool isDistanceGreater = fromDist > vDist + 1;
@@ -748,6 +735,12 @@ private:
     }
 
     template<int DIRECTION>
+    inline bool isVertexFree(const Vertex vertex) const noexcept {
+        // Vertices without a parent are either free or roots. Roots have negative excess, free vertices do not.
+        return treeData.parentEdge[vertex] == noEdge && getExcess<DIRECTION>(vertex) >= 0;
+    }
+
+    template<int DIRECTION>
     inline bool isEdgeAdmissible(const Vertex from, const Vertex to) const noexcept {
         return getDistance<DIRECTION>(from) == getDistance<DIRECTION>(to) + 1;
     }
@@ -793,13 +786,13 @@ private:
         const Edge edge = treeData.parentEdge[v];
         if (edge == noEdge) return;
         const Vertex parent = treeData.parentVertex[v];
-        assert(getDistance<DIRECTION>(parent) == getDistance<DIRECTION>(v) - 1);
+        assert(getDistance<DIRECTION>(v) == getDistance<DIRECTION>(parent) + 1);
         for (const Edge e : graph.edgesFrom(v)) {
             const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(e);
-            const Vertex to = graph.get(ToVertex, e);
+            const Vertex nonParent = graph.get(ToVertex, e);
             if (!isEdgeResidual(edgeTowardsSink)) continue;
-            if (!isVertexInTree<DIRECTION>(to)) continue;
-            assert(getDistance<DIRECTION>(to) >= getDistance<DIRECTION>(v) - 1);
+            if (!isVertexInTree<DIRECTION>(nonParent)) continue;
+            assert(getDistance<DIRECTION>(v) <= getDistance<DIRECTION>(nonParent) + 1);
         }
     }
 
@@ -898,6 +891,18 @@ private:
         for (const Vertex vertex : graph.vertices()) {
             if (getDistance<DIRECTION>(vertex) != maxDistance[DIRECTION]) continue;
             Assert(Vector::contains(Q[DIRECTION], vertex), "Vertex missing from queue");
+        }
+    }
+
+    inline void checkTreesDisconnected() noexcept {
+        for (const Vertex vertex : graph.vertices()) {
+            if (distance[vertex] <= 0) continue;
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                if (distance[to] >= 0) continue;
+                if (!isEdgeResidual(edge)) continue;
+                Assert(false, "Found connecting edge " << vertex << " -> " << to << " with residual capacity " << residualCapacity[edge] << " and distances " << distance[vertex] << "/" << maxDistance[FORWARD] << " and " << -distance[to]  << "/" << maxDistance[BACKWARD]);
+            }
         }
     }
 
