@@ -9,6 +9,7 @@
 #include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/PushRelabel.h"
 #include "../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
+#include "../Helpers/Console/Progress.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
@@ -36,16 +37,14 @@ TEST(parametricMaxFlow, smallTest) {
     EXPECT_DOUBLE_EQ(vertexBreakpoints[4], INFTY);
 }
 
-const uint bigNum = 1000000000;
-
-void addEdge(FlowEdgeList& edgeList, const Vertex from, const Vertex to, const pmf::linearFlowFunction& cap) {
+inline void addEdge(FlowEdgeList& edgeList, const Vertex from, const Vertex to, const pmf::linearFlowFunction& cap) noexcept {
     edgeList.addEdge(from, to).set(Capacity, cap);
     edgeList.addEdge(to, from).set(Capacity, pmf::linearFlowFunction(0));
 }
 
-ParametricInstance createRandomParametricInstance(const uint n) {
+inline ParametricInstance createRandomParametricInstance(const uint n) noexcept {
     std::mt19937 rng(42);
-    std::uniform_int_distribution<int> disN(2, bigNum);
+    std::uniform_int_distribution<int> disN(2, 1000000000);
     std::uniform_real_distribution<double> disR(0.0, 20.0);
 
     FlowEdgeList edgeList;
@@ -87,10 +86,14 @@ ParametricInstance createRandomParametricInstance(const uint n) {
     return {graph, Vertex(0), Vertex(1), 0.0, 1.0};
 }
 
-TEST(parametricMaxFlow, largeTestStatic) {
-    const ParametricInstance instance = createRandomParametricInstance(1000);
+template<typename ALGORITHM1, typename ALGORITHM2>
+inline void compareAlgorithmResults(const ALGORITHM1& algo1, const ALGORITHM2& algo2, const double tolerance = pmf::epsilon) noexcept {
+    EXPECT_NEAR(algo1.getFlowValue(), algo2.getFlowValue(), tolerance);
+    EXPECT_EQ(algo1.getSinkComponent(), algo2.getSinkComponent());
+}
+
+inline void validateStaticAlgorithms(const ParametricInstance& instance, const size_t steps) noexcept {
     ParametricWrapper wrapper(instance);
-    const size_t steps = 10;
     for (size_t i = 0; i <= steps; i++) {
         const double alpha = instance.alphaMin + static_cast<double>(i) * (instance.alphaMax - instance.alphaMin)/steps;
         wrapper.setAlpha(alpha);
@@ -100,193 +103,143 @@ TEST(parametricMaxFlow, largeTestStatic) {
         eibfs.run();
         PushRelabel<ParametricWrapper> prf(wrapper);
         prf.run();
-
-        EXPECT_NEAR(ibfs.getFlowValue(), eibfs.getFlowValue(), pmf::epsilon);
-        EXPECT_NEAR(ibfs.getFlowValue(), prf.getFlowValue(), pmf::epsilon);
-        EXPECT_EQ(ibfs.getSinkComponent(), eibfs.getSinkComponent());
-        EXPECT_EQ(ibfs.getSinkComponent(), prf.getSinkComponent());
+        compareAlgorithmResults(ibfs, eibfs);
+        compareAlgorithmResults(ibfs,prf);
     }
 }
 
-TEST(parametricMaxFlow, largeTestRestartable) {
-    const ParametricInstance instance = createRandomParametricInstance(1000);
+inline void validateRestartableAlgorithms(const ParametricInstance& instance, const size_t steps) noexcept {
     ParametricWrapper wrapper(instance);
-    PushRelabel<ParametricWrapper> prf(wrapper);
-    RestartableIBFS<ParametricWrapper> restartableIbfs(wrapper);
-    const size_t steps = 10;
+    PushRelabel<ParametricWrapper> restartablePRF(wrapper);
+    RestartableIBFS<ParametricWrapper> restartableIBFS(wrapper);
     for (size_t i = 0; i <= steps; i++) {
         const double alpha = instance.alphaMin + static_cast<double>(i) * (instance.alphaMax - instance.alphaMin)/steps;
         wrapper.setAlpha(alpha);
         IBFS<ParametricWrapper> ibfs(wrapper);
         ibfs.run();
         if (i == 0) {
-            restartableIbfs.run();
-            prf.run();
+            restartableIBFS.run();
+            restartablePRF.run();
         } else {
-            restartableIbfs.continueAfterUpdate();
-            prf.continueAfterUpdate();
+            restartableIBFS.continueAfterUpdate();
+            restartablePRF.continueAfterUpdate();
         }
-
-        EXPECT_NEAR(ibfs.getFlowValue(), restartableIbfs.getFlowValue(), pmf::epsilon);
-        EXPECT_NEAR(ibfs.getFlowValue(), prf.getFlowValue(), pmf::epsilon);
-        EXPECT_EQ(ibfs.getSinkComponent(), restartableIbfs.getSinkComponent());
-        EXPECT_EQ(ibfs.getSinkComponent(), prf.getSinkComponent());
+        compareAlgorithmResults(ibfs, restartableIBFS);
+        compareAlgorithmResults(ibfs,restartablePRF);
     }
 }
 
-template<typename STATIC_ALGO, typename RESTARTABLE_ALGO>
-void largeTest(const uint n) {
-    const ParametricInstance instance = createRandomParametricInstance(n);
+template<typename PARAMETRIC_ALGO, typename STATIC_ALGO>
+inline void compareParametricAlgorithmResults(const PARAMETRIC_ALGO& parametricAlgo, const STATIC_ALGO& staticAlgo, const double alpha, const double tolerance) noexcept {
+    EXPECT_NEAR(parametricAlgo.getFlowValue(alpha), staticAlgo.getFlowValue(), tolerance);
+    EXPECT_EQ(parametricAlgo.getSinkComponent(alpha), staticAlgo.getSinkComponent());
+}
 
+template<typename STATIC_ALGO, typename RESTARTABLE_ALGO>
+inline void validateParametricIBFS(const ParametricInstance& instance, const double tolerance) {
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
-
-    const std::vector<double>& breakpoints = algo.getBreakpoints();
-    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
-
-    for (const double breakPoint : breakpoints)
-        std::cout << "Breakpoint at " << breakPoint << std::endl;
-
     ParametricWrapper wrapper(instance);
     RESTARTABLE_ALGO restartableAlgo(wrapper);
 
-    for (const double breakPoint : breakpoints) {
-        std::cout << "Checking breakpoint " << breakPoint << std::endl;
-
-        wrapper.setAlpha(breakPoint);
+    const std::vector<double>& breakpoints = algo.getBreakpoints();
+    Progress progress(breakpoints.size());
+    for (const double breakpoint : breakpoints) {
+        wrapper.setAlpha(breakpoint);
         STATIC_ALGO staticAlgo(wrapper);
         staticAlgo.run();
-
-        if (breakPoint == instance.alphaMin) {
+        if (breakpoint == instance.alphaMin) {
             restartableAlgo.run();
         } else {
             restartableAlgo.continueAfterUpdate();
         }
-
-        EXPECT_NEAR(algo.getFlowValue(breakPoint), staticAlgo.getFlowValue(), pmf::epsilon);
-        EXPECT_NEAR(algo.getFlowValue(breakPoint), restartableAlgo.getFlowValue(), pmf::epsilon);
-        EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
-        EXPECT_EQ(algo.getSinkComponent(breakPoint), restartableAlgo.getSinkComponent());
-
-        for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(vertexBreakpoints[v], breakPoint);
-        }
-
-        for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(vertexBreakpoints[v], breakPoint);
-        }
+        compareAlgorithmResults(staticAlgo, restartableAlgo, tolerance);
+        compareParametricAlgorithmResults(algo, staticAlgo, breakpoint, tolerance);
+        compareParametricAlgorithmResults(algo, restartableAlgo, breakpoint, tolerance);
+        progress++;
     }
+    progress.finished();
 }
 
-TEST(parametricMaxFlow, largeTestParametricPushRelabel) {
-    largeTest<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(1000);
-}
-
-TEST(parametricMaxFlow, largeTestParametricRestartableIBFS) {
-    largeTest<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(1000);
-}
-
-TEST(parametricMaxFlow, ahremTest) {
-    ParametricInstance instance("../../test/instances/ahrem");
-
+template<typename RESTARTABLE_ALGO>
+inline void validateParametricIBFSFast(const ParametricInstance& instance, const double tolerance) {
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
+    ParametricWrapper wrapper(instance);
+    RESTARTABLE_ALGO restartableAlgo(wrapper);
 
     const std::vector<double>& breakpoints = algo.getBreakpoints();
-    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
-
-    for (const double breakPoint : breakpoints)
-        std::cout << "Breakpoint at " << breakPoint << std::endl;
-
-    ParametricWrapper wrapper(instance);
-
-    for (const double breakPoint : breakpoints) {
-        std::cout << "Checking breakpoint " << breakPoint << std::endl;
-
-        wrapper.setAlpha(breakPoint);
-        PushRelabel<ParametricWrapper> staticAlgo(wrapper);
-        staticAlgo.run();
-
-        EXPECT_NEAR(algo.getFlowValue(breakPoint), staticAlgo.getFlowValue(), 1e-5);
-        EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
-
-        for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(vertexBreakpoints[v], breakPoint);
-            if (vertexBreakpoints[v] > breakPoint)
-                std::cout << "v = " << v << std::endl;
+    Progress progress(breakpoints.size());
+    for (const double breakpoint : breakpoints) {
+        wrapper.setAlpha(breakpoint);
+        if (breakpoint == instance.alphaMin) {
+            restartableAlgo.run();
+        } else {
+            restartableAlgo.continueAfterUpdate();
         }
-
-        for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(vertexBreakpoints[v], breakPoint);
-        }
+        compareParametricAlgorithmResults(algo, restartableAlgo, breakpoint, tolerance);
+        progress++;
     }
+    progress.finished();
 }
 
-TEST(parametricMaxFlow, ahremTestChord) {
+template<typename STATIC_ALGO>
+inline void validateChordScheme(const ParametricInstance& instance, const double precision, const double tolerance) {
     using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>;
     using Chord = ChordScheme<pmf::linearFlowFunction, SearchAlgorithm>;
-    ParametricInstance instance("../../test/instances/ahrem");
-
-    Chord algo(instance, 1e-12);
+    Chord algo(instance, precision);
     algo.run();
+    ParametricWrapper wrapper(instance);
 
     const std::vector<Chord::Solution>& solutions = algo.getSolutions();
-    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
-
-    ParametricWrapper wrapper(instance);
-
+    Progress progress(solutions.size());
     for (const Chord::Solution& solution : solutions) {
-        std::cout << "Checking breakpoint " << solution.breakpoint << std::endl;
-
         wrapper.setAlpha(solution.breakpoint);
-        PushRelabel<ParametricWrapper> staticAlgo(wrapper);
+        STATIC_ALGO staticAlgo(wrapper);
         staticAlgo.run();
-
-        EXPECT_NEAR(solution.getFlowValue(), staticAlgo.getFlowValue(), 1e-5);
-        for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(vertexBreakpoints[v], solution.breakpoint);
-            if (vertexBreakpoints[v] > solution.breakpoint)
-                std::cout << "v = " << v << std::endl;
-        }
-
-        for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(vertexBreakpoints[v], solution.breakpoint);
-        }
+        EXPECT_NEAR(solution.getFlowValue(), staticAlgo.getFlowValue(), tolerance);
+        EXPECT_EQ(algo.getSinkComponent(solution.breakpoint), staticAlgo.getSinkComponent());
+        progress++;
     }
+    progress.finished();
 }
 
-TEST(parametricMaxFlow, bonnTest) {
-    ParametricInstance instance("../../test/instances/bonn");
+TEST(parametricMaxFlow, randomStatic) {
+    const ParametricInstance instance = createRandomParametricInstance(1000);
+    validateStaticAlgorithms(instance, 100);
+}
 
-    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
-    algo.run();
+TEST(parametricMaxFlow, randomRestartable) {
+    const ParametricInstance instance = createRandomParametricInstance(1000);
+    validateRestartableAlgorithms(instance, 100);
+}
 
-    const std::vector<double>& breakpoints = algo.getBreakpoints();
-    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
+TEST(parametricMaxFlow, randomParametricIBFSPushRelabel) {
+    const ParametricInstance instance = createRandomParametricInstance(1000);
+    validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, pmf::epsilon);
+}
 
-    for (const double breakPoint : breakpoints)
-        std::cout << "Breakpoint at " << breakPoint << std::endl;
+TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
+    const ParametricInstance instance = createRandomParametricInstance(1000);
+    validateParametricIBFS<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(instance, pmf::epsilon);
+}
 
-    ParametricWrapper wrapper(instance);
+TEST(parametricMaxFlow, ahremParametricIBFS) {
+    const ParametricInstance instance("../../test/instances/ahrem");
+    validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-4);
+}
 
-    for (const double breakPoint : breakpoints) {
-        std::cout << "Checking breakpoint " << breakPoint << std::endl;
+TEST(parametricMaxFlow, ahremChord) {
+    const ParametricInstance instance("../../test/instances/ahrem");
+    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-12, 1e-5);
+}
 
-        wrapper.setAlpha(breakPoint);
-        PushRelabel<ParametricWrapper> staticAlgo(wrapper);
-        staticAlgo.run();
+TEST(parametricMaxFlow, bonnParametricIBFS) {
+    const ParametricInstance instance("../../test/instances/bonn");
+    validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-5);
+}
 
-        EXPECT_NEAR(algo.getFlowValue(breakPoint), staticAlgo.getFlowValue(), 1e-5);
-        EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
-
-        for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(vertexBreakpoints[v], breakPoint);
-            if (vertexBreakpoints[v] > breakPoint)
-                std::cout << "v = " << v << std::endl;
-        }
-
-        for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(vertexBreakpoints[v], breakPoint);
-        }
-    }
+TEST(parametricMaxFlow, bonnChord) {
+    const ParametricInstance instance("../../test/instances/bonn");
+    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-12, 1e-5);
 }

@@ -205,7 +205,7 @@ public:
         return edges;
     }
 
-    inline FlowType getFlowValue() noexcept {
+    inline FlowType getFlowValue() const noexcept {
         FlowType flow = 0;
         for (const Edge edge : graph.edgesFrom(terminal[BACKWARD])) {
             const Edge reverseEdge = graph.get(ReverseEdge, edge);
