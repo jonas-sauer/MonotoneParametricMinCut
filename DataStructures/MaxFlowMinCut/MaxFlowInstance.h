@@ -437,14 +437,6 @@ public:
         return currentCapacity;
     }
 
-    inline std::vector<Vertex> translate(const std::vector<Vertex>& vertices) const noexcept {
-        std::vector<Vertex> result;
-        for (const Vertex vertex : vertices) {
-            result.emplace_back(newToOldVertex[vertex]);
-        }
-        return result;
-    }
-
     inline void setAlpha(const double newAlpha) noexcept {
         alpha = newAlpha;
         for (const Edge edge: graph.edges()) {

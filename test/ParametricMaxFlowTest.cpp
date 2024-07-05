@@ -23,17 +23,17 @@ TEST(parametricMaxFlow, smallTest) {
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
 
-    const std::vector<double>& vertexThetas = algo.getVertexThetas();
+    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
 
     for (uint i = 0; i < 5; i++) {
-        std::cout << "Vertex " << i + 1 << " has value " << vertexThetas[i] << std::endl;
+        std::cout << "Vertex " << i + 1 << " has value " << vertexBreakpoints[i] << std::endl;
     }
 
-    EXPECT_DOUBLE_EQ(vertexThetas[0], 0.0);
-    EXPECT_DOUBLE_EQ(vertexThetas[1], 0.5);
-    EXPECT_DOUBLE_EQ(vertexThetas[2], 0.3333333333333333);
-    EXPECT_DOUBLE_EQ(vertexThetas[3], 0.0);
-    EXPECT_DOUBLE_EQ(vertexThetas[4], INFTY);
+    EXPECT_DOUBLE_EQ(vertexBreakpoints[0], 0.0);
+    EXPECT_DOUBLE_EQ(vertexBreakpoints[1], 0.5);
+    EXPECT_DOUBLE_EQ(vertexBreakpoints[2], 0.3333333333333333);
+    EXPECT_DOUBLE_EQ(vertexBreakpoints[3], 0.0);
+    EXPECT_DOUBLE_EQ(vertexBreakpoints[4], INFTY);
 }
 
 const uint bigNum = 1000000000;
@@ -141,13 +141,16 @@ void largeTest(const uint n) {
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
 
-    for (const double breakPoint : algo.getBreakpoints())
+    const std::vector<double>& breakpoints = algo.getBreakpoints();
+    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
+
+    for (const double breakPoint : breakpoints)
         std::cout << "Breakpoint at " << breakPoint << std::endl;
 
     ParametricWrapper wrapper(instance);
     RESTARTABLE_ALGO restartableAlgo(wrapper);
 
-    for (const double breakPoint : algo.getBreakpoints()) {
+    for (const double breakPoint : breakpoints) {
         std::cout << "Checking breakpoint " << breakPoint << std::endl;
 
         wrapper.setAlpha(breakPoint);
@@ -166,11 +169,11 @@ void largeTest(const uint n) {
         EXPECT_EQ(algo.getSinkComponent(breakPoint), restartableAlgo.getSinkComponent());
 
         for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(algo.getVertexThetas()[v], breakPoint);
+            EXPECT_LE(vertexBreakpoints[v], breakPoint);
         }
 
         for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(algo.getVertexThetas()[v], breakPoint);
+            EXPECT_GT(vertexBreakpoints[v], breakPoint);
         }
     }
 }
@@ -189,12 +192,15 @@ TEST(parametricMaxFlow, ahremTest) {
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
 
-    for (const double breakPoint : algo.getBreakpoints())
+    const std::vector<double>& breakpoints = algo.getBreakpoints();
+    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
+
+    for (const double breakPoint : breakpoints)
         std::cout << "Breakpoint at " << breakPoint << std::endl;
 
     ParametricWrapper wrapper(instance);
 
-    for (const double breakPoint : algo.getBreakpoints()) {
+    for (const double breakPoint : breakpoints) {
         std::cout << "Checking breakpoint " << breakPoint << std::endl;
 
         wrapper.setAlpha(breakPoint);
@@ -205,13 +211,13 @@ TEST(parametricMaxFlow, ahremTest) {
         EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
 
         for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(algo.getVertexThetas()[v], breakPoint);
-            if (algo.getVertexThetas()[v] > breakPoint)
+            EXPECT_LE(vertexBreakpoints[v], breakPoint);
+            if (vertexBreakpoints[v] > breakPoint)
                 std::cout << "v = " << v << std::endl;
         }
 
         for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(algo.getVertexThetas()[v], breakPoint);
+            EXPECT_GT(vertexBreakpoints[v], breakPoint);
         }
     }
 }
@@ -236,7 +242,7 @@ TEST(parametricMaxFlow, ahremTestChord) {
         PushRelabel<ParametricWrapper> staticAlgo(wrapper);
         staticAlgo.run();
 
-        EXPECT_NEAR(solution.flowValue, staticAlgo.getFlowValue(), 1e-5);
+        EXPECT_NEAR(solution.getFlowValue(), staticAlgo.getFlowValue(), 1e-5);
         for (const Vertex v : staticAlgo.getSourceComponent()) {
             EXPECT_LE(vertexBreakpoints[v], solution.breakpoint);
             if (vertexBreakpoints[v] > solution.breakpoint)
@@ -255,12 +261,15 @@ TEST(parametricMaxFlow, bonnTest) {
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
 
-    for (const double breakPoint : algo.getBreakpoints())
+    const std::vector<double>& breakpoints = algo.getBreakpoints();
+    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
+
+    for (const double breakPoint : breakpoints)
         std::cout << "Breakpoint at " << breakPoint << std::endl;
 
     ParametricWrapper wrapper(instance);
 
-    for (const double breakPoint : algo.getBreakpoints()) {
+    for (const double breakPoint : breakpoints) {
         std::cout << "Checking breakpoint " << breakPoint << std::endl;
 
         wrapper.setAlpha(breakPoint);
@@ -271,13 +280,13 @@ TEST(parametricMaxFlow, bonnTest) {
         EXPECT_EQ(algo.getSinkComponent(breakPoint), staticAlgo.getSinkComponent());
 
         for (const Vertex v : staticAlgo.getSourceComponent()) {
-            EXPECT_LE(algo.getVertexThetas()[v], breakPoint);
-            if (algo.getVertexThetas()[v] > breakPoint)
+            EXPECT_LE(vertexBreakpoints[v], breakPoint);
+            if (vertexBreakpoints[v] > breakPoint)
                 std::cout << "v = " << v << std::endl;
         }
 
         for (const Vertex v : staticAlgo.getSinkComponent()) {
-            EXPECT_GT(algo.getVertexThetas()[v], breakPoint);
+            EXPECT_GT(vertexBreakpoints[v], breakPoint);
         }
     }
 }

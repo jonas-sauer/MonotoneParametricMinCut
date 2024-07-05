@@ -17,25 +17,25 @@ template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, typename SEARCH_ALGORIT
 class ChordScheme {
 public:
     using FlowFunction = FLOW_FUNCTION;
+    using FlowType = FlowFunction::FlowType;
     using ParametricInstance = ParametricMaxFlowInstance<FlowFunction>;
     using ParametricWrapper = ChordSchemeMaxFlowWrapper<FlowFunction>;
     using SearchAlgorithm = SEARCH_ALGORITHM;
-    using FlowGraph = ParametricInstance::GraphType;
 
     struct Solution {
         Solution(const ParametricWrapper& wrapper, const SearchAlgorithm& search, const double alpha) :
             breakpoint(alpha),
-            sinkComponent(wrapper.translate(search.getSinkComponent())),
             inSinkComponent(search.getInSinkComponent()),
-            flowFunction(wrapper.getCapacity(search.getCutEdges())),
-            flowValue(flowFunction.eval(alpha)) {
+            flowFunction(wrapper.getCapacity(search.getCutEdges())) {
         }
 
         double breakpoint;
-        std::vector<Vertex> sinkComponent;
         std::vector<bool> inSinkComponent;
         FlowFunction flowFunction;
-        double flowValue;
+
+        inline FlowType getFlowValue() const noexcept {
+            return flowFunction.eval(breakpoint);
+        }
 
         inline bool operator<(const Solution& other) const noexcept {
             return breakpoint < other.breakpoint;
@@ -52,7 +52,9 @@ public:
         const Solution solMax = runSearch(wrapper, instance.alphaMax);
         if (instance.alphaMax < INFTY) solutions.emplace_back(solMax);
         for (const Vertex vertex : instance.graph.vertices()) {
-            if (!solMin.inSinkComponent[vertex]) breakpointOfVertex[vertex] = instance.alphaMin;
+            if (!solMin.inSinkComponent[vertex]) {
+                breakpointOfVertex[vertex] = instance.alphaMin;
+            }
         }
         ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
         recurse(instance.alphaMin, instance.alphaMax, solMin.flowFunction, solMax.flowFunction, contractedWrapper);
@@ -63,8 +65,25 @@ public:
         return solutions;
     }
 
+    inline std::vector<double> getBreakpoints() const noexcept {
+        std::vector<double> result;
+        for (const Solution& solution : solutions) {
+            result.emplace_back(solution.breakpoint);
+        }
+        return result;
+    }
+
     inline const std::vector<double>& getVertexBreakpoints() const noexcept {
         return breakpointOfVertex;
+    }
+
+    inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
+        std::vector<Vertex> sinkComponent;
+        for (const Vertex vertex : instance.graph.vertices()) {
+            if (breakpointOfVertex[vertex] <= alpha) continue;
+            sinkComponent.emplace_back(vertex);
+        }
+        return sinkComponent;
     }
 
 private:
@@ -80,14 +99,16 @@ private:
         const double mid = findIntersectionPoint(flowLeft, flowRight);
         assert(mid >= left && mid <= right);
 
-        const Solution& solMid = runSearch(wrapper, mid);
+        const Solution solMid = runSearch(wrapper, mid);
         const double oldVal = flowLeft.eval(mid);
         const double newVal = solMid.flowFunction.eval(mid);
         if (oldVal <= (1 + epsilon) * newVal) return;
 
         solutions.emplace_back(solMid);
         for (const Vertex vertex : wrapper.graph.vertices()) {
-            if (!solMid.inSinkComponent[vertex] && vertex != wrapper.source) breakpointOfVertex[wrapper.newToOldVertex[vertex]] = mid;
+            if (!solMid.inSinkComponent[vertex] && vertex != wrapper.source) {
+                breakpointOfVertex[wrapper.newToOldVertex[vertex]] = mid;
+            }
         }
         ParametricWrapper wrapperLeft = wrapper.contractSinkComponent(solMid.inSinkComponent);
         ParametricWrapper wrapperRight = wrapper.contractSourceComponent(solMid.inSinkComponent);

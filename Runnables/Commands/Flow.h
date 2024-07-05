@@ -353,45 +353,46 @@ public:
 private:
     template<typename SEARCH_ALGORITHM>
     inline void run() const noexcept {
-        using ChordScheme = ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM>;
-        using Solution = ChordScheme::Solution;
         ParametricInstance instance(getParameter("Instance file"));
         const double precision = std::pow(10, -getParameter<int>("Precision"));
-        ChordScheme chordScheme(instance, precision);
+        ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM> chordScheme(instance, precision);
         Timer timer;
         chordScheme.run();
-        const std::vector<Solution>& solutions = chordScheme.getSolutions();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
-        std::cout << "Solutions: " << solutions.size() << std::endl;
+        std::cout << "Solutions: " << chordScheme.getSolutions().size() << std::endl;
         if (getParameter("Restartable algorithm") == "Push-Relabel") {
-            compare<PushRelabel<ParametricWrapper>>(instance, solutions);
+            compare<PushRelabel<ParametricWrapper>>(instance, chordScheme);
         } else {
-            compare<RestartableIBFS<ParametricWrapper>>(instance, solutions);
+            compare<RestartableIBFS<ParametricWrapper>>(instance, chordScheme);
         }
     }
 
-    template<typename RESTARTABLE_ALGORITHM, typename SOLUTION>
-    inline void compare(const ParametricInstance& instance, const std::vector<SOLUTION>& solutions) const noexcept {
+    template<typename RESTARTABLE_ALGORITHM, typename CHORD_SCHEME>
+    inline void compare(const ParametricInstance& instance, const CHORD_SCHEME& chordScheme) const noexcept {
+        using Solution = CHORD_SCHEME::Solution;
+        const std::vector<Solution>& solutions = chordScheme.getSolutions();
         ParametricWrapper wrapper(instance);
         RESTARTABLE_ALGORITHM restartableAlgorithm(wrapper);
         Progress progress(solutions.size());
         Timer timer;
         double restartableTime = 0;
         for (size_t i = 0; i < solutions.size(); i++) {
+            const double alpha = solutions[i].breakpoint;
             timer.restart();
             if (i == 0) {
                 restartableAlgorithm.run();
             } else {
-                wrapper.setAlpha(solutions[i].breakpoint);
+                wrapper.setAlpha(alpha);
                 restartableAlgorithm.continueAfterUpdate();
             }
             restartableTime += timer.elapsedMicroseconds();
-            if (!areFlowValuesEqual(solutions[i].flowValue, restartableAlgorithm.getFlowValue())) {
+            const double flowValue = solutions[i].getFlowValue();
+            if (!areFlowValuesEqual(flowValue, restartableAlgorithm.getFlowValue())) {
                 std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
-                std::cout << "Flow values for breakpoint " << solutions[i].breakpoint << " are not equal! ";
-                std::cout << "Parametric: " << solutions[i].flowValue << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
+                std::cout << "Flow values for breakpoint " << alpha << " are not equal! ";
+                std::cout << "Parametric: " << flowValue << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
             }
-            compareSinkComponents(solutions[i].breakpoint, solutions[i].sinkComponent, restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
+            compareSinkComponents(alpha, chordScheme.getSinkComponent(alpha), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
             progress++;
         }
         std::cout << "Restartable time: " << String::musToString(restartableTime) << std::endl;

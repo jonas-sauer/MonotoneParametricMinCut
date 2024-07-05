@@ -200,8 +200,8 @@ public:
         residualCapacity_(instance_.getCurrentCapacities()),
         dist_(n, INFTY),
         excessVertices_(n),
-        thetaByVertex_(n, INFTY),
-        thetaBreakpoints_(1, alphaMin_),
+        breakpointOfVertex_(n, INFTY),
+        breakpoints_(1, alphaMin_),
         treeData_(n),
         currentEdge_(n, noEdge),
         rootAlpha_(n),
@@ -231,17 +231,17 @@ public:
     }
 
     inline const std::vector<double>& getBreakpoints() const noexcept {
-        return thetaBreakpoints_;
+        return breakpoints_;
     };
 
-    inline const std::vector<double>& getVertexThetas() const noexcept {
-        return thetaByVertex_;
+    inline const std::vector<double>& getVertexBreakpoints() const noexcept {
+        return breakpointOfVertex_;
     }
 
     inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
         std::vector<Vertex> sinkComponent;
         for (const Vertex vertex : graph_.vertices()) {
-            if (thetaByVertex_[vertex] <= alpha) continue;
+            if (breakpointOfVertex_[vertex] <= alpha) continue;
             sinkComponent.emplace_back(vertex);
         }
         return sinkComponent;
@@ -250,10 +250,10 @@ public:
     inline double getFlowValue(const double alpha) const noexcept {
         double flow = 0;
         for (const Vertex from : graph_.vertices()) {
-            if (thetaByVertex_[from] > alpha) continue;
+            if (breakpointOfVertex_[from] > alpha) continue;
             for (const Edge edge : graph_.edgesFrom(from)) {
                 const Vertex to = graph_.get(ToVertex, edge);
-                if (thetaByVertex_[to] <= alpha) continue;
+                if (breakpointOfVertex_[to] <= alpha) continue;
                 flow += instance_.getCapacity(edge, alpha);
             }
         }
@@ -270,7 +270,7 @@ private:
         for (const Vertex from : graph_.vertices()) {
             if (from == sink_) continue;
             if (dist_[from] == INFTY) {
-                thetaByVertex_[from] = alphaMin_;
+                breakpointOfVertex_[from] = alphaMin_;
             }
             for (const Edge e : graph_.edgesFrom(from)) {
                 const Vertex to = graph_.get(ToVertex, e);
@@ -300,7 +300,7 @@ private:
             if (v == source_)
                 continue;
             for (Edge e : graph_.edgesFrom(v)) {
-                if (thetaByVertex_[v] == alphaMin_ || thetaByVertex_[graph_.get(ToVertex, e)] == alphaMin_)
+                if (breakpointOfVertex_[v] == alphaMin_ || breakpointOfVertex_[graph_.get(ToVertex, e)] == alphaMin_)
                     continue;
                 if (graph_.get(ToVertex, e) != sink_) {
                     std::cout << "Edge connecting " << v << " and " << graph_.get(ToVertex, e) << std::endl;
@@ -391,9 +391,9 @@ private:
             if (adoptWithNewDist(v, nextAlpha)) continue;
             moved.emplace_back(v);
             dist_[v] = INFTY;
-            thetaByVertex_[v] = nextAlpha;
-            if (thetaBreakpoints_.back() != nextAlpha) {
-                thetaBreakpoints_.emplace_back(nextAlpha);
+            breakpointOfVertex_[v] = nextAlpha;
+            if (breakpoints_.back() != nextAlpha) {
+                breakpoints_.emplace_back(nextAlpha);
             }
         }
     }
@@ -468,9 +468,9 @@ private:
             if (treeData_.edgeToParent_[v] != noEdge) continue;
             excessVertices_.removeVertex(v, dist_[v]);
             dist_[v] = INFTY;
-            thetaByVertex_[v] = nextAlpha;
-            if (thetaBreakpoints_.back() != nextAlpha) {
-                thetaBreakpoints_.emplace_back(nextAlpha);
+            breakpointOfVertex_[v] = nextAlpha;
+            if (breakpoints_.back() != nextAlpha) {
+                breakpoints_.emplace_back(nextAlpha);
             }
         }
     }
@@ -742,8 +742,8 @@ private:
     std::vector<uint> dist_;
     ExcessBuckets excessVertices_;
 
-    std::vector<double> thetaByVertex_;
-    std::vector<double> thetaBreakpoints_;
+    std::vector<double> breakpointOfVertex_;
+    std::vector<double> breakpoints_;
     TreeData treeData_;
     std::vector<Edge> currentEdge_;
 
