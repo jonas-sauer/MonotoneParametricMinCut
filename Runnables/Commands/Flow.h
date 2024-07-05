@@ -378,7 +378,6 @@ private:
         Timer timer;
         double restartableTime = 0;
         for (size_t i = 0; i < solutions.size(); i++) {
-            if (solutions[i].breakpoint == INFTY) break; //TODO: Handle this
             timer.restart();
             if (i == 0) {
                 restartableAlgorithm.run();

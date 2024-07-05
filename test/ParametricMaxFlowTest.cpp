@@ -3,6 +3,7 @@
 #include <random>
 #include <fstream>
 
+#include "../Algorithms/MaxFlowMinCut/ChordScheme.h"
 #include "../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/IBFS.h"
 #include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
@@ -182,10 +183,8 @@ TEST(parametricMaxFlow, largeTestParametricRestartableIBFS) {
     largeTest<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(1000);
 }
 
-
 TEST(parametricMaxFlow, ahremTest) {
-    ParametricInstance instance;
-    instance.fromDimacs("../../test/instances/ahrem.max");
+    ParametricInstance instance("../../test/instances/ahrem");
 
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();
@@ -217,9 +216,41 @@ TEST(parametricMaxFlow, ahremTest) {
     }
 }
 
+TEST(parametricMaxFlow, ahremTestChord) {
+    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>;
+    using Chord = ChordScheme<pmf::linearFlowFunction, SearchAlgorithm>;
+    ParametricInstance instance("../../test/instances/ahrem");
+
+    Chord algo(instance, 1e-12);
+    algo.run();
+
+    const std::vector<Chord::Solution>& solutions = algo.getSolutions();
+    const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
+
+    ParametricWrapper wrapper(instance);
+
+    for (const Chord::Solution& solution : solutions) {
+        std::cout << "Checking breakpoint " << solution.breakpoint << std::endl;
+
+        wrapper.setAlpha(solution.breakpoint);
+        PushRelabel<ParametricWrapper> staticAlgo(wrapper);
+        staticAlgo.run();
+
+        EXPECT_NEAR(solution.flowValue, staticAlgo.getFlowValue(), 1e-5);
+        for (const Vertex v : staticAlgo.getSourceComponent()) {
+            EXPECT_LE(vertexBreakpoints[v], solution.breakpoint);
+            if (vertexBreakpoints[v] > solution.breakpoint)
+                std::cout << "v = " << v << std::endl;
+        }
+
+        for (const Vertex v : staticAlgo.getSinkComponent()) {
+            EXPECT_GT(vertexBreakpoints[v], solution.breakpoint);
+        }
+    }
+}
+
 TEST(parametricMaxFlow, bonnTest) {
-    ParametricInstance instance;
-    instance.fromDimacs("../../test/instances/bonn.max");
+    ParametricInstance instance("../../test/instances/bonn");
 
     ParametricIBFS<pmf::linearFlowFunction> algo(instance);
     algo.run();

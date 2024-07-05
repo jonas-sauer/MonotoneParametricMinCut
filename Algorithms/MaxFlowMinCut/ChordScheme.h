@@ -42,22 +42,29 @@ public:
         }
     };
 
-    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), epsilon(epsilon) {}
+    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
 
     inline void run() noexcept {
         ParametricWrapper wrapper(instance);
         solutions.clear();
         const Solution solMin = runSearch(wrapper, instance.alphaMin);
-        solutions.push_back(solMin);
+        solutions.emplace_back(solMin);
         const Solution solMax = runSearch(wrapper, instance.alphaMax);
-        solutions.push_back(solMax);
+        if (instance.alphaMax < INFTY) solutions.emplace_back(solMax);
+        for (const Vertex vertex : instance.graph.vertices()) {
+            if (!solMin.inSinkComponent[vertex]) breakpointOfVertex[vertex] = instance.alphaMin;
+        }
         ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
         recurse(instance.alphaMin, instance.alphaMax, solMin.flowFunction, solMax.flowFunction, contractedWrapper);
         std::sort(solutions.begin(), solutions.end());
     }
 
-    [[nodiscard]] const std::vector<Solution>& getSolutions() const noexcept {
+    [[nodiscard]] inline const std::vector<Solution>& getSolutions() const noexcept {
         return solutions;
+    }
+
+    inline const std::vector<double>& getVertexBreakpoints() const noexcept {
+        return breakpointOfVertex;
     }
 
 private:
@@ -79,6 +86,9 @@ private:
         if (oldVal <= (1 + epsilon) * newVal) return;
 
         solutions.emplace_back(solMid);
+        for (const Vertex vertex : wrapper.graph.vertices()) {
+            if (!solMid.inSinkComponent[vertex] && vertex != wrapper.source) breakpointOfVertex[wrapper.newToOldVertex[vertex]] = mid;
+        }
         ParametricWrapper wrapperLeft = wrapper.contractSinkComponent(solMid.inSinkComponent);
         ParametricWrapper wrapperRight = wrapper.contractSourceComponent(solMid.inSinkComponent);
         recurse(left, mid, flowLeft, solMid.flowFunction, wrapperLeft);
@@ -89,4 +99,5 @@ private:
     const ParametricInstance& instance;
     const double epsilon;
     std::vector<Solution> solutions;
+    std::vector<double> breakpointOfVertex;
 };

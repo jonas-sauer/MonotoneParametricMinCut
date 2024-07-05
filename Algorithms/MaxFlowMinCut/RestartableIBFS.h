@@ -367,9 +367,13 @@ private:
         for (const Vertex from : Q[DIRECTION]) {
             if (getDistance<DIRECTION>(from) != maxDistance[DIRECTION] - 1) continue;
 
-            for (Edge edge = graph.beginEdgeFrom(from); edge < graph.endEdgeFrom(from); edge++) {
+            Edge edge = graph.beginEdgeFrom(from);
+            while (edge < graph.endEdgeFrom(from)) {
                 const Edge edgeTowardsSink = getForwardEdge<DIRECTION>(edge);
-                if (!isEdgeResidual(edgeTowardsSink)) continue;
+                if (!isEdgeResidual(edgeTowardsSink)) {
+                    edge++;
+                    continue;
+                }
                 const Vertex to = graph.get(ToVertex, edge);
                 if (distance[to] == 0) {
                     setDistance<DIRECTION>(to, maxDistance[DIRECTION]);
@@ -381,8 +385,9 @@ private:
                     const Vertex sinkEndpoint = (DIRECTION == BACKWARD) ? from : to;
                     augment(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
                     if (getDistance<DIRECTION>(from) != maxDistance[DIRECTION] - 1) break;
-                    if (isEdgeResidual(edgeTowardsSink)) edge--;
+                    if (isEdgeResidual(edgeTowardsSink)) continue;
                 }
+                edge++;
             }
         }
         if (nextQ[DIRECTION].empty()) {
