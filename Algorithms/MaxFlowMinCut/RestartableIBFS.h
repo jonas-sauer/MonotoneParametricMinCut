@@ -82,6 +82,10 @@ private:
             Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
         }
 
+        inline bool contains(const Vertex vertex) const noexcept {
+            return positionOfVertex_[vertex] != -1;
+        }
+
         inline void addVertex(const Vertex vertex, const int dist) noexcept {
             if (positionOfVertex_[vertex] != -1) {
                 assertVertexInBucket(vertex, dist);
@@ -611,9 +615,8 @@ private:
                 assert(isFree);
                 //std::cout << "Re-add orphan " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
                 if (fromDist == vDist) {
-                    // TODO This is incorrect but the paper claims that this is done?
-                    //threePassOrphans[DIRECTION].increaseBucket(from, fromDist, vDist + 1);
-                    continue;
+                    if (threePassOrphans[DIRECTION].contains(from)) continue;
+                    threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
                 } else if (fromDist < vDist) {
                     threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
                 }

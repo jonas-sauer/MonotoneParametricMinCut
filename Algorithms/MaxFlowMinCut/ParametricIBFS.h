@@ -87,6 +87,10 @@ private:
             Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
         }
 
+        inline bool contains(const Vertex vertex) const noexcept {
+            return positionOfVertex_[vertex] != -1;
+        }
+
         inline void addVertex(const Vertex vertex, const int dist) noexcept {
             if (positionOfVertex_[vertex] != -1) {
                 assertVertexInBucket(vertex, dist);
@@ -291,7 +295,7 @@ private:
 
         drainExcess(alphaMin_);
 
-#ifndef NDEBUG
+/*#ifndef NDEBUG
         for (Vertex v : graph_.vertices()) {
             if (v == source_)
                 continue;
@@ -327,7 +331,7 @@ private:
                 std::cout << std::endl << "Reached shared sink component" << std::endl << std::endl;
             }
         }
-#endif
+#endif*/
 
 
     }
@@ -556,9 +560,8 @@ private:
                 assert(isFree);
                 //std::cout << "Re-add orphan " << from << " from " << dist_[from] << " to " << dist_[v] + 1 << std::endl;
                 if (dist_[from] == dist_[v]) {
-                    // TODO This is incorrect but the paper claims that this is done?
-                    //threePassOrphans_.increaseBucket(from, dist_[from], dist_[v] + 1);
-                    continue;
+                    if (threePassOrphans_.contains(from)) continue;
+                    threePassOrphans_.addVertex(from, dist_[v] + 1);
                 } else if (dist_[from] < dist_[v]) {
                     threePassOrphans_.addVertex(from, dist_[v] + 1);
                 }
@@ -650,6 +653,7 @@ private:
             for (const Edge e : graph_.edgesFrom(v)) {
                 const Vertex to = graph_.get(ToVertex, e);
                 if (!isEdgeResidual(e, alpha)) continue;
+                if (treeData_.edgeToParent_[to] == noEdge) continue;
                 assert(dist_[to] >= dist_[v] - 1);
             }
 
