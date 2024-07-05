@@ -195,6 +195,10 @@ public:
         return cut.getSinkComponent();
     }
 
+    inline const std::vector<bool>& getInSinkComponent() const noexcept {
+        return cut.inSinkComponent;
+    }
+
     inline std::vector<Edge> getCutEdges() const noexcept {
         std::vector<Edge> edges;
         for (const Vertex vertex : graph.vertices()) {

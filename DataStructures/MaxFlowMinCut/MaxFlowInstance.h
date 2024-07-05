@@ -279,6 +279,20 @@ public:
 
         DynamicParametricFlowGraph<FlowFunction> dynamicGraph;
         Graph::move(std::move(temp), dynamicGraph);
+        for (const Vertex vertex : dynamicGraph.vertices()) {
+            if (!dynamicGraph.hasEdge(vertex, source)) {
+                dynamicGraph.addEdge(vertex, source).set(Capacity, FlowFunction(0));
+            }
+            if (!dynamicGraph.hasEdge(source, vertex)) {
+                dynamicGraph.addEdge(source, vertex).set(Capacity, FlowFunction(0));
+            }
+            if (!dynamicGraph.hasEdge(vertex, sink)) {
+                dynamicGraph.addEdge(vertex, sink).set(Capacity, FlowFunction(0));
+            }
+            if (!dynamicGraph.hasEdge(sink, vertex)) {
+                dynamicGraph.addEdge(sink, vertex).set(Capacity, FlowFunction(0));
+            }
+        }
         for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
             if (dynamicGraph.hasReverseEdge(edge)) continue;
             dynamicGraph.addReverseEdge(edge).set(Capacity, FlowFunction(0));
@@ -374,18 +388,19 @@ template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
 class ChordSchemeMaxFlowWrapper {
 public:
     using FlowFunction = FLOW_FUNCTION;
+    using Type = ChordSchemeMaxFlowWrapper<FlowFunction>;
     using InstanceType = ParametricMaxFlowInstance<FlowFunction>;
     using GraphType = InstanceType::GraphType;
     using FlowType = InstanceType::FlowType;
 
 public:
     ChordSchemeMaxFlowWrapper(const InstanceType& instance, const double alpha) :
-        instance(instance),
         graph(instance.graph),
         source(instance.source),
         sink(instance.sink),
         alpha(alpha),
-        currentCapacity(graph.numEdges()) {
+        currentCapacity(instance.graph.numEdges()),
+        newToOldVertex(Vector::id<Vertex>(graph.numVertices())) {
         for (const Edge edge : instance.graph.edges()) {
             currentCapacity[edge] = instance.getCapacity(edge, alpha);
         }
@@ -393,6 +408,15 @@ public:
 
     ChordSchemeMaxFlowWrapper(const InstanceType& instance) :
         ChordSchemeMaxFlowWrapper(instance, instance.alphaMin) {}
+
+    ChordSchemeMaxFlowWrapper(const Type& parent, const GraphType& graph, const Vertex source, const Vertex sink, const std::vector<Vertex>& newToOldVertex) :
+        graph(graph),
+        source(source),
+        sink(sink),
+        alpha(parent.alpha),
+        currentCapacity(graph.numEdges()),
+        newToOldVertex(newToOldVertex) {
+    }
 
     inline const FlowType& getCapacity(const Edge edge) const noexcept {
         return currentCapacity[edge];
@@ -410,25 +434,147 @@ public:
         return currentCapacity;
     }
 
-    inline void setAlpha(const double newAlpha) noexcept {
-        Assert(newAlpha >= instance.alphaMin, "Parameter out of range!");
-        Assert(newAlpha <= instance.alphaMax, "Parameter out of range!");
-        alpha = newAlpha;
-        for (const Edge edge : graph.edgesFrom(source)) {
-            currentCapacity[edge] = instance.getCapacity(edge).eval(alpha);
+    inline std::vector<Vertex> translate(const std::vector<Vertex>& vertices) const noexcept {
+        std::vector<Vertex> result;
+        for (const Vertex vertex : vertices) {
+            result.emplace_back(newToOldVertex[vertex]);
         }
-        for (const Edge edge : graph.edgesFrom(sink)) {
-            const Edge edgeToSink = graph.get(ReverseEdge, edge);
-            currentCapacity[edgeToSink] = instance.getCapacity(edgeToSink).eval(alpha);
-            Assert(currentCapacity[edgeToSink] >= 0, "Negative capacity!");
+        return result;
+    }
+
+    inline void setAlpha(const double newAlpha) noexcept {
+        alpha = newAlpha;
+        for (const Edge edge: graph.edges()) {
+            currentCapacity[edge] = graph.get(Capacity, edge).eval(alpha);
         }
     }
 
+    inline Type contractSourceComponent(const std::vector<bool>& inSinkComponent) const noexcept {
+        GraphType contractedGraph;
+        std::vector<Vertex> newToOldMapping;
+        Vertex newSource = noVertex;
+        Vertex newSink = noVertex;
+        Graph::copy(graph, contractedGraph);
+        std::vector<Edge> fromSourceEdge(contractedGraph.numVertices(), noEdge);
+        std::vector<Edge> toSourceEdge(contractedGraph.numVertices(), noEdge);
+        for (const Edge edge : contractedGraph.edgesFrom(source)) {
+            const Vertex to = contractedGraph.get(ToVertex, edge);
+            if (!inSinkComponent[to]) continue;
+            fromSourceEdge[to] = edge;
+            toSourceEdge[to] = contractedGraph.get(ReverseEdge, edge);
+        }
+        for (const Vertex vertex : contractedGraph.vertices()) {
+            if (inSinkComponent[vertex] || vertex == source) {
+                if (vertex == source) newSource = Vertex(newToOldMapping.size());
+                else if (vertex == sink) newSink = Vertex(newToOldMapping.size());
+                newToOldMapping.emplace_back(newToOldVertex[vertex]);
+                continue;
+            }
+            for (const Edge edge : contractedGraph.edgesFrom(vertex)) {
+                const Vertex to = contractedGraph.get(ToVertex, edge);
+                if (!inSinkComponent[to]) continue;
+                contractedGraph.get(Capacity, fromSourceEdge[to]) += contractedGraph.get(Capacity, edge);
+                const Edge reverseEdge = contractedGraph.get(ReverseEdge, edge);
+                contractedGraph.get(Capacity, toSourceEdge[to]) += contractedGraph.get(Capacity, reverseEdge);
+            }
+        }
+        contractedGraph.deleteVertices([&](const Vertex vertex) {
+            return !inSinkComponent[vertex] && vertex != source;
+        });
+        return {*this, contractedGraph, newSource, newSink, newToOldMapping};
+    }
+
+    inline Type contractSinkComponent(const std::vector<bool>& inSinkComponent) const noexcept {
+        GraphType contractedGraph;
+        std::vector<Vertex> newToOldMapping;
+        Vertex newSource = noVertex;
+        Vertex newSink = noVertex;
+        Graph::copy(graph, contractedGraph);
+        std::vector<Edge> fromSinkEdge(contractedGraph.numVertices(), noEdge);
+        std::vector<Edge> toSinkEdge(contractedGraph.numVertices(), noEdge);
+        for (const Edge edge : contractedGraph.edgesFrom(sink)) {
+            const Vertex to = contractedGraph.get(ToVertex, edge);
+            if (inSinkComponent[to]) continue;
+            fromSinkEdge[to] = edge;
+            toSinkEdge[to] = contractedGraph.get(ReverseEdge, edge);
+        }
+        for (const Vertex vertex : contractedGraph.vertices()) {
+            if (!inSinkComponent[vertex] || vertex == sink) {
+                if (vertex == source) newSource = Vertex(newToOldMapping.size());
+                else if (vertex == sink) newSink = Vertex(newToOldMapping.size());
+                newToOldMapping.emplace_back(newToOldVertex[vertex]);
+                continue;
+            }
+            for (const Edge edge : contractedGraph.edgesFrom(vertex)) {
+                const Vertex to = contractedGraph.get(ToVertex, edge);
+                if (inSinkComponent[to]) continue;
+                contractedGraph.get(Capacity, fromSinkEdge[to]) += contractedGraph.get(Capacity, edge);
+                const Edge reverseEdge = contractedGraph.get(ReverseEdge, edge);
+                contractedGraph.get(Capacity, toSinkEdge[to]) += contractedGraph.get(Capacity, reverseEdge);
+            }
+        }
+        contractedGraph.deleteVertices([&](const Vertex vertex) {
+            return inSinkComponent[vertex] && vertex != sink;
+        });
+        return {*this, contractedGraph, newSource, newSink, newToOldMapping};
+    }
+
+    inline Type contractSourceAndSinkComponents(const std::vector<bool>& inSinkComponent1, const std::vector<bool>& inSinkComponent2) const noexcept {
+        GraphType contractedGraph;
+        std::vector<Vertex> newToOldMapping;
+        Vertex newSource = noVertex;
+        Vertex newSink = noVertex;
+        Graph::copy(graph, contractedGraph);
+        std::vector<Edge> fromSourceEdge(contractedGraph.numVertices(), noEdge);
+        std::vector<Edge> toSourceEdge(contractedGraph.numVertices(), noEdge);
+        for (const Edge edge : contractedGraph.edgesFrom(source)) {
+            const Vertex to = contractedGraph.get(ToVertex, edge);
+            if (!inSinkComponent1[to]) continue;
+            fromSourceEdge[to] = edge;
+            toSourceEdge[to] = contractedGraph.get(ReverseEdge, edge);
+        }
+        std::vector<Edge> fromSinkEdge(contractedGraph.numVertices(), noEdge);
+        std::vector<Edge> toSinkEdge(contractedGraph.numVertices(), noEdge);
+        for (const Edge edge : contractedGraph.edgesFrom(sink)) {
+            const Vertex to = contractedGraph.get(ToVertex, edge);
+            if (inSinkComponent2[to]) continue;
+            fromSinkEdge[to] = edge;
+            toSinkEdge[to] = contractedGraph.get(ReverseEdge, edge);
+        }
+        for (const Vertex vertex : contractedGraph.vertices()) {
+            if (!inSinkComponent1[vertex] && vertex != source) {
+                for (const Edge edge : contractedGraph.edgesFrom(vertex)) {
+                    const Vertex to = contractedGraph.get(ToVertex, edge);
+                    if (!inSinkComponent1[to]) continue;
+                    contractedGraph.get(Capacity, fromSourceEdge[to]) += contractedGraph.get(Capacity, edge);
+                    const Edge reverseEdge = contractedGraph.get(ReverseEdge, edge);
+                    contractedGraph.get(Capacity, toSourceEdge[to]) += contractedGraph.get(Capacity, reverseEdge);
+                }
+            } else if (inSinkComponent2[vertex] && vertex != sink) {
+                for (const Edge edge : contractedGraph.edgesFrom(vertex)) {
+                    const Vertex to = contractedGraph.get(ToVertex, edge);
+                    if (inSinkComponent2[to]) continue;
+                    contractedGraph.get(Capacity, fromSinkEdge[to]) += contractedGraph.get(Capacity, edge);
+                    const Edge reverseEdge = contractedGraph.get(ReverseEdge, edge);
+                    contractedGraph.get(Capacity, toSinkEdge[to]) += contractedGraph.get(Capacity, reverseEdge);
+                }
+            } else {
+                if (vertex == source) newSource = Vertex(newToOldMapping.size());
+                else if (vertex == sink) newSink = Vertex(newToOldMapping.size());
+                newToOldMapping.emplace_back(newToOldVertex[vertex]);
+            }
+        }
+        contractedGraph.deleteVertices([&](const Vertex vertex) {
+            return (!inSinkComponent1[vertex] && vertex != source) || (inSinkComponent2[vertex] && vertex != sink);
+        });
+        return {*this, contractedGraph, newSource, newSink, newToOldMapping};
+    }
+
 public:
-    const InstanceType& instance;
-    const GraphType& graph;
-    const Vertex& source;
-    const Vertex& sink;
+    GraphType graph;
+    const Vertex source;
+    const Vertex sink;
     double alpha;
     std::vector<FlowType> currentCapacity;
+    std::vector<Vertex> newToOldVertex;
 };

@@ -20,10 +20,20 @@ public:
     using ParametricInstance = ParametricMaxFlowInstance<FlowFunction>;
     using ParametricWrapper = ChordSchemeMaxFlowWrapper<FlowFunction>;
     using SearchAlgorithm = PushRelabel<ParametricWrapper>;
+    using FlowGraph = ParametricInstance::GraphType;
 
     struct Solution {
+        Solution(const ParametricWrapper& wrapper, const SearchAlgorithm& search, const double alpha) :
+            breakpoint(alpha),
+            sinkComponent(wrapper.translate(search.getSinkComponent())),
+            inSinkComponent(search.getInSinkComponent()),
+            flowFunction(wrapper.getCapacity(search.getCutEdges())),
+            flowValue(flowFunction.eval(alpha)) {
+        }
+
         double breakpoint;
         std::vector<Vertex> sinkComponent;
+        std::vector<bool> inSinkComponent;
         FlowFunction flowFunction;
         double flowValue;
 
@@ -32,15 +42,17 @@ public:
         }
     };
 
-    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), wrapper(instance), epsilon(epsilon) {}
+    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), epsilon(epsilon) {}
 
     inline void run() noexcept {
+        ParametricWrapper wrapper(instance);
         solutions.clear();
-        const Solution solMin = runSearch(instance.alphaMin);
+        const Solution solMin = runSearch(wrapper, instance.alphaMin);
         solutions.push_back(solMin);
-        const Solution solMax = runSearch(instance.alphaMax);
+        const Solution solMax = runSearch(wrapper, instance.alphaMax);
         solutions.push_back(solMax);
-        recurse(instance.alphaMin, instance.alphaMax, solMin.flowFunction, solMax.flowFunction);
+        ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
+        recurse(instance.alphaMin, instance.alphaMax, solMin.flowFunction, solMax.flowFunction, contractedWrapper);
         std::sort(solutions.begin(), solutions.end());
     }
 
@@ -49,32 +61,32 @@ public:
     }
 
 private:
-    inline Solution runSearch(const double alpha) noexcept {
-        SearchAlgorithm search(wrapper);
+    inline Solution runSearch(ParametricWrapper& wrapper, const double alpha) noexcept {
         wrapper.setAlpha(alpha);
+        SearchAlgorithm search(wrapper);
         search.run();
-        const FlowFunction flowFunction = wrapper.getCapacity(search.getCutEdges());
-        return Solution{alpha, search.getSinkComponent(), flowFunction, flowFunction.eval(alpha)};
+        return Solution(wrapper, search, alpha);
     }
 
-    inline void recurse(const double left, const double right, const FlowFunction& flowLeft, const FlowFunction& flowRight) noexcept {
+    inline void recurse(const double left, const double right, const FlowFunction& flowLeft, const FlowFunction& flowRight, ParametricWrapper& wrapper) noexcept {
         if (right <= left) return;
         const double mid = findIntersectionPoint(flowLeft, flowRight);
-        assert(mid > left && mid < right);
+        assert(mid >= left && mid <= right);
 
-        const Solution& solMid = runSearch(mid);
+        const Solution& solMid = runSearch(wrapper, mid);
         const double oldVal = flowLeft.eval(mid);
         const double newVal = solMid.flowFunction.eval(mid);
         if (oldVal <= (1 + epsilon) * newVal) return;
 
         solutions.emplace_back(solMid);
-        recurse(left, mid, flowLeft, solMid.flowFunction);
-        recurse(mid, right, solMid.flowFunction, flowRight);
+        ParametricWrapper wrapperLeft = wrapper.contractSinkComponent(solMid.inSinkComponent);
+        ParametricWrapper wrapperRight = wrapper.contractSourceComponent(solMid.inSinkComponent);
+        recurse(left, mid, flowLeft, solMid.flowFunction, wrapperLeft);
+        recurse(mid, right, solMid.flowFunction, flowRight, wrapperRight);
     }
 
 private:
     const ParametricInstance& instance;
-    ParametricWrapper wrapper;
     const double epsilon;
     std::vector<Solution> solutions;
 };

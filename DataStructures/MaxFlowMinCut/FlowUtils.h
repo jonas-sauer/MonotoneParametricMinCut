@@ -152,6 +152,7 @@ namespace pmf {
         }
 
         friend double findIntersectionPoint(const linearFlowFunction& lhs, const linearFlowFunction& rhs) {
+            if (lhs.a == rhs.a) return CONST_INF;
             return (rhs.b - lhs.b)/(lhs.a - rhs.a);
         }
 
