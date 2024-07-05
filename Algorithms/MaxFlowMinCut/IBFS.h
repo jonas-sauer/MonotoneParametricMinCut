@@ -188,6 +188,23 @@ public:
         return cut.getSinkComponent();
     }
 
+    inline const std::vector<bool>& getInSinkComponent() const noexcept {
+        return cut.inSinkComponent;
+    }
+
+    inline std::vector<Edge> getCutEdges() const noexcept {
+        std::vector<Edge> edges;
+        for (const Vertex vertex : graph.vertices()) {
+            if (cut.inSinkComponent[vertex]) continue;
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                if (!cut.inSinkComponent[to]) continue;
+                edges.emplace_back(edge);
+            }
+        }
+        return edges;
+    }
+
     inline FlowType getFlowValue() noexcept {
         FlowType flow = 0;
         for (const Edge edge : graph.edgesFrom(terminal[BACKWARD])) {
@@ -220,7 +237,11 @@ private:
 
     inline void runAfterInitialize() noexcept {
         while (true) {
-            if (!grow<FORWARD>()) break;
+            if (!grow<FORWARD>()) {
+                // Continue the backward search to ensure we get the minimal sink component
+                while (grow<BACKWARD>());
+                break;
+            }
             if (!grow<BACKWARD>()) break;
         }
     }

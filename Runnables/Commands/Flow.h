@@ -336,16 +336,28 @@ public:
         ParameterizedCommand(shell, "testChordScheme", "Solves the given parametric max-flow instance with the chord scheme.") {
         addParameter("Instance file");
         addParameter("Precision");
+        addParameter("Chord scheme algorithm", {"Push-Relabel", "IBFS"});
         addParameter("Restartable algorithm", {"Push-Relabel", "IBFS"});
     }
 
-    using Algorithm = ChordScheme<pmf::linearFlowFunction>;
-    using Solution = Algorithm::Solution;
+    using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
 
     virtual void execute() noexcept {
+        if (getParameter("Chord scheme algorithm") == "Push-Relabel") {
+            run<PushRelabel<ChordSchemeWrapper>>();
+        } else {
+            run<IBFS<ChordSchemeWrapper>>();
+        }
+    }
+
+private:
+    template<typename SEARCH_ALGORITHM>
+    inline void run() const noexcept {
+        using ChordScheme = ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM>;
+        using Solution = ChordScheme::Solution;
         ParametricInstance instance(getParameter("Instance file"));
         const double precision = std::pow(10, -getParameter<int>("Precision"));
-        Algorithm chordScheme(instance, precision);
+        ChordScheme chordScheme(instance, precision);
         Timer timer;
         chordScheme.run();
         const std::vector<Solution>& solutions = chordScheme.getSolutions();
@@ -358,9 +370,8 @@ public:
         }
     }
 
-private:
-    template<typename RESTARTABLE_ALGORITHM>
-    inline void compare(const ParametricInstance& instance, const std::vector<Solution>& solutions) const noexcept {
+    template<typename RESTARTABLE_ALGORITHM, typename SOLUTION>
+    inline void compare(const ParametricInstance& instance, const std::vector<SOLUTION>& solutions) const noexcept {
         ParametricWrapper wrapper(instance);
         RESTARTABLE_ALGORITHM restartableAlgorithm(wrapper);
         Progress progress(solutions.size());

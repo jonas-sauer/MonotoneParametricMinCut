@@ -13,13 +13,13 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
+template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM>
 class ChordScheme {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using ParametricInstance = ParametricMaxFlowInstance<FlowFunction>;
     using ParametricWrapper = ChordSchemeMaxFlowWrapper<FlowFunction>;
-    using SearchAlgorithm = PushRelabel<ParametricWrapper>;
+    using SearchAlgorithm = SEARCH_ALGORITHM;
     using FlowGraph = ParametricInstance::GraphType;
 
     struct Solution {
