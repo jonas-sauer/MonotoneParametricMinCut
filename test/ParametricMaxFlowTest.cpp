@@ -204,6 +204,35 @@ inline void validateChordScheme(const ParametricInstance& instance, const double
     progress.finished();
 }
 
+inline void compareParametricAlgorithms(const ParametricInstance& instance, const double precision, const double tolerance) {
+    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>;
+    using Chord = ChordScheme<pmf::linearFlowFunction, SearchAlgorithm>;
+    Chord chordScheme(instance, precision);
+    chordScheme.run();
+    ParametricIBFS<pmf::linearFlowFunction> parametricIBFS(instance);
+    parametricIBFS.run();
+
+    const std::vector<double>& breakpoints = parametricIBFS.getBreakpoints();
+    const std::vector<Chord::Solution>& solutions = chordScheme.getSolutions();
+
+    for (const Chord::Solution& solution : solutions) {
+        EXPECT_NEAR(solution.getFlowValue(), parametricIBFS.getFlowValue(solution.breakpoint), tolerance);
+    }
+    size_t i = 0;
+    for (const double breakpoint : breakpoints) {
+        while (i < solutions.size() && solutions[i].breakpoint < breakpoint) i++;
+        double chordValue = INFTY;
+        if (i < solutions.size()) {
+            chordValue = std::min(chordValue, solutions[i].getFlowValue());
+        }
+        if (i >= 1) {
+            chordValue = std::min(chordValue, solutions[i-1].getFlowValue());
+        }
+        const double ibfsValue = parametricIBFS.getFlowValue(solutions[i].breakpoint);
+        EXPECT_LE(chordValue, (1 + precision) * ibfsValue);
+    }
+}
+
 TEST(parametricMaxFlow, randomStatic) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateStaticAlgorithms(instance, 100);
@@ -234,6 +263,11 @@ TEST(parametricMaxFlow, ahremChord) {
     validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-12, 1e-5);
 }
 
+TEST(parametricMaxFlow, ahremCompare) {
+    const ParametricInstance instance("../../test/instances/ahrem");
+    compareParametricAlgorithms(instance, 1e-12, 1e-5);
+}
+
 TEST(parametricMaxFlow, bonnParametricIBFS) {
     const ParametricInstance instance("../../test/instances/bonn");
     validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-5);
@@ -242,4 +276,9 @@ TEST(parametricMaxFlow, bonnParametricIBFS) {
 TEST(parametricMaxFlow, bonnChord) {
     const ParametricInstance instance("../../test/instances/bonn");
     validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-12, 1e-5);
+}
+
+TEST(parametricMaxFlow, bonnCompare) {
+    const ParametricInstance instance("../../test/instances/bonn");
+    compareParametricAlgorithms(instance, 1e-12, 1e-5);
 }
