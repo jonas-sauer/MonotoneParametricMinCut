@@ -211,6 +211,8 @@ public:
         std::cout << "\r                     \r" << std::flush;
 
         ParametricFlowGraphEdgeList<FlowFunction> temp;
+        std::vector<bool> hasEdgeFromSource;
+        std::vector<bool> hasEdgeFromSink;
         size_t vertexCount = -1;
         size_t edgeCount = -1;
         source = noVertex;
@@ -228,6 +230,8 @@ public:
                     break;
                 } else {
                     vertexCount = String::lexicalCast<size_t>(tokens[2]);
+                    hasEdgeFromSource.resize(vertexCount, false);
+                    hasEdgeFromSink.resize(vertexCount, false);
                     edgeCount = String::lexicalCast<size_t>(tokens[3]);
                     temp.reserve(vertexCount, edgeCount);
                     temp.addVertices(vertexCount);
@@ -239,12 +243,14 @@ public:
                     break;
                 } else if (tokens[2] == "s") {
                     source = Vertex(String::lexicalCast<size_t>(tokens[1]) - 1);
+                    hasEdgeFromSource[source] = true;
                     if (!temp.isVertex(source)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
                     }
                 } else {
                     sink = Vertex(String::lexicalCast<size_t>(tokens[1]) - 1);
+                    hasEdgeFromSource[sink] = true;
                     if (!temp.isVertex(sink)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
@@ -259,6 +265,8 @@ public:
                     const Vertex to(String::lexicalCast<size_t>(tokens[2]) - 1);
                     const FlowType capacityA = String::lexicalCast<FlowType>(tokens[3]);
                     const FlowType capacityB = String::lexicalCast<FlowType>(tokens[4]);
+                    if (from == source) hasEdgeFromSource[to] = true;
+                    else if (from == sink) hasEdgeFromSink[to] = true;
                     if (!temp.isVertex(from)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
@@ -277,22 +285,17 @@ public:
             std::cout << "WARNING, found " << temp.numEdges() << " edges, but " << edgeCount << " edges were declared." << std::endl;
         }
 
-        DynamicParametricFlowGraph<FlowFunction> dynamicGraph;
-        Graph::move(std::move(temp), dynamicGraph);
-        for (const Vertex vertex : dynamicGraph.vertices()) {
-            if (!dynamicGraph.hasEdge(vertex, source)) {
-                dynamicGraph.addEdge(vertex, source).set(Capacity, FlowFunction(0));
+        for (const Vertex vertex : temp.vertices()) {
+            if (!hasEdgeFromSource[vertex]) {
+                temp.addEdge(source, vertex).set(Capacity, FlowFunction(0));
             }
-            if (!dynamicGraph.hasEdge(source, vertex)) {
-                dynamicGraph.addEdge(source, vertex).set(Capacity, FlowFunction(0));
-            }
-            if (!dynamicGraph.hasEdge(vertex, sink)) {
-                dynamicGraph.addEdge(vertex, sink).set(Capacity, FlowFunction(0));
-            }
-            if (!dynamicGraph.hasEdge(sink, vertex)) {
-                dynamicGraph.addEdge(sink, vertex).set(Capacity, FlowFunction(0));
+            if (!hasEdgeFromSink[vertex]) {
+                temp.addEdge(sink, vertex).set(Capacity, FlowFunction(0));
             }
         }
+
+        DynamicParametricFlowGraph<FlowFunction> dynamicGraph;
+        Graph::move(std::move(temp), dynamicGraph);
         for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
             if (dynamicGraph.hasReverseEdge(edge)) continue;
             dynamicGraph.addReverseEdge(edge).set(Capacity, FlowFunction(0));
