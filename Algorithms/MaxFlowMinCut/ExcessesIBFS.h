@@ -269,9 +269,9 @@ private:
 
     inline void runAfterInitialize() noexcept {
         while (true) {
-            //TODO: Clever alternation
             if (!grow<FORWARD>()) {
-                std::swap(Q[BACKWARD], nextQ[BACKWARD]);
+                // Continue the backward search to ensure we get the minimal sink component
+                while (grow<BACKWARD>());
                 break;
             }
             if (!grow<BACKWARD>()) break;
@@ -379,7 +379,7 @@ private:
             const FlowType res = residualCapacity[edgeTowardsSink];
             const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
-            if (flow == res) {
+            if (pmf::areNumbersEqual(flow, res)) {
                 makeOrphan<DIRECTION>(vertex);
             }
             if (flow == exc) {

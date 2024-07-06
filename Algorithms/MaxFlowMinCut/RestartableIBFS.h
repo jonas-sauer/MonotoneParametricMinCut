@@ -194,6 +194,12 @@ private:
     struct Cut {
         Cut(const int n) : inSinkComponent(n, false) {}
 
+        inline void compute(const std::vector<int>& dist) {
+            for (size_t i = 0; i < dist.size(); i++) {
+                inSinkComponent[i] = (dist[i] < 0);
+            }
+        }
+
         inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
@@ -339,34 +345,13 @@ private:
     inline void runAfterInitialize() noexcept {
         while (true) {
             if (!grow<FORWARD>()) {
-                std::swap(Q[BACKWARD], nextQ[BACKWARD]);
+                // Continue the backward search to ensure we get the minimal sink component
+                while (grow<BACKWARD>());
                 break;
             }
             if (!grow<BACKWARD>()) break;
         }
-        computeCut();
-    }
-
-    inline void computeCut() noexcept {
-        std::vector<bool>(n, false).swap(cut.inSinkComponent);
-        std::queue<Vertex> queue;
-        queue.push(terminal[BACKWARD]);
-        cut.inSinkComponent[terminal[BACKWARD]] = true;
-        while (!queue.empty()) {
-            const Vertex vertex = queue.front();
-            queue.pop();
-            for (const Edge edge : graph.edgesFrom(vertex)) {
-                const Vertex to = graph.get(ToVertex, edge);
-                const Edge edgeToSink = graph.get(ReverseEdge, edge);
-                if (!isEdgeResidual(edgeToSink)) continue;
-                if (!cut.inSinkComponent[to]) {
-                    queue.push(to);
-                    cut.inSinkComponent[to] = true;
-                }
-            }
-        }
-
-        Assert(!cut.inSinkComponent[terminal[FORWARD]], "No cut found!");
+        cut.compute(distance);
     }
 
     template<int DIRECTION>
@@ -472,7 +457,7 @@ private:
             const FlowType res = residualCapacity[edgeTowardsSink];
             const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
-            if (flow == res) {
+            if (pmf::areNumbersEqual(flow, res)) {
                 makeOrphan<DIRECTION>(vertex);
             }
             if (flow == exc) {
