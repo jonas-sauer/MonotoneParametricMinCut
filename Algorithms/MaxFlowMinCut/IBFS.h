@@ -81,6 +81,10 @@ private:
             Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
         }
 
+        inline bool contains(const Vertex vertex) const noexcept {
+            return positionOfVertex_[vertex] != -1;
+        }
+
         inline void addVertex(const Vertex vertex, const int dist) noexcept {
             if (positionOfVertex_[vertex] != -1) {
                 assertVertexInBucket(vertex, dist);
@@ -109,6 +113,11 @@ private:
 
         inline bool empty() const noexcept {
             return buckets_.empty();
+        }
+
+        inline Vertex front() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            return buckets_[minBucket_].back();
         }
 
         inline Vertex pop() noexcept {
@@ -169,6 +178,12 @@ public:
         currentEdge(n, noEdge),
         treeData(n),
         orphans{n, n},
+        threePassOrphans{n, n},
+        processedOrphans_(0),
+        processedUniqueOrphans_(0),
+        orphanTimestamp_(n, 0),
+        currentTimestamp_(0),
+        threePass_(false),
         cut(n) {
     }
 
@@ -284,6 +299,7 @@ private:
     inline void augment(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) noexcept {
         const FlowType flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
         augmentPath(sourceEndpoint, sinkEndpoint, edgeTowardsSink, flow);
+        resetAdoptionCounter();
         adoptOrphans<FORWARD>();
         adoptOrphans<BACKWARD>();
     }
@@ -332,10 +348,32 @@ private:
         treeData.removeVertex(vertex);
     }
 
+    inline void resetAdoptionCounter() noexcept {
+        processedOrphans_ = 0;
+        processedUniqueOrphans_ = 0;
+        currentTimestamp_++;
+        threePass_ = false;
+    }
+
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
+        if (threePass_) {
+            adoptOrphansThreePass<DIRECTION>();
+            return;
+        }
         while (!orphans[DIRECTION].empty()) {
-            const Vertex orphan = orphans[DIRECTION].pop();
+            const Vertex orphan = orphans[DIRECTION].front();
+            processedOrphans_++;
+            if (orphanTimestamp_[orphan] != currentTimestamp_) {
+                processedUniqueOrphans_++;
+                orphanTimestamp_[orphan] = currentTimestamp_;
+            }
+            if (processedOrphans_ >= 3 * processedUniqueOrphans_) {
+                threePass_ = true;
+                adoptOrphansThreePass<DIRECTION>();
+                return;
+            }
+            orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
             if (getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION]) {
                 distance[orphan] = 0;
@@ -346,6 +384,130 @@ private:
             });
             if (!adoptWithNewDistance<DIRECTION>(orphan))
                 distance[orphan] = 0;
+        }
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansThreePass() noexcept {
+        adoptOrphansFirstPass<DIRECTION>();
+        std::vector<Vertex> moved;
+        while (!threePassOrphans[DIRECTION].empty()) {
+            const Vertex vertex = threePassOrphans[DIRECTION].pop();
+            if (treeData.parentEdge[vertex] == noEdge) {
+                //std::cout << "Second pass of " << vertex << " with distance " << distance[vertex] << std::endl;
+                if (adoptOrphansSecondPass<DIRECTION>(vertex)) {
+                    //std::cout << "Distance increased to " << distance[vertex] << std::endl;
+                    continue;
+                }
+            }
+            if (treeData.parentEdge[vertex] != noEdge) {
+                //std::cout << "Third pass of " << vertex << " with distance " << distance[vertex] << " and max distance " << maxDistance[DIRECTION] << std::endl;
+                adoptOrphansThirdPass<DIRECTION>(vertex);
+            } else {
+                moved.emplace_back(vertex); //TODO: Do this properly
+            }
+        }
+        for (const Vertex vertex : moved) {
+            if (treeData.parentEdge[vertex] != noEdge) continue;
+            //std::cout << "Remove "<< vertex << " with excess " << excess[vertex] << std::endl;
+            distance[vertex] = 0;
+        }
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansFirstPass() noexcept {
+        while (!orphans[DIRECTION].empty()) {
+            const Vertex vertex = orphans[DIRECTION].pop();
+            if (adoptWithSameDistance<DIRECTION>(vertex)) continue;
+            //std::cout << "First pass of " << vertex << " with distance " << distance[vertex] << " failed!" << std::endl;
+            //TODO Max distance check?
+            treeData.removeChildren(vertex, [&](const Vertex child) {
+                orphans[DIRECTION].addVertex(child, getDistance<DIRECTION>(child));
+            });
+            //TODO Clean up this mess
+            const int newDistance = getDistance<DIRECTION>(vertex) + 1;
+            setDistance<DIRECTION>(vertex, newDistance);
+            threePassOrphans[DIRECTION].addVertex(vertex, newDistance);
+        }
+    }
+
+    template<int DIRECTION>
+    inline bool adoptOrphansSecondPass(const Vertex orphan) noexcept {
+        int newDistance = maxDistance[DIRECTION];
+        Edge newEdge = noEdge;
+        Edge newEdgeTowardsSink = noEdge;
+        Vertex newParent = noVertex;
+        for (const Edge edge : graph.edgesFrom(orphan)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            const Vertex from = graph.get(ToVertex, edge);
+            if (!isVertexInTree<DIRECTION>(from)) continue;
+            if (treeData.parentEdge[from] == noEdge) continue;
+            const int fromDistance = getDistance<DIRECTION>(from);
+            if (fromDistance < newDistance) {
+                newDistance = fromDistance;
+                newEdge = edge;
+                newEdgeTowardsSink = edgeTowardsSink;
+                newParent = from;
+            }
+        }
+        if (newEdge == noEdge) {
+            //std::cout << "Adoption failed" << std::endl;
+            return false;
+        }
+        treeData.parentEdge[orphan] = newEdgeTowardsSink;
+        if (newDistance + 1 > getDistance<DIRECTION>(orphan)) {
+            setDistance<DIRECTION>(orphan, newDistance + 1);
+            threePassOrphans[DIRECTION].addVertex(orphan, newDistance + 1);
+            return true;
+        }
+        return false;
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansThirdPass(const Vertex vertex) noexcept {
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            const Vertex from = graph.get(ToVertex, edge);
+            if (!isEdgeAdmissible<DIRECTION>(vertex, from)) continue;
+            if (treeData.parentEdge[from] == noEdge) continue;
+            const int dist = getDistance<DIRECTION>(vertex);
+            treeData.addVertex(from, vertex, edgeTowardsSink);
+            currentEdge[vertex] = edge;
+            if (dist == maxDistance[DIRECTION]) {
+                nextQ[DIRECTION].push(vertex);
+            }
+            break;
+        }
+
+        //Don't try to adopt children beyond maxDistance. This will be done in the growth steps.
+        if (getDistance<DIRECTION>(vertex) == maxDistance[DIRECTION]) return;
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Vertex from = graph.get(ToVertex, edge);
+            if (from == terminal[DIRECTION] || isVertexInTree<!DIRECTION>(from)) continue;
+            const bool isFree = treeData.parentEdge[from] == noEdge;
+            const int fromDist = getDistance<DIRECTION>(from);
+            const int vDist = getDistance<DIRECTION>(vertex);
+            const bool isDistanceGreater = fromDist > vDist + 1;
+            if (!isFree && !isDistanceGreater) continue;
+            const Edge edgeTowardsSink = getForwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            if (isDistanceGreater) {
+                //std::cout << "Decrease distance of " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
+                threePassOrphans[DIRECTION].decreaseBucket(from, fromDist, vDist + 1);
+            } else {
+                assert(isFree);
+                //std::cout << "Re-add orphan " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
+                if (fromDist == vDist) {
+                    if (threePassOrphans[DIRECTION].contains(from)) continue;
+                    threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
+                } else if (fromDist < vDist) {
+                    threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
+                }
+            }
+            treeData.parentEdge[from] = edgeTowardsSink;
+            setDistance<DIRECTION>(from, vDist + 1);
         }
     }
 
@@ -488,5 +650,11 @@ private:
     std::queue<Vertex> Q[2];
     std::queue<Vertex> nextQ[2];
     OrphanBuckets orphans[2];
+    OrphanBuckets threePassOrphans[2];
+    size_t processedOrphans_;
+    size_t processedUniqueOrphans_;
+    std::vector<int> orphanTimestamp_;
+    int currentTimestamp_;
+    bool threePass_;
     Cut cut;
 };
