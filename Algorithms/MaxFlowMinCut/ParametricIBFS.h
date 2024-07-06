@@ -378,7 +378,7 @@ private:
             assert(e != noEdge);
             assert(!isEdgeResidual(e, nextAlpha));
             const Vertex parent = graph_.get(ToVertex, e);
-            removeTreeEdge(e, v, parent, nextAlpha);
+            removeTreeEdge<true>(e, v, parent, nextAlpha);
             treeData_.removeChild(parent, v);
         }
     }
@@ -403,9 +403,8 @@ private:
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) continue;
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
-                removeTreeEdge(e, child, v, nextAlpha);
+                removeTreeEdge<false>(e, child, v, nextAlpha);
             });
-            excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithNewDist(v, nextAlpha)) continue;
             moved.emplace_back(v);
             dist_[v] = INFTY;
@@ -479,7 +478,7 @@ private:
                 reconnectTreeThirdPass(v, nextAlpha);
             } else {
                 // If pass 2 failed, v leaves the sink component.
-                moved.emplace_back(v); //TODO: Do this properly
+                moved.emplace_back(v);
             }
         }
         for (const Vertex v : moved) {
@@ -503,10 +502,8 @@ private:
             if (adoptWithSameDist(v, nextAlpha)) continue;
             //std::cout << "First pass of " << v << " with distance " << dist_[v] << " failed!" << std::endl;
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
-                removeTreeEdge(e, child, v, nextAlpha);
+                removeTreeEdge<false>(e, child, v, nextAlpha);
             });
-            //TODO Clean up this mess
-            excessVertices_.removeVertex(v, dist_[v]);
             dist_[v]++;
             threePassOrphans_.addVertex(v, dist_[v]);
         }
@@ -610,6 +607,7 @@ private:
         }
     }
 
+    template<bool REGISTER_EXCESS>
     inline void removeTreeEdge(const Edge e, const Vertex from, const Vertex to, const double nextAlpha) noexcept {
         const Edge rev = graph_.get(ReverseEdge, e);
         const FlowFunction oldResidualCapacity = residualCapacity_[e];
@@ -620,7 +618,7 @@ private:
         excess_at_vertex_[to] -= add;
         residualCapacity_[e] = newResidualCapacity;
         residualCapacity_[rev] -= add;
-        excessVertices_.addVertex(to, dist_[to]);
+        if constexpr (REGISTER_EXCESS) excessVertices_.addVertex(to, dist_[to]);
         clearRootAlpha(from);
         orphans_.addVertex(from, dist_[from]);
         assert(dist_[from] != INFTY);

@@ -553,7 +553,7 @@ private:
                 //std::cout << "Third pass of " << vertex << " with distance " << distance[vertex] << " and max distance " << maxDistance[DIRECTION] << std::endl;
                 adoptOrphansThirdPass<DIRECTION>(vertex);
             } else {
-                moved.emplace_back(vertex); //TODO: Do this properly
+                moved.emplace_back(vertex);
             }
         }
         for (const Vertex vertex : moved) {
@@ -570,12 +570,13 @@ private:
             excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             if (adoptWithSameDistance<DIRECTION>(vertex)) continue;
             //std::cout << "First pass of " << vertex << " with distance " << distance[vertex] << " failed!" << std::endl;
-            //TODO Max distance check?
+            if (getDistance<DIRECTION>(vertex) == maxDistance[DIRECTION]) {
+                removeOrphan<DIRECTION>(vertex);
+                continue;
+            }
             treeData.removeChildren(vertex, [&](const Vertex child) {
                 orphans[DIRECTION].addVertex(child, getDistance<DIRECTION>(child));
             });
-            //TODO Clean up this mess
-            excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             const int newDistance = getDistance<DIRECTION>(vertex) + 1;
             setDistance<DIRECTION>(vertex, newDistance);
             threePassOrphans[DIRECTION].addVertex(vertex, newDistance);
