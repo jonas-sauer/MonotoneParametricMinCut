@@ -195,19 +195,35 @@ public:
         cut.compute(distance);
     }
 
-    inline std::vector<Vertex> getSourceComponent() const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSourceComponent() const noexcept {
         return cut.getSourceComponent();
     }
 
-    inline std::vector<Vertex> getSinkComponent() const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSinkComponent() const noexcept {
         return cut.getSinkComponent();
     }
 
-    inline const std::vector<bool>& getInSinkComponent() const noexcept {
+    [[nodiscard]] inline const std::vector<bool>& getInSinkComponent() const noexcept {
         return cut.inSinkComponent;
     }
 
-    inline std::vector<Edge> getCutEdges() const noexcept {
+    [[nodiscard]] inline bool isInSinkComponent(const Vertex vertex) const noexcept {
+        return cut.inSinkComponent[vertex];
+    }
+
+    [[nodiscard]] inline uint getSinkComponentDistance(const Vertex vertex) const noexcept {
+        return -distance[vertex] - 1;
+    }
+
+    [[nodiscard]] inline Vertex getParentVertex(const Vertex vertex) const noexcept {
+        return treeData.parentVertex[vertex];
+    }
+
+    [[nodiscard]] inline Edge getParentEdge(const Vertex vertex) const noexcept {
+        return treeData.parentEdge[vertex];
+    }
+
+    [[nodiscard]] inline std::vector<Edge> getCutEdges() const noexcept {
         std::vector<Edge> edges;
         for (const Vertex vertex : graph.vertices()) {
             if (cut.inSinkComponent[vertex]) continue;

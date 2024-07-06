@@ -269,38 +269,12 @@ private:
     inline void initialize() noexcept {
         initialFlow.run();
         const std::vector<double>& initialResidualCapacity = initialFlow.getCleanResidualCapacities();
-        // TODO Obtain source and sink component from initialFlow
-        initializeSinkTree(initialResidualCapacity);
-
-        for (const Vertex from : graph_.vertices()) {
-            if (from == sink_) continue;
-            if (dist_[from] == INFTY) {
-                breakpointOfVertex_[from] = alphaMin_;
-            }
-            for (const Edge e : graph_.edgesFrom(from)) {
-                const Vertex to = graph_.get(ToVertex, e);
-                if (dist_[to] == INFTY) continue;
-                const Edge revE = graph_.get(ReverseEdge, e);
-                if (dist_[from] == INFTY) {
-                    if (dist_[to] == INFTY) continue;
-                    // Cut edge
-                    saturateEdgeInitial(e, revE, to);
-                } else if (to == sink_) {
-                    if (initialResidualCapacity[e] > 0) {
-                        residualCapacity_[e] = graph_.get(Capacity, e) - FlowFunction(graph_.get(Capacity, e).eval(alphaMin_) - initialResidualCapacity[e]);
-                        residualCapacity_[revE] = graph_.get(Capacity, revE) - FlowFunction(graph_.get(Capacity, revE).eval(alphaMin_) - initialResidualCapacity[revE]);
-                    } else {
-                        saturateEdgeInitial(e, revE, to);
-                    }
-                } else {
-                    residualCapacity_[e] = FlowFunction(initialResidualCapacity[e]);
-                }
-            }
-        }
-
+        std::vector<Vertex> sinkComponent;
+        initializeSinkTree(sinkComponent);
+        createInitialExcesses(sinkComponent, initialResidualCapacity);
         drainExcess(alphaMin_);
 
-/*#ifndef NDEBUG
+        /*#ifndef NDEBUG
         for (Vertex v : graph_.vertices()) {
             if (v == source_)
                 continue;
@@ -337,26 +311,40 @@ private:
             }
         }
 #endif*/
-
-
     }
 
-    inline void initializeSinkTree(const std::vector<double>& initialResidualCapacity) noexcept {
-        std::deque<Vertex> queue(1, sink_);
-        dist_[sink_] = 0;
+    inline void initializeSinkTree(std::vector<Vertex>& sinkComponent) noexcept {
+        for (const Vertex vertex : graph_.vertices()) {
+            if (initialFlow.isInSinkComponent(vertex)) {
+                sinkComponent.emplace_back(vertex);
+                dist_[vertex] = initialFlow.getSinkComponentDistance(vertex);
+                if (vertex == sink_) continue;
+                treeData_.addVertex(initialFlow.getParentVertex(vertex), vertex, initialFlow.getParentEdge(vertex));
+            } else {
+                breakpointOfVertex_[vertex] = alphaMin_;
+            }
+        }
+    }
 
-        while (!queue.empty()) {
-            const Vertex v = queue.front();
-            queue.pop_front();
-
-            for (const Edge e : graph_.edgesFrom(v)) {
-                const Edge revE = graph_.get(ReverseEdge, e);
-                if (!pmf::doubleIsPositive(initialResidualCapacity[revE])) continue;
-                const Vertex w = graph_.get(ToVertex, e);
-                if (dist_[w] != INFTY) continue;
-                dist_[w] = dist_[v] + 1;
-                treeData_.addVertex(v, w, revE);
-                queue.emplace_back(w);
+    inline void createInitialExcesses(const std::vector<Vertex>& sinkComponent, const std::vector<double>& initialResidualCapacity) noexcept {
+        for (const Vertex to : sinkComponent) {
+            for (const Edge revE : graph_.edgesFrom(to)) {
+                const Vertex from = graph_.get(ToVertex, revE);
+                if (from == sink_) continue;
+                const Edge e = graph_.get(ReverseEdge, revE);
+                if (dist_[from] == INFTY) {
+                    // Cut edge
+                    saturateEdgeInitial(e, revE, to);
+                } else if (to == sink_) {
+                    if (initialResidualCapacity[e] > 0) {
+                        initializeTreeSinkEdge(e, initialResidualCapacity[e]);
+                        initializeTreeSinkEdge(revE, initialResidualCapacity[revE]);
+                    } else {
+                        saturateEdgeInitial(e, revE, to);
+                    }
+                } else {
+                    residualCapacity_[e] = FlowFunction(initialResidualCapacity[e]);
+                }
             }
         }
     }
@@ -367,6 +355,11 @@ private:
         residualCapacity_[revE] = capacity + graph_.get(Capacity, revE);
         excess_at_vertex_[to] += capacity - FlowFunction(capacity.eval(alphaMin_));
         excessVertices_.addVertex(to, dist_[to]);
+    }
+
+    inline void initializeTreeSinkEdge(const Edge e, const double initialResidualCapacity) noexcept {
+        const FlowFunction& capacity = graph_.get(Capacity, e);
+        residualCapacity_[e] = capacity - FlowFunction(capacity.eval(alphaMin_) - initialResidualCapacity);
     }
 
     inline void updateTree(const double nextAlpha) noexcept {

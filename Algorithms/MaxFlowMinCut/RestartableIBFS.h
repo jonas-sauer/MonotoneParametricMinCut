@@ -338,7 +338,6 @@ private:
 
     inline void runAfterInitialize() noexcept {
         while (true) {
-            //TODO: Clever alternation
             if (!grow<FORWARD>()) {
                 std::swap(Q[BACKWARD], nextQ[BACKWARD]);
                 break;
