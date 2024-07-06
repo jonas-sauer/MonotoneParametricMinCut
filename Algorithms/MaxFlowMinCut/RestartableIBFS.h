@@ -116,6 +116,11 @@ private:
             return buckets_.empty();
         }
 
+        inline Vertex front() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            return buckets_[minBucket_].back();
+        }
+
         inline Vertex pop() noexcept {
             Assert(!empty(), "Buckets are empty!");
             const Vertex vertex = buckets_[minBucket_].back();
@@ -223,6 +228,11 @@ public:
         excessVertices{ExcessBuckets(n), ExcessBuckets(n)},
         orphans{n, n},
         threePassOrphans{n, n},
+        processedOrphans(0),
+        processedUniqueOrphans(0),
+        orphanTimestamp(n, 0),
+        currentTimestamp(0),
+        threePass(false),
         cut(n) {
     }
 
@@ -305,7 +315,8 @@ private:
                 makeOrphan<BACKWARD>(from);
             }
         }
-        adoptOrphansThreePass<BACKWARD>();
+        resetAdoptionCounter();
+        adoptOrphans<BACKWARD>();
         drainExcesses<BACKWARD>();
     }
 
@@ -401,6 +412,7 @@ private:
         const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
         const FlowType flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
         pushFlow<BACKWARD>(sourceEndpoint, sinkEndpoint, edgeTowardsSink, edgeTowardsSource, flow);
+        resetAdoptionCounter();
         registerAndDrainExcess<FORWARD>(sourceEndpoint);
         registerAndDrainExcess<BACKWARD>(sinkEndpoint);
     }
@@ -436,7 +448,7 @@ private:
         }
         else {
             makeOrphan<DIRECTION>(start);
-            adoptOrphansThreePass<DIRECTION>();
+            adoptOrphans<DIRECTION>();
         }
     }
 
@@ -446,7 +458,7 @@ private:
             const Vertex vertex = excessVertices[DIRECTION].front();
             Assert(hasNonNegativeExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
             drainExcess<DIRECTION>(vertex);
-            adoptOrphansThreePass<DIRECTION>();
+            adoptOrphans<DIRECTION>();
         }
     }
 
@@ -461,10 +473,10 @@ private:
             const FlowType res = residualCapacity[edgeTowardsSink];
             const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
-            if (pmf::areNumbersEqual(flow, res)) {
+            if (flow == res) {
                 makeOrphan<DIRECTION>(vertex);
             }
-            if (pmf::areNumbersEqual(flow, exc)) {
+            if (flow == exc) {
                 excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             vertex = parentVertex;
@@ -484,11 +496,32 @@ private:
         treeData.removeVertex(vertex);
     }
 
-    //TODO Hybrid adoption
+    inline void resetAdoptionCounter() noexcept {
+        processedOrphans = 0;
+        processedUniqueOrphans = 0;
+        currentTimestamp++;
+        threePass = false;
+    }
+
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
+        if (threePass) {
+            adoptOrphansThreePass<DIRECTION>();
+            return;
+        }
         while (!orphans[DIRECTION].empty()) {
-            const Vertex orphan = orphans[DIRECTION].pop();
+            const Vertex orphan = orphans[DIRECTION].front();
+            processedOrphans++;
+            if (orphanTimestamp[orphan] != currentTimestamp) {
+                processedUniqueOrphans++;
+                orphanTimestamp[orphan] = currentTimestamp;
+            }
+            if (processedOrphans >= 3 * processedUniqueOrphans) {
+                threePass = true;
+                adoptOrphansThreePass<DIRECTION>();
+                return;
+            }
+            orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
             if (getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION]) {
                 removeOrphan<DIRECTION>(orphan);
@@ -928,5 +961,10 @@ private:
     ExcessBuckets excessVertices[2];
     OrphanBuckets orphans[2];
     OrphanBuckets threePassOrphans[2];
+    size_t processedOrphans;
+    size_t processedUniqueOrphans;
+    std::vector<int> orphanTimestamp;
+    int currentTimestamp;
+    bool threePass;
     Cut cut;
 };

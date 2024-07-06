@@ -121,6 +121,11 @@ private:
             return buckets_.empty();
         }
 
+        inline Vertex front() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            return buckets_[minBucket_].back();
+        }
+
         inline Vertex pop() noexcept {
             Assert(!empty(), "Buckets are empty!");
             const Vertex vertex = buckets_[minBucket_].back();
@@ -208,6 +213,8 @@ public:
         alphaQ_(n),
         orphans_(n),
         threePassOrphans_(n),
+        orphanTimestamp_(n, 0),
+        currentTimestamp_(0),
         excess_at_vertex_(n, FlowFunction(0)) {
         for (const Vertex vertex : graph_.vertices()) {
             currentEdge_[vertex] = graph_.beginEdgeFrom(vertex);
@@ -223,9 +230,7 @@ public:
             alpha = alphaQ_.front()->value_;
             if (alpha > alphaMax_) return;
             updateTree(alpha);
-            //TODO Hybrid adoption
-            //reconnectTree(alpha);
-            reconnectTreeThreePass(alpha);
+            reconnectTree(alpha);
             drainExcess(alpha);
         }
     }
@@ -379,9 +384,22 @@ private:
     }
 
     inline void reconnectTree(const double nextAlpha) noexcept {
+        size_t processedOrphans = 0;
+        size_t processedUniqueOrphans = 0;
+        currentTimestamp_++;
         std::vector<Vertex> moved;
         while (!orphans_.empty()) {
-            const Vertex v = orphans_.pop();
+            const Vertex v = orphans_.front();
+            processedOrphans++;
+            if (orphanTimestamp_[v] != currentTimestamp_) {
+                processedUniqueOrphans++;
+                orphanTimestamp_[v] = currentTimestamp_;
+            }
+            if (processedOrphans >= 3 * processedUniqueOrphans) {
+                reconnectTreeThreePass(nextAlpha);
+                return;
+            }
+            orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) continue;
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
@@ -752,6 +770,8 @@ private:
 
     OrphanBuckets orphans_;
     OrphanBuckets threePassOrphans_;
+    std::vector<int> orphanTimestamp_;
+    int currentTimestamp_;
 
     std::vector<FlowFunction> excess_at_vertex_;
 };
