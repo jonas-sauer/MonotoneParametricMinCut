@@ -129,12 +129,13 @@ public:
         }
 
         DynamicParametricFlowGraph<FlowType> dynamicGraph;
-        Graph::move(std::move(temp), dynamicGraph);
+        Graph::copy(temp, dynamicGraph);
         for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
             if (dynamicGraph.hasReverseEdge(edge)) continue;
-            dynamicGraph.addReverseEdge(edge).set(Capacity, 0);
+            const Vertex to = dynamicGraph.get(ToVertex, edge);
+            temp.addEdge(to, from).set(Capacity, 0);
         }
-        Graph::move(std::move(dynamicGraph), graph);
+        Graph::move(std::move(temp), graph);
     }
 
 public:
@@ -295,12 +296,13 @@ public:
         }
 
         DynamicParametricFlowGraph<FlowFunction> dynamicGraph;
-        Graph::move(std::move(temp), dynamicGraph);
+        Graph::copy(temp, dynamicGraph);
         for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
             if (dynamicGraph.hasReverseEdge(edge)) continue;
-            dynamicGraph.addReverseEdge(edge).set(Capacity, FlowFunction(0));
+            const Vertex to = dynamicGraph.get(ToVertex, edge);
+            temp.addEdge(to, from).set(Capacity, FlowFunction(0));
         }
-        Graph::move(std::move(dynamicGraph), graph);
+        Graph::move(std::move(temp), graph);
     }
 
 public:
