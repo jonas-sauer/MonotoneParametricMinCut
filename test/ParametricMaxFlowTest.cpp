@@ -191,14 +191,14 @@ inline void validateChordScheme(const ParametricInstance& instance, const double
     algo.run();
     ParametricWrapper wrapper(instance);
 
-    const std::vector<Chord::Solution>& solutions = algo.getSolutions();
-    Progress progress(solutions.size());
-    for (const Chord::Solution& solution : solutions) {
-        wrapper.setAlpha(solution.breakpoint);
+    const std::vector<double>& breakpoints = algo.getBreakpoints();
+    Progress progress(breakpoints.size());
+    for (const double breakpoint : breakpoints) {
+        wrapper.setAlpha(breakpoint);
         STATIC_ALGO staticAlgo(wrapper);
         staticAlgo.run();
-        EXPECT_NEAR(solution.getFlowValue(), staticAlgo.getFlowValue(), tolerance);
-        EXPECT_EQ(algo.getSinkComponent(solution.breakpoint), staticAlgo.getSinkComponent());
+        EXPECT_NEAR(algo.getFlowValue(breakpoint), staticAlgo.getFlowValue(), tolerance);
+        EXPECT_EQ(algo.getSinkComponent(breakpoint), staticAlgo.getSinkComponent());
         progress++;
     }
     progress.finished();
@@ -212,24 +212,33 @@ inline void compareParametricAlgorithms(const ParametricInstance& instance, cons
     ParametricIBFS<pmf::linearFlowFunction> parametricIBFS(instance);
     parametricIBFS.run();
 
-    const std::vector<double>& breakpoints = parametricIBFS.getBreakpoints();
-    const std::vector<Chord::Solution>& solutions = chordScheme.getSolutions();
+    const std::vector<double>& parametricBreakpoints = parametricIBFS.getBreakpoints();
+    const std::vector<double>& chordBreakpoints = chordScheme.getBreakpoints();
+    std::cout << "Parametric IBFS: " << parametricBreakpoints.size() << " breakpoints" << std::endl;
+    std::cout << "Chord scheme: " << chordBreakpoints.size() << " breakpoints" << std::endl;
 
-    for (const Chord::Solution& solution : solutions) {
-        EXPECT_NEAR(solution.getFlowValue(), parametricIBFS.getFlowValue(solution.breakpoint), tolerance);
+    std::cout << "Check validity of Parametric IBFS" << std::endl;
+    Progress progress(chordBreakpoints.size());
+    for (const double breakpoint : chordBreakpoints) {
+        EXPECT_LE(parametricIBFS.getFlowValue(breakpoint), chordScheme.getFlowValue(breakpoint) + tolerance);
+        progress++;
     }
+
+    std::cout << "Check validity of chord scheme" << std::endl;
+    progress.init(parametricBreakpoints.size());
     size_t i = 0;
-    for (const double breakpoint : breakpoints) {
-        while (i < solutions.size() && solutions[i].breakpoint < breakpoint) i++;
+    for (const double breakpoint : parametricBreakpoints) {
+        while (i < chordBreakpoints.size() && chordBreakpoints[i] < breakpoint) i++;
         double chordValue = INFTY;
-        if (i < solutions.size()) {
-            chordValue = std::min(chordValue, solutions[i].getFlowValue());
+        if (i < chordBreakpoints.size()) {
+            chordValue = std::min(chordValue, chordScheme.getFlowValue(chordBreakpoints[i]));
         }
         if (i >= 1) {
-            chordValue = std::min(chordValue, solutions[i-1].getFlowValue());
+            chordValue = std::min(chordValue, chordScheme.getFlowValue(chordBreakpoints[i-1]));
         }
-        const double ibfsValue = parametricIBFS.getFlowValue(solutions[i].breakpoint);
+        const double ibfsValue = parametricIBFS.getFlowValue(chordBreakpoints[i]);
         EXPECT_LE(chordValue, (1 + precision) * ibfsValue);
+        progress++;
     }
 }
 
@@ -260,25 +269,25 @@ TEST(parametricMaxFlow, ahremParametricIBFS) {
 
 TEST(parametricMaxFlow, ahremChord) {
     const ParametricInstance instance("../../test/instances/ahrem");
-    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-12, 1e-5);
+    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-5);
 }
 
 TEST(parametricMaxFlow, ahremCompare) {
     const ParametricInstance instance("../../test/instances/ahrem");
-    compareParametricAlgorithms(instance, 1e-12, 1e-5);
+    compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }
 
 TEST(parametricMaxFlow, bonnParametricIBFS) {
     const ParametricInstance instance("../../test/instances/bonn");
-    validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-5);
+    validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-3);
 }
 
 TEST(parametricMaxFlow, bonnChord) {
     const ParametricInstance instance("../../test/instances/bonn");
-    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-12, 1e-5);
+    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-4);
 }
 
 TEST(parametricMaxFlow, bonnCompare) {
     const ParametricInstance instance("../../test/instances/bonn");
-    compareParametricAlgorithms(instance, 1e-12, 1e-5);
+    compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }

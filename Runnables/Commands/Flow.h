@@ -359,7 +359,7 @@ private:
         Timer timer;
         chordScheme.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
-        std::cout << "Solutions: " << chordScheme.getSolutions().size() << std::endl;
+        std::cout << "Solutions: " << chordScheme.getBreakpoints().size() << std::endl;
         if (getParameter("Restartable algorithm") == "Push-Relabel") {
             compare<PushRelabel<ParametricWrapper>>(instance, chordScheme);
         } else {
@@ -369,15 +369,14 @@ private:
 
     template<typename RESTARTABLE_ALGORITHM, typename CHORD_SCHEME>
     inline void compare(const ParametricInstance& instance, const CHORD_SCHEME& chordScheme) const noexcept {
-        using Solution = CHORD_SCHEME::Solution;
-        const std::vector<Solution>& solutions = chordScheme.getSolutions();
+        const std::vector<double>& breakpoints = chordScheme.getBreakpoints();
         ParametricWrapper wrapper(instance);
         RESTARTABLE_ALGORITHM restartableAlgorithm(wrapper);
-        Progress progress(solutions.size());
+        Progress progress(breakpoints.size());
         Timer timer;
         double restartableTime = 0;
-        for (size_t i = 0; i < solutions.size(); i++) {
-            const double alpha = solutions[i].breakpoint;
+        for (size_t i = 0; i < breakpoints.size(); i++) {
+            const double alpha = breakpoints[i];
             timer.restart();
             if (i == 0) {
                 restartableAlgorithm.run();
@@ -386,7 +385,7 @@ private:
                 restartableAlgorithm.continueAfterUpdate();
             }
             restartableTime += timer.elapsedMicroseconds();
-            const double flowValue = solutions[i].getFlowValue();
+            const double flowValue = chordScheme.getFlowValue(alpha);
             if (!areFlowValuesEqual(flowValue, restartableAlgorithm.getFlowValue())) {
                 std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
                 std::cout << "Flow values for breakpoint " << alpha << " are not equal! ";
