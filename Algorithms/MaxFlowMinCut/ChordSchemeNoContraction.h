@@ -13,7 +13,7 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM, bool MEASUREMENTS = false>
+template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM>
 class ChordScheme {
 public:
     using FlowFunction = FLOW_FUNCTION;
@@ -42,10 +42,9 @@ public:
         }
     };
 
-    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
+    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), wrapper(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
 
     inline void run() noexcept {
-        ParametricWrapper wrapper(instance);
         const Solution solMin = runSearch(wrapper, instance.alphaMin);
         addSolution(instance.alphaMin, solMin, wrapper);
         const Solution solMax = runSearch(wrapper, instance.alphaMax);
@@ -55,10 +54,7 @@ public:
                 breakpointOfVertex[vertex] = instance.alphaMin;
             }
         }
-        timer.restart();
-        ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
-        if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
-        recurse(instance.alphaMin, instance.alphaMax, solMin, solMax, contractedWrapper, wrapper);
+        recurse(instance.alphaMin, instance.alphaMax, solMin, solMax);
     }
 
     inline const std::vector<double>& getBreakpoints() const noexcept {
@@ -92,24 +88,22 @@ public:
     }
 
 private:
-    inline Solution runSearch(ParametricWrapper& wrapper, const double alpha) noexcept {
-        if constexpr (MEASUREMENTS) timer.restart();
+    inline Solution runSearch(const double alpha) noexcept {
         wrapper.setAlpha(alpha);
         SearchAlgorithm search(wrapper);
         search.run();
         Solution result(wrapper, search, alpha);
-        if constexpr (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
         return result;
     }
 
-    inline void recurse(const double left, const double right, const Solution& solLeft, const Solution& solRight, ParametricWrapper& wrapper, const ParametricWrapper& evalWrapper) noexcept {
+    inline void recurse(const double left, const double right, const Solution& solLeft, const Solution& solRight) noexcept {
         if (right <= left) {
-            addSolution(left, solRight, evalWrapper);
+            addSolution(left, solRight);
             return;
         }
         const double mid = findIntersectionPoint(solLeft.flowFunction, solRight.flowFunction);
         if (mid <= left || mid >= right) {
-            addSolution(left, solRight, evalWrapper);
+            addSolution(left, solRight);
             return;
         }
 
@@ -117,30 +111,20 @@ private:
         const double oldVal = solLeft.flowFunction.eval(mid);
         const double newVal = solMid.flowFunction.eval(mid);
         if (oldVal <= (1 + epsilon) * newVal) {
-            addSolution(mid, solRight, evalWrapper);
+            addSolution(mid, solRight);
             return;
         }
 
-        if constexpr (MEASUREMENTS) timer.restart();
-        ParametricWrapper wrapperLeft = wrapper.contractSinkComponent(solMid.inSinkComponent);
-        ParametricWrapper wrapperRight = wrapper.contractSourceComponent(solMid.inSinkComponent);
-        if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
-        if constexpr (MEASUREMENTS) {
-            const size_t small = std::min(wrapperLeft.graph.numVertices(), wrapperRight.graph.numVertices());
-            const size_t large = std::max(wrapperLeft.graph.numVertices(), wrapperRight.graph.numVertices());
-            if (large >= 9 * small) badSplits++;
-        }
-        recurse(left, mid, solLeft, solMid, wrapperLeft, wrapper);
-        recurse(mid, right, solMid, solRight, wrapperRight, evalWrapper);
+        recurse(left, mid, solLeft, solMid);
+        recurse(mid, right, solMid, solRight);
     }
 
-    inline void addSolution(const double breakpoint, const Solution& solution, const ParametricWrapper& wrapper) noexcept {
+    inline void addSolution(const double breakpoint, const Solution& solution) noexcept {
         bool addSolution = false;
         for (const Vertex vertex : wrapper.graph.vertices()) {
             if (solution.inSinkComponent[vertex] || vertex == wrapper.source) continue;
-            const Vertex realVertex = wrapper.newToOldVertex[vertex];
-            if (breakpoint < breakpointOfVertex[realVertex]) {
-                breakpointOfVertex[realVertex] = breakpoint;
+            if (breakpoint < breakpointOfVertex[vertex]) {
+                breakpointOfVertex[vertex] = breakpoint;
                 addSolution = true;
             }
         }
@@ -149,12 +133,8 @@ private:
 
 private:
     const ParametricInstance& instance;
+    ParametricWrapper wrapper;
     const double epsilon;
     std::vector<double> breakpoints;
     std::vector<double> breakpointOfVertex;
-
-    double contractionTime = 0;
-    double flowTime = 0;
-    size_t badSplits = 0;
-    Timer timer;
 };
