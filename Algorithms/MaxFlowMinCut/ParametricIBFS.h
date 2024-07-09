@@ -14,7 +14,7 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
+template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, bool MEASUREMENTS = false>
 class ParametricIBFS {
 public:
     using FlowFunction = FLOW_FUNCTION;
@@ -222,16 +222,25 @@ public:
     };
 
     inline void run() noexcept {
+        Timer timer;
         initialize();
+        if constexpr (MEASUREMENTS) initTime = timer.elapsedMicroseconds();
         double alpha = alphaMin_;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
+            if constexpr (MEASUREMENTS) numIterations++;
             if (alphaQ_.empty()) return;
             assert(alphaQ_.front()->value_ >= alpha);
             alpha = alphaQ_.front()->value_;
             if (alpha > alphaMax_) return;
+            if constexpr (MEASUREMENTS) timer.restart();
             updateTree(alpha);
+            if constexpr (MEASUREMENTS) updateTime += timer.elapsedMicroseconds();
+            if constexpr (MEASUREMENTS) timer.restart();
             reconnectTree(alpha);
+            if constexpr (MEASUREMENTS) reconnectTime += timer.elapsedMicroseconds();
+            if constexpr (MEASUREMENTS) timer.restart();
             drainExcess(alpha);
+            if constexpr (MEASUREMENTS) drainTime += timer.elapsedMicroseconds();
         }
     }
 
@@ -765,4 +774,10 @@ private:
     int currentTimestamp_;
 
     std::vector<FlowFunction> excess_at_vertex_;
+
+    double initTime = 0;
+    double updateTime = 0;
+    double reconnectTime = 0;
+    double drainTime = 0;
+    size_t numIterations = 0;
 };
