@@ -330,12 +330,12 @@ public:
 
         for (const Vertex vertex: temp.vertices()) {
             if (!hasEdgeFromSource[vertex]) {
-                temp.addEdge(source, vertex).set(Capacity, 0);
-                temp.addEdge(vertex, source).set(Capacity, 0);
+                temp.addEdge(source, vertex).set(Capacity, FlowFunction(0));
+                temp.addEdge(vertex, source).set(Capacity, FlowFunction(0));
             }
             if (!hasEdgeFromSink[vertex]) {
-                temp.addEdge(sink, vertex).set(Capacity, 0);
-                temp.addEdge(vertex, sink).set(Capacity, 0);
+                temp.addEdge(sink, vertex).set(Capacity, FlowFunction(0));
+                temp.addEdge(vertex, sink).set(Capacity, FlowFunction(0));
             }
         }
 
