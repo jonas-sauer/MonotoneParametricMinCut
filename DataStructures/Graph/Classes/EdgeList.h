@@ -365,6 +365,14 @@ public:
         applyEdgeOrder(Order(edgeOrder));
     }
 
+    inline void sortEdges() noexcept {
+        std::vector<Edge> edgeOrder = Vector::id<Edge>(numEdges());
+        std::stable_sort(edgeOrder.begin(), edgeOrder.end(), [&](const Edge a, const Edge b){
+            return std::tie(get(FromVertex, a), get(ToVertex, a)) < std::tie(get(FromVertex, b), get(ToVertex, b));
+        });
+        applyEdgeOrder(Order(edgeOrder));
+    }
+
     // Utilities
     inline void deleteIsolatedVertices() noexcept {
         std::vector<bool> isIsolated(numVertices(), true);

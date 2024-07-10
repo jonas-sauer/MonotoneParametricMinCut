@@ -52,12 +52,11 @@ public:
         ParameterizedCommand(shell, "makeStaticMaxFlowInstanceParametric", "Converts the given static max-flow instance to a parametric one.") {
         addParameter("Input file");
         addParameter("Output file");
-        addParameter("Steps", "0");
     }
 
     virtual void execute() noexcept {
         StaticInstance staticInstance(getParameter("Input file"));
-        ParametricInstance instance(staticInstance, getParameter<int>("Steps"));
+        ParametricInstance instance(staticInstance);
         Graph::printInfo(instance.graph);
         instance.graph.printAnalysis();
         instance.serialize(getParameter("Output file"));

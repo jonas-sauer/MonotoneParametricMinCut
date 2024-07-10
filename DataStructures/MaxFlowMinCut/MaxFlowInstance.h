@@ -63,6 +63,8 @@ public:
         std::cout << "\r                     \r" << std::flush;
 
         ParametricFlowGraphEdgeList<FlowType> temp;
+        std::vector<bool> hasEdgeFromSource;
+        std::vector<bool> hasEdgeFromSink;
         size_t vertexCount = -1;
         size_t edgeCount = -1;
         source = noVertex;
@@ -80,6 +82,8 @@ public:
                     break;
                 } else {
                     vertexCount = String::lexicalCast<size_t>(tokens[2]);
+                    hasEdgeFromSource.resize(vertexCount, false);
+                    hasEdgeFromSink.resize(vertexCount, false);
                     edgeCount = String::lexicalCast<size_t>(tokens[3]);
                     temp.reserve(vertexCount, edgeCount);
                     temp.addVertices(vertexCount);
@@ -91,12 +95,14 @@ public:
                     break;
                 } else if (tokens[2] == "s") {
                     source = Vertex(String::lexicalCast<size_t>(tokens[1]) - 1);
+                    hasEdgeFromSource[source] = true;
                     if (!temp.isVertex(source)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
                     }
                 } else {
                     sink = Vertex(String::lexicalCast<size_t>(tokens[1]) - 1);
+                    hasEdgeFromSink[sink] = true;
                     if (!temp.isVertex(sink)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
@@ -110,6 +116,8 @@ public:
                     const Vertex from(String::lexicalCast<size_t>(tokens[1]) - 1);
                     const Vertex to(String::lexicalCast<size_t>(tokens[2]) - 1);
                     const FlowType capacity = String::lexicalCast<FlowType>(tokens[3]);
+                    if (from == source) hasEdgeFromSource[to] = true;
+                    else if (from == sink) hasEdgeFromSink[to] = true;
                     if (!temp.isVertex(from)) {
                         std::cout << "ERROR, " << tokens[1] << " does not name a vertex!" << std::endl;
                         break;
@@ -118,24 +126,47 @@ public:
                         break;
                     }
                     temp.addEdge(from, to).set(Capacity, capacity);
+                    temp.addEdge(to, from).set(Capacity, 0);
                     if constexpr (VERBOSE) bar++;
                 }
             }
         }
         is.close();
         if constexpr (VERBOSE) std::cout << std::endl;
-        if (temp.numEdges() != edgeCount) {
-            std::cout << "WARNING, found " << temp.numEdges() << " edges, but " << edgeCount << " edges were declared." << std::endl;
+        if (temp.numEdges() / 2 != edgeCount) {
+            std::cout << "WARNING, found " << temp.numEdges() / 2 << " edges, but " << edgeCount << " edges were declared." << std::endl;
         }
 
-        DynamicParametricFlowGraph<FlowType> dynamicGraph;
-        Graph::copy(temp, dynamicGraph);
-        for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
-            if (dynamicGraph.hasReverseEdge(edge)) continue;
-            const Vertex to = dynamicGraph.get(ToVertex, edge);
-            temp.addEdge(to, from).set(Capacity, 0);
+        for (const Vertex vertex: temp.vertices()) {
+            if (!hasEdgeFromSource[vertex]) {
+                temp.addEdge(source, vertex).set(Capacity, 0);
+                temp.addEdge(vertex, source).set(Capacity, 0);
+            }
+            if (!hasEdgeFromSink[vertex]) {
+                temp.addEdge(sink, vertex).set(Capacity, 0);
+                temp.addEdge(vertex, sink).set(Capacity, 0);
+            }
         }
-        Graph::move(std::move(temp), graph);
+
+        temp.sortEdges();
+        ParametricFlowGraphEdgeList<FlowType> temp2;
+        temp2.reserve(vertexCount, edgeCount);
+        temp2.addVertices(vertexCount);
+        Vertex lastFrom = noVertex;
+        Vertex lastTo = noVertex;
+        Edge lastEdge = noEdge;
+        for (const Edge edge : temp.edges()) {
+            const Vertex from = temp.get(FromVertex, edge);
+            const Vertex to = temp.get(ToVertex, edge);
+            if (from == lastFrom && to == lastTo) {
+                temp2.get(Capacity, lastEdge) += temp.get(Capacity, edge);
+            } else {
+                lastFrom = from;
+                lastTo = to;
+                lastEdge = temp2.addEdge(from, to).set(Capacity, temp.get(Capacity, edge));
+            }
+        }
+        Graph::move(std::move(temp2), graph);
     }
 
 public:
@@ -162,22 +193,32 @@ public:
     }
 
     template<typename T>
-    explicit ParametricMaxFlowInstance(const StaticMaxFlowInstance<T>& staticInstance, const int steps = 0) : source(staticInstance.source), sink(staticInstance.sink), alphaMin(0), alphaMax(steps) {
+    explicit ParametricMaxFlowInstance(const StaticMaxFlowInstance<T>& staticInstance) : source(staticInstance.source), sink(staticInstance.sink), alphaMin(0), alphaMax(2) {
         Graph::copy(staticInstance.graph, graph);
         for (const Edge e : graph.edges()) {
             graph.set(Capacity, e, FlowFunction(staticInstance.graph.get(Capacity, e)));
         }
-        if (steps > 0) {
-            for (const Edge edge : graph.edgesFrom(source)) {
-                const FlowType capacity = staticInstance.graph.get(Capacity, edge);
-                graph.set(Capacity, edge, FlowFunction(capacity / steps, 0));
-            }
-            for (const Edge edge : graph.edgesFrom(sink)) {
-                const Edge reverseEdge = graph.get(ReverseEdge, edge);
-                const FlowType capacity = staticInstance.graph.get(Capacity, reverseEdge);
-                graph.set(Capacity, reverseEdge, FlowFunction(-capacity / steps, capacity));
-            }
+        FlowType minSourceCapacity = INFTY;
+        FlowType maxSourceCapacity = 0;
+        for (const Edge edge : graph.edgesFrom(source)) {
+            const FlowType capacity = staticInstance.graph.get(Capacity, edge);
+            minSourceCapacity = std::min(capacity, minSourceCapacity);
+            maxSourceCapacity = std::max(capacity, maxSourceCapacity);
+            graph.set(Capacity, edge, FlowFunction(capacity, 0));
         }
+        std::cout << "Min source capacity: " << minSourceCapacity << std::endl;
+        std::cout << "Max source capacity: " << maxSourceCapacity << std::endl;
+        FlowType minSinkCapacity = INFTY;
+        FlowType maxSinkCapacity = 0;
+        for (const Edge edge : graph.edgesFrom(sink)) {
+            const Edge reverseEdge = graph.get(ReverseEdge, edge);
+            const FlowType capacity = staticInstance.graph.get(Capacity, reverseEdge);
+            minSinkCapacity = std::min(capacity, minSinkCapacity);
+            maxSinkCapacity = std::max(capacity, maxSinkCapacity);
+            graph.set(Capacity, reverseEdge, FlowFunction(-capacity, 2 * capacity));
+        }
+        std::cout << "Min sink capacity: " << minSinkCapacity << std::endl;
+        std::cout << "Max sink capacity: " << maxSinkCapacity << std::endl;
     }
 
     inline void serialize(const std::string& fileName) const noexcept {
@@ -276,33 +317,47 @@ public:
                         break;
                     }
                     temp.addEdge(from, to).set(Capacity, FlowFunction(capacityA, capacityB));
+                    temp.addEdge(to, from).set(Capacity, FlowFunction(0));
                     if constexpr (VERBOSE) bar++;
                 }
             }
         }
         is.close();
         if constexpr (VERBOSE) std::cout << std::endl;
-        if (temp.numEdges() != edgeCount) {
-            std::cout << "WARNING, found " << temp.numEdges() << " edges, but " << edgeCount << " edges were declared." << std::endl;
+        if (temp.numEdges() / 2 != edgeCount) {
+            std::cout << "WARNING, found " << temp.numEdges() / 2 << " edges, but " << edgeCount << " edges were declared." << std::endl;
         }
 
-        for (const Vertex vertex : temp.vertices()) {
+        for (const Vertex vertex: temp.vertices()) {
             if (!hasEdgeFromSource[vertex]) {
-                temp.addEdge(source, vertex).set(Capacity, FlowFunction(0));
+                temp.addEdge(source, vertex).set(Capacity, 0);
+                temp.addEdge(vertex, source).set(Capacity, 0);
             }
             if (!hasEdgeFromSink[vertex]) {
-                temp.addEdge(sink, vertex).set(Capacity, FlowFunction(0));
+                temp.addEdge(sink, vertex).set(Capacity, 0);
+                temp.addEdge(vertex, sink).set(Capacity, 0);
             }
         }
 
-        DynamicParametricFlowGraph<FlowFunction> dynamicGraph;
-        Graph::copy(temp, dynamicGraph);
-        for (const auto [edge, from] : dynamicGraph.edgesWithFromVertex()) {
-            if (dynamicGraph.hasReverseEdge(edge)) continue;
-            const Vertex to = dynamicGraph.get(ToVertex, edge);
-            temp.addEdge(to, from).set(Capacity, FlowFunction(0));
+        temp.sortEdges();
+        ParametricFlowGraphEdgeList<FlowFunction> temp2;
+        temp2.reserve(vertexCount, edgeCount);
+        temp2.addVertices(vertexCount);
+        Vertex lastFrom = noVertex;
+        Vertex lastTo = noVertex;
+        Edge lastEdge = noEdge;
+        for (const Edge edge : temp.edges()) {
+            const Vertex from = temp.get(FromVertex, edge);
+            const Vertex to = temp.get(ToVertex, edge);
+            if (from == lastFrom && to == lastTo) {
+                temp2.get(Capacity, lastEdge) += temp.get(Capacity, edge);
+            } else {
+                lastFrom = from;
+                lastTo = to;
+                lastEdge = temp2.addEdge(from, to).set(Capacity, temp.get(Capacity, edge));
+            }
         }
-        Graph::move(std::move(temp), graph);
+        Graph::move(std::move(temp2), graph);
     }
 
 public:
