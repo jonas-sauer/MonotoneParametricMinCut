@@ -3,11 +3,14 @@
 #include <random>
 #include <fstream>
 
+#include "../Helpers/Console/Progress.h"
+
 #include "../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/IBFS.h"
 #include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/PushRelabel.h"
 #include "../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
+#include "../Algorithms/MaxFlowMinCut/ChordScheme.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
