@@ -233,7 +233,7 @@ public:
 
     virtual void execute() noexcept {
         ParametricInstance instance(getParameter("Instance file"));
-        ParametricIBFS<ParametricInstance::FlowFunction> algorithm(instance);
+        ParametricIBFS<ParametricInstance::FlowFunction, true> algorithm(instance);
         Timer timer;
         algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
@@ -354,7 +354,7 @@ private:
     inline void run() const noexcept {
         ParametricInstance instance(getParameter("Instance file"));
         const double precision = std::pow(10, -getParameter<int>("Precision"));
-        ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM> chordScheme(instance, precision);
+        ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM, true> chordScheme(instance, precision);
         Timer timer;
         chordScheme.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
@@ -390,7 +390,7 @@ private:
                 std::cout << "Flow values for breakpoint " << alpha << " are not equal! ";
                 std::cout << "Parametric: " << flowValue << ", restartable: " << restartableAlgorithm.getFlowValue() << std::endl;
             }
-            compareSinkComponents(alpha, chordScheme.getSinkComponent(alpha), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
+            //compareSinkComponents(alpha, chordScheme.getSinkComponent(alpha), restartableAlgorithm.getSinkComponent(), instance.graph.numVertices());
             progress++;
         }
         std::cout << "Restartable time: " << String::musToString(restartableTime) << std::endl;

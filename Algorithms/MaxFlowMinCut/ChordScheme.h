@@ -59,6 +59,11 @@ public:
         ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
         if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
         recurse(instance.alphaMin, instance.alphaMax, solMin, solMax, contractedWrapper, wrapper);
+        if constexpr (MEASUREMENTS) {
+            std::cout << "Contraction time: " << String::musToString(contractionTime) << std::endl;
+            std::cout << "Flow time: " << String::musToString(flowTime) << std::endl;
+            std::cout << "#Bad splits: " << badSplits << std::endl;
+        }
     }
 
     inline const std::vector<double>& getBreakpoints() const noexcept {

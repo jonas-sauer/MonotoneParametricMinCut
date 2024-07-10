@@ -228,10 +228,10 @@ public:
         double alpha = alphaMin_;
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
             if constexpr (MEASUREMENTS) numIterations++;
-            if (alphaQ_.empty()) return;
+            if (alphaQ_.empty()) break;
             assert(alphaQ_.front()->value_ >= alpha);
             alpha = alphaQ_.front()->value_;
-            if (alpha > alphaMax_) return;
+            if (alpha > alphaMax_) break;
             if constexpr (MEASUREMENTS) timer.restart();
             updateTree(alpha);
             if constexpr (MEASUREMENTS) updateTime += timer.elapsedMicroseconds();
@@ -241,6 +241,13 @@ public:
             if constexpr (MEASUREMENTS) timer.restart();
             drainExcess(alpha);
             if constexpr (MEASUREMENTS) drainTime += timer.elapsedMicroseconds();
+        }
+        if constexpr (MEASUREMENTS) {
+            std::cout << "#Iterations: " << numIterations << std::endl;
+            std::cout << "Init time: " << String::musToString(initTime) << std::endl;
+            std::cout << "Update time: " << String::musToString(updateTime) << std::endl;
+            std::cout << "Reconnect time: " << String::musToString(reconnectTime) << std::endl;
+            std::cout << "Drain time: " << String::musToString(drainTime) << std::endl;
         }
     }
 
