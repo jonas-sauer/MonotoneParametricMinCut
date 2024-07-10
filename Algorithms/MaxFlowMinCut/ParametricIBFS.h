@@ -96,8 +96,11 @@ private:
                 assertVertexInBucket(vertex, dist);
                 return;
             }
-            if (static_cast<size_t>(dist) >= buckets_.size()) buckets_.resize(dist + 1);
+            if (static_cast<size_t>(dist) >= buckets_.size()) {
+                buckets_.resize(dist + 1);
+            }
             positionOfVertex_[vertex] = buckets_[dist].size();
+
             buckets_[dist].emplace_back(vertex);
             minBucket_ = std::min(minBucket_, dist);
         }
@@ -678,7 +681,6 @@ private:
             for (const Edge e : graph_.edgesFrom(v)) {
                 const Vertex to = graph_.get(ToVertex, e);
                 if (!isEdgeResidual(e, alpha)) continue;
-                if (treeData_.edgeToParent_[to] == noEdge) continue;
                 assert(dist_[to] >= dist_[v] - 1);
             }
 
