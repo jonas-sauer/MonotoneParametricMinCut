@@ -221,6 +221,25 @@ public:
         std::cout << "Max sink capacity: " << maxSinkCapacity << std::endl;
     }
 
+    template<typename T>
+    explicit ParametricMaxFlowInstance(const StaticMaxFlowInstance<T>& staticInstance, const FlowType maxWeight, const double edgeProbability) : source(staticInstance.source), sink(staticInstance.sink), alphaMin(0), alphaMax(INFTY) {
+        Graph::copy(staticInstance.graph, graph);
+        for (const Edge e : graph.edges()) {
+            graph.set(Capacity, e, FlowFunction(staticInstance.graph.get(Capacity, e)));
+        }
+        std::mt19937 randomGenerator;
+        std::uniform_int_distribution<> distribution(0, maxWeight);
+        std::uniform_real_distribution<> probDist(0, 1);
+        for (const Edge edge : graph.edgesFrom(source)) {
+            if (probDist(randomGenerator) > edgeProbability) {
+                graph.set(Capacity, edge, FlowFunction(0));
+            } else {
+                graph.set(Capacity, edge, FlowFunction(distribution(randomGenerator), distribution(randomGenerator)));
+            }
+        }
+        alphaMax = INFTY;
+    }
+
     inline void serialize(const std::string& fileName) const noexcept {
         IO::serialize(fileName, source, sink, alphaMin, alphaMax);
         graph.writeBinary(fileName + ".graph");

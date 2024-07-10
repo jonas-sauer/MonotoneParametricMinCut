@@ -52,14 +52,24 @@ public:
         ParameterizedCommand(shell, "makeStaticMaxFlowInstanceParametric", "Converts the given static max-flow instance to a parametric one.") {
         addParameter("Input file");
         addParameter("Output file");
+        addParameter("Random?");
+        addParameter("Max weight", "0");
+        addParameter("Edge probability", "0");
     }
 
     virtual void execute() noexcept {
         StaticInstance staticInstance(getParameter("Input file"));
-        ParametricInstance instance(staticInstance);
-        Graph::printInfo(instance.graph);
-        instance.graph.printAnalysis();
-        instance.serialize(getParameter("Output file"));
+        if (getParameter<bool>("Random?")) {
+            ParametricInstance instance(staticInstance, getParameter<double>("Max weight"), getParameter<double>("Edge probability"));
+            Graph::printInfo(instance.graph);
+            instance.graph.printAnalysis();
+            instance.serialize(getParameter("Output file"));
+        } else {
+            ParametricInstance instance(staticInstance);
+            Graph::printInfo(instance.graph);
+            instance.graph.printAnalysis();
+            instance.serialize(getParameter("Output file"));
+        };
     }
 };
 
