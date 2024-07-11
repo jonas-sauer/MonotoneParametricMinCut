@@ -284,6 +284,31 @@ public:
         return flow;
     }
 
+    inline double getInitTime() const noexcept {
+        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return initTime;
+    }
+
+    inline double getUpdateTime() const noexcept {
+        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return updateTime;
+    }
+
+    inline double getReconnectTime() const noexcept {
+        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return reconnectTime;
+    }
+
+    inline double getDrainTime() const noexcept {
+        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return drainTime;
+    }
+
+    inline size_t getNumIterations() const noexcept {
+        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return numIterations;
+    }
+
 private:
     inline void initialize() noexcept {
         initialFlow.run();

@@ -46,17 +46,25 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
+        } else if (mode == "specific") {
+            ParametricIBFS<pmf::linearFlowFunction, true> algo(graph);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            return algorithm + "," + instance + "," + std::to_string(graph.graph.numVertices()) + "," +
+                   std::to_string(graph.graph.numEdges()) + "," +
+                   std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
+                   std::to_string(algo.getNumIterations()) + "," +
+                   std::to_string(algo.getInitTime()) + "," + std::to_string(algo.getUpdateTime()) + "," +
+                   std::to_string(algo.getReconnectTime()) + "," + std::to_string(algo.getDrainTime()) + "\n";
         }
-        else if (mode == "specific") {
-            //TODO actually write the code for specific analysis
-            throw std::runtime_error("specific analysis of parametric IBFS has not yet been implemented");
-        }
-    }
-    else {
+    } else {
         throw std::runtime_error("No valid algorithm was selected");
     }
 
-    return algorithm + "," + instance + "," + std::to_string(graph.graph.numVertices()) + "," + std::to_string(graph.graph.numEdges()) + "," + std::to_string(runtime) + "," + std::to_string(numBreakpoints) + "\n";
+    return algorithm + "," + instance + "," + std::to_string(graph.graph.numVertices()) + "," +
+           std::to_string(graph.graph.numEdges()) + "," +
+           std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "\n";
 }
 
 /**
@@ -67,7 +75,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
  * Takes a mode to be run with -m. Options are 'whole' for measuring time over the whole run and 'specific' for measuring algorithm specific detail
  * Output of specific results should be appended to a CSV file specific for this, as they have unique formatting
  */
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     CommandLineParser parser(argc, argv);
 
     std::string inputFileName = parser.value<std::string>("i");
