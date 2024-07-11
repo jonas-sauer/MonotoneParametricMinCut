@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
     new TestRestartableIBFS(shell);
     new RunParametricIBFS(shell);
     new TestParametricIBFS(shell);
+    new RunChordScheme(shell);
     new TestChordScheme(shell);
     shell.run();
     return 0;

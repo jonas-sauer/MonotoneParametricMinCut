@@ -338,6 +338,39 @@ private:
     }
 };
 
+class RunChordScheme : public ParameterizedCommand {
+
+public:
+    RunChordScheme(BasicShell& shell) :
+        ParameterizedCommand(shell, "runChordScheme", "Computes a parametric minimum s-t-cut on the given graph with the chord scheme.") {
+        addParameter("Instance file");
+        addParameter("Precision");
+        addParameter("Flow algorithm", {"Push-Relabel", "IBFS"});
+    }
+
+    using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
+
+    virtual void execute() noexcept {
+        if (getParameter("Flow algorithm") == "Push-Relabel") {
+            run<PushRelabel<ChordSchemeWrapper>>();
+        } else {
+            run<IBFS<ChordSchemeWrapper>>();
+        }
+    }
+
+private:
+    template<typename SEARCH_ALGORITHM>
+    inline void run() const noexcept {
+        ParametricInstance instance(getParameter("Instance file"));
+        const double precision = std::pow(10, -getParameter<int>("Precision"));
+        ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM, true> chordScheme(instance, precision);
+        Timer timer;
+        chordScheme.run();
+        std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;
+        std::cout << "Solutions: " << chordScheme.getBreakpoints().size() << std::endl;
+    }
+};
+
 class TestChordScheme : public ParameterizedCommand {
 
 public:
