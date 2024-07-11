@@ -97,17 +97,17 @@ public:
     }
 
     inline double getContractionTime() const noexcept {
-        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
         return contractionTime;
     }
 
     inline double getFlowTime() const noexcept {
-        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
         return flowTime;
     }
 
     inline size_t getNumBadSplits() const noexcept {
-        if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
         return badSplits;
     }
 

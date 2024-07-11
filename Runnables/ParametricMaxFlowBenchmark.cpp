@@ -144,7 +144,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
     }
 
     return algorithm + "," + instance + "," + std::to_string(graph.graph.numVertices()) + "," +
-           std::to_string(graph.graph.numEdges()) + "," +
+           std::to_string(graph.graph.numEdges()) + "," + std::to_string(epsilon) + "," +
            std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "\n";
 }
 
