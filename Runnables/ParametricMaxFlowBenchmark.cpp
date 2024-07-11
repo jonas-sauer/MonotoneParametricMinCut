@@ -58,6 +58,8 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
                    std::to_string(algo.getNumIterations()) + "," +
                    std::to_string(algo.getInitTime()) + "," + std::to_string(algo.getUpdateTime()) + "," +
                    std::to_string(algo.getReconnectTime()) + "," + std::to_string(algo.getDrainTime()) + "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
         }
     } else if (algorithm == "chordScheme[IBFS]") {
         if (mode == "whole") {
@@ -81,6 +83,8 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
                    std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
                    std::to_string(algo.getNumBadSplits()) +
                    "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
         }
     } else if (algorithm == "chordScheme[PushRelabel]") {
         if (mode == "whole") {
@@ -104,10 +108,12 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
                    std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
                    std::to_string(algo.getNumBadSplits()) +
                    "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
         }
     }
-    // TODO add more subroutines for chord scheme
-    // TODO add same code for chord scheme without contraction
+        // TODO add more subroutines for chord scheme
+        // TODO add same code for chord scheme without contraction
     else {
         throw std::runtime_error("No valid algorithm was selected");
     }
