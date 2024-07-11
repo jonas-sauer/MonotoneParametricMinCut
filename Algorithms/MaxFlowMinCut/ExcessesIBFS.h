@@ -242,6 +242,23 @@ public:
         return cut.getSinkComponent();
     }
 
+    inline const std::vector<bool>& getInSinkComponent() const noexcept {
+        return cut.inSinkComponent;
+    }
+
+    inline std::vector<Edge> getCutEdges() const noexcept {
+        std::vector<Edge> edges;
+        for (const Vertex vertex : graph.vertices()) {
+            if (cut.inSinkComponent[vertex]) continue;
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                if (!cut.inSinkComponent[to]) continue;
+                edges.emplace_back(edge);
+            }
+        }
+        return edges;
+    }
+
     //TODO: Maintain the flow value throughout the algorithm.
     inline FlowType getFlowValue() const noexcept {
         FlowType flow = 0;
