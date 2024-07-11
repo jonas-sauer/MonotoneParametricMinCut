@@ -53,14 +53,14 @@ public:
         addParameter("Input file");
         addParameter("Output file");
         addParameter("Random?");
-        addParameter("Max weight", "0");
-        addParameter("Edge probability", "0");
+        addParameter("Edge probability", "1");
+        addParameter("Make sink edges parametric?", "true");
     }
 
     virtual void execute() noexcept {
         StaticInstance staticInstance(getParameter("Input file"));
         if (getParameter<bool>("Random?")) {
-            ParametricInstance instance(staticInstance, getParameter<double>("Max weight"), getParameter<double>("Edge probability"));
+            ParametricInstance instance(staticInstance, getParameter<double>("Edge probability"), getParameter<bool>("Make sink edges parametric?"));
             Graph::printInfo(instance.graph);
             instance.graph.printAnalysis();
             instance.serialize(getParameter("Output file"));

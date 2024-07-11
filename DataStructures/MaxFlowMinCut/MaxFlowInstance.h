@@ -221,23 +221,45 @@ public:
         std::cout << "Max sink capacity: " << maxSinkCapacity << std::endl;
     }
 
-    template<typename T>
-    explicit ParametricMaxFlowInstance(const StaticMaxFlowInstance<T>& staticInstance, const FlowType maxWeight, const double edgeProbability) : source(staticInstance.source), sink(staticInstance.sink), alphaMin(0), alphaMax(INFTY) {
+    ParametricMaxFlowInstance(const StaticMaxFlowInstance<int>& staticInstance, const double edgeProbability, const bool sinkEdges) :
+        source(staticInstance.source),
+        sink(staticInstance.sink),
+        alphaMin(0),
+        alphaMax(INFTY) {
         Graph::copy(staticInstance.graph, graph);
+        int maxCapacity = 0;
         for (const Edge e : graph.edges()) {
-            graph.set(Capacity, e, FlowFunction(staticInstance.graph.get(Capacity, e)));
+            const int capacity = staticInstance.graph.get(Capacity, e);
+            maxCapacity = std::max(maxCapacity, capacity);
+            graph.set(Capacity, e, FlowFunction(capacity));
         }
         std::mt19937 randomGenerator;
-        std::uniform_int_distribution<> distribution(0, maxWeight);
+        std::uniform_int_distribution<> distribution(1, maxCapacity);
         std::uniform_real_distribution<> probDist(0, 1);
         for (const Edge edge : graph.edgesFrom(source)) {
             if (probDist(randomGenerator) > edgeProbability) {
                 graph.set(Capacity, edge, FlowFunction(0));
             } else {
-                graph.set(Capacity, edge, FlowFunction(distribution(randomGenerator), distribution(randomGenerator)));
+                const int slope = distribution(randomGenerator);
+                const int minValue = distribution(randomGenerator);
+                graph.set(Capacity, edge, FlowFunction(slope, minValue));
             }
         }
-        alphaMax = INFTY;
+        if (sinkEdges) {
+            alphaMax = 1;
+            for (const Edge edge : graph.edgesFrom(sink)) {
+                const Edge reverseEdge = graph.get(ReverseEdge, edge);
+                if (probDist(randomGenerator) > edgeProbability) {
+                    graph.set(Capacity, reverseEdge, FlowFunction(0));
+                } else {
+                    const int slope = distribution(randomGenerator);
+                    const int maxValue = distribution(randomGenerator);
+                    const double limit = 1 + static_cast<double>(maxValue)/slope;
+                    alphaMax = std::min(limit, alphaMax);
+                    graph.set(Capacity, reverseEdge, FlowFunction(-slope, maxValue + slope));
+                }
+            }
+        }
     }
 
     inline void serialize(const std::string& fileName) const noexcept {
