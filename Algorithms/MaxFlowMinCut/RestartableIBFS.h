@@ -10,7 +10,7 @@
 #include "../../Helpers/Types.h"
 #include "../../Helpers/Vector/Vector.h"
 
-template<typename MAX_FLOW_INSTANCE>
+template<typename MAX_FLOW_INSTANCE, bool MEASUREMENTS = false>
 class RestartableIBFS {
 
 public:
@@ -244,16 +244,24 @@ public:
 
 public:
     inline void run() noexcept {
+        if (MEASUREMENTS) timer.restart();
         initialize<FORWARD>();
         initialize<BACKWARD>();
         runAfterInitialize();
+        if (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
     }
 
     inline void continueAfterUpdate() noexcept {
+        if (MEASUREMENTS) timer.restart();
         std::swap(Q[FORWARD], nextQ[FORWARD]);
         std::swap(Q[BACKWARD], nextQ[BACKWARD]);
         updateCapacities();
+        if (MEASUREMENTS) {
+            updateTime += timer.elapsedMicroseconds();
+            timer.restart();
+        }
         runAfterInitialize();
+        if (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
     }
 
     inline std::vector<Vertex> getSourceComponent() const noexcept {
@@ -275,6 +283,14 @@ public:
             }
         }
         return flow;
+    }
+
+    inline double getUpdateTime() const noexcept {
+        return updateTime;
+    }
+
+    inline double getFlowTime() const noexcept {
+        return flowTime;
     }
 
 private:
@@ -952,4 +968,8 @@ private:
     int currentTimestamp;
     bool threePass;
     Cut cut;
+
+    double updateTime = 0;
+    double flowTime = 0;
+    Timer timer;
 };

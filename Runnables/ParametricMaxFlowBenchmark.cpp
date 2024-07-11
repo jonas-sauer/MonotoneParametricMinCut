@@ -59,7 +59,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
                    std::to_string(algo.getNumIterations()) + "," +
                    std::to_string(algo.getInitTime()) + "," + std::to_string(algo.getUpdateTime()) + "," +
                    std::to_string(algo.getReconnectTime()) + "," + std::to_string(algo.getDrainTime()) + "\n";
-        } else {
+        }
+        // TODO add precision benchmark for parametricIBFS
+        else {
             throw std::runtime_error("No valid mode was selected");
         }
     } else if (algorithm == "chordScheme[IBFS]") {
@@ -198,8 +200,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         } else {
             throw std::runtime_error("No valid mode was selected");
         }
-    }
-    else if (algorithm == "chordSchemeNoContraction[IBFS]") {
+    } else if (algorithm == "chordSchemeNoContraction[IBFS]") {
         if (mode == "whole") {
             ChordSchemeNoContraction<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
                     graph, epsilon);
@@ -210,8 +211,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         } else {
             throw std::runtime_error("No valid mode was selected");
         }
-    }
-    else if (algorithm == "chordSchemeNoContraction[EIBFS]") {
+    } else if (algorithm == "chordSchemeNoContraction[EIBFS]") {
         if (mode == "whole") {
             ChordSchemeNoContraction<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
                     graph, epsilon);
@@ -222,13 +222,104 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         } else {
             throw std::runtime_error("No valid mode was selected");
         }
+    } else if (algorithm == "restartableIBFS") {
+        if (mode == "whole") {
+            ParametricIBFS<pmf::linearFlowFunction, false> breakpointGetter(graph);
+            breakpointGetter.run();
+            numBreakpoints = breakpointGetter.getBreakpoints().size();
+
+            ParametricWrapper wrapper(graph);
+
+            RestartableIBFS<ParametricWrapper, false> algo(wrapper);
+
+            Timer timer;
+            algo.run();
+
+            for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
+                wrapper.setAlpha(breakpointGetter.getBreakpoints()[i]);
+                algo.continueAfterUpdate();
+            }
+
+            runtime = timer.elapsedMicroseconds();
+        } else if (mode == "specific") {
+            ParametricIBFS<pmf::linearFlowFunction, false> breakpointGetter(graph);
+            breakpointGetter.run();
+            numBreakpoints = breakpointGetter.getBreakpoints().size();
+
+            ParametricWrapper wrapper(graph);
+
+            RestartableIBFS<ParametricWrapper, true> algo(wrapper);
+
+            Timer timer;
+            algo.run();
+
+            for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
+                wrapper.setAlpha(breakpointGetter.getBreakpoints()[i]);
+                algo.continueAfterUpdate();
+            }
+
+            runtime = timer.elapsedMicroseconds();
+
+            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+                   std::to_string(graph.graph.numVertices()) + "," +
+                   std::to_string(graph.graph.numEdges()) + "," +
+                   std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
+                   std::to_string(algo.getUpdateTime()) + "," + std::to_string(algo.getFlowTime()) + "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
+    } else if (algorithm == "restartablePushRelabel") {
+        if (mode == "whole") {
+            ParametricIBFS<pmf::linearFlowFunction, false> breakpointGetter(graph);
+            breakpointGetter.run();
+            numBreakpoints = breakpointGetter.getBreakpoints().size();
+
+            ParametricWrapper wrapper(graph);
+
+            PushRelabel<ParametricWrapper, false> algo(wrapper);
+
+            Timer timer;
+            algo.run();
+
+            for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
+                wrapper.setAlpha(breakpointGetter.getBreakpoints()[i]);
+                algo.continueAfterUpdate();
+            }
+
+            runtime = timer.elapsedMicroseconds();
+        } else if (mode == "specific") {
+            ParametricIBFS<pmf::linearFlowFunction, false> breakpointGetter(graph);
+            breakpointGetter.run();
+            numBreakpoints = breakpointGetter.getBreakpoints().size();
+
+            ParametricWrapper wrapper(graph);
+
+            PushRelabel<ParametricWrapper, true> algo(wrapper);
+
+            Timer timer;
+            algo.run();
+
+            for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
+                wrapper.setAlpha(breakpointGetter.getBreakpoints()[i]);
+                algo.continueAfterUpdate();
+            }
+
+            runtime = timer.elapsedMicroseconds();
+
+            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+                   std::to_string(graph.graph.numVertices()) + "," +
+                   std::to_string(graph.graph.numEdges()) + "," +
+                   std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
+                   std::to_string(algo.getUpdateTime()) + "," + std::to_string(algo.getFlowTime()) + "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
     }
-        // TODO add restartable algorithms
     else {
         throw std::runtime_error("No valid algorithm was selected");
     }
 
-    return algorithm + "," + instance + "," + std::to_string(graph.graph.numVertices()) + "," +
+    return algorithm + "," + instance + "," + std::to_string(epsilon) + "," + std::to_string(graph.graph.numVertices()) + "," +
            std::to_string(graph.graph.numEdges()) + "," + std::to_string(epsilon) + "," +
            std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "\n";
 }
