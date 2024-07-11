@@ -46,15 +46,15 @@ public:
 
     inline void run() noexcept {
         const Solution solMin = runSearch(instance.alphaMin);
-        addSolution(instance.alphaMin, solMin);
         const Solution solMax = runSearch(instance.alphaMax);
-        if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax);
         for (const Vertex vertex : instance.graph.vertices()) {
             if (!solMin.inSinkComponent[vertex]) {
                 breakpointOfVertex[vertex] = instance.alphaMin;
             }
         }
+        breakpoints.emplace_back(instance.alphaMin);
         recurse(instance.alphaMin, instance.alphaMax, solMin, solMax);
+        if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax);
     }
 
     inline const std::vector<double>& getBreakpoints() const noexcept {

@@ -47,18 +47,18 @@ public:
     inline void run() noexcept {
         ParametricWrapper wrapper(instance);
         const Solution solMin = runSearch(wrapper, instance.alphaMin);
-        addSolution(instance.alphaMin, solMin, wrapper);
         const Solution solMax = runSearch(wrapper, instance.alphaMax);
-        if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax, wrapper);
         for (const Vertex vertex : instance.graph.vertices()) {
             if (!solMin.inSinkComponent[vertex]) {
                 breakpointOfVertex[vertex] = instance.alphaMin;
             }
         }
+        breakpoints.emplace_back(instance.alphaMin);
         timer.restart();
         ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
         if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
         recurse(instance.alphaMin, instance.alphaMax, solMin, solMax, contractedWrapper, wrapper);
+        if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax, wrapper);
         if constexpr (MEASUREMENTS) {
             std::cout << "Contraction time: " << String::musToString(contractionTime) << std::endl;
             std::cout << "Flow time: " << String::musToString(flowTime) << std::endl;
