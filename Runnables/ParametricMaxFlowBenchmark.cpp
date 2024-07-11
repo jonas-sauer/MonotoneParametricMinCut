@@ -9,6 +9,7 @@
 #include "../Algorithms/MaxFlowMinCut/PushRelabel.h"
 #include "../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
 #include "../Algorithms/MaxFlowMinCut/ChordScheme.h"
+#include "../Algorithms/MaxFlowMinCut/ChordSchemeNoContraction.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
@@ -63,7 +64,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[IBFS]") {
         if (mode == "whole") {
-            ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
+            ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
             Timer timer;
             algo.run();
@@ -88,7 +89,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[PushRelabel]") {
         if (mode == "whole") {
-            ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
+            ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
             Timer timer;
             algo.run();
@@ -113,7 +114,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[EIBFS]") {
         if (mode == "whole") {
-            ChordScheme<pmf::linearFlowFunction, ExcessesIBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
+            ChordScheme<pmf::linearFlowFunction, ExcessesIBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
             Timer timer;
             algo.run();
@@ -136,8 +137,92 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         } else {
             throw std::runtime_error("No valid mode was selected");
         }
+    } else if (algorithm == "chordScheme[IBFS]") {
+        if (mode == "whole") {
+            ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+        } else if (mode == "specific") {
+            ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+                   std::to_string(graph.graph.numVertices()) + "," +
+                   std::to_string(graph.graph.numEdges()) + "," +
+                   std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
+                   std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
+                   std::to_string(algo.getNumBadSplits()) +
+                   "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
+    } else if (algorithm == "chordScheme[PushRelabel]") {
+        if (mode == "whole") {
+            ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+        } else if (mode == "specific") {
+            ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+                   std::to_string(graph.graph.numVertices()) + "," +
+                   std::to_string(graph.graph.numEdges()) + "," +
+                   std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
+                   std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
+                   std::to_string(algo.getNumBadSplits()) +
+                   "\n";
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
+    } else if (algorithm == "chordSchemeNoContraction[EIBFS]") {
+        if (mode == "whole") {
+            ChordSchemeNoContraction<pmf::linearFlowFunction, ExcessesIBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
     }
-        // TODO add same code for chord scheme without contraction
+    else if (algorithm == "chordSchemeNoContraction[IBFS]") {
+        if (mode == "whole") {
+            ChordSchemeNoContraction<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
+    }
+    else if (algorithm == "chordSchemeNoContraction[EIBFS]") {
+        if (mode == "whole") {
+            ChordSchemeNoContraction<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
+                    graph, epsilon);
+            Timer timer;
+            algo.run();
+            runtime = timer.elapsedMicroseconds();
+            numBreakpoints = algo.getBreakpoints().size();
+        } else {
+            throw std::runtime_error("No valid mode was selected");
+        }
+    }
         // TODO add restartable algorithms
     else {
         throw std::runtime_error("No valid algorithm was selected");

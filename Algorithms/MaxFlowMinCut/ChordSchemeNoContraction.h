@@ -14,7 +14,7 @@
 #include "../../Helpers/Vector/Vector.h"
 
 template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM>
-class ChordScheme {
+class ChordSchemeNoContraction {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using FlowType = FlowFunction::FlowType;
@@ -42,13 +42,13 @@ public:
         }
     };
 
-    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), wrapper(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
+    ChordSchemeNoContraction(const ParametricInstance& instance, const double epsilon) : instance(instance), wrapper(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
 
     inline void run() noexcept {
-        const Solution solMin = runSearch(wrapper, instance.alphaMin);
-        addSolution(instance.alphaMin, solMin, wrapper);
-        const Solution solMax = runSearch(wrapper, instance.alphaMax);
-        if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax, wrapper);
+        const Solution solMin = runSearch(instance.alphaMin);
+        addSolution(instance.alphaMin, solMin);
+        const Solution solMax = runSearch(instance.alphaMax);
+        if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax);
         for (const Vertex vertex : instance.graph.vertices()) {
             if (!solMin.inSinkComponent[vertex]) {
                 breakpointOfVertex[vertex] = instance.alphaMin;
@@ -107,7 +107,7 @@ private:
             return;
         }
 
-        const Solution solMid = runSearch(wrapper, mid);
+        const Solution solMid = runSearch(mid);
         const double oldVal = solLeft.flowFunction.eval(mid);
         const double newVal = solMid.flowFunction.eval(mid);
         if (oldVal <= (1 + epsilon) * newVal) {
