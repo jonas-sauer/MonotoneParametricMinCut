@@ -230,9 +230,10 @@ public:
         int maxCapacity = 0;
         for (const Edge e : graph.edges()) {
             const int capacity = staticInstance.graph.get(Capacity, e);
-            maxCapacity = std::max(maxCapacity, capacity);
+            if (capacity < INFTY) maxCapacity = std::max(maxCapacity, capacity);
             graph.set(Capacity, e, FlowFunction(capacity));
         }
+        std::cout << "Max capacity: " << maxCapacity << std::endl;
         std::mt19937 randomGenerator;
         std::uniform_int_distribution<> distribution(1, maxCapacity);
         std::uniform_real_distribution<> probDist(0, 1);
