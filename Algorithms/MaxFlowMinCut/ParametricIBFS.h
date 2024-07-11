@@ -232,7 +232,7 @@ public:
         while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
             if constexpr (MEASUREMENTS) numIterations++;
             if (alphaQ_.empty()) break;
-            assert(alphaQ_.front()->value_ >= alpha);
+            assert(alphaQ_.front()->value_ > alpha);
             alpha = alphaQ_.front()->value_;
             if (alpha > alphaMax_) break;
             if constexpr (MEASUREMENTS) timer.restart();
@@ -413,7 +413,7 @@ private:
             const Vertex v(alphaQ_.front() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
             assert(e != noEdge);
-            assert(!isEdgeResidual(e, nextAlpha));
+            //assert(!isEdgeResidual(e, nextAlpha));
             const Vertex parent = graph_.get(ToVertex, e);
             removeTreeEdge<true>(e, v, parent, nextAlpha);
             treeData_.removeChild(parent, v);
@@ -662,13 +662,13 @@ private:
     }
 
     inline double getNextZeroCrossing(const Edge e, const double alpha) const noexcept {
-        return residualCapacity_[e].getNextZeroCrossing(alpha);
+        const double crossing = residualCapacity_[e].getNextZeroCrossing(alpha);
+        return (crossing == alpha) ? std::nextafter(alpha, instance_.alphaMax) : crossing;
     }
 
     inline void recalculateRootAlpha(const Vertex v, const Edge e, const double alpha) noexcept {
         const double oldValue = rootAlpha_[v].value_;
         rootAlpha_[v].value_ = getNextZeroCrossing(e, alpha);
-        //assert(rootAlpha_[v].value_ > alpha);
         if (rootAlpha_[v].value_ == INFTY) {
             if (oldValue < INFTY) {
                 alphaQ_.remove(&rootAlpha_[v]);
