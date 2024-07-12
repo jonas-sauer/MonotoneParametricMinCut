@@ -21,6 +21,7 @@
 *.conf
 *.data
 *.exe
+build/
 cmake-build-debug/
 cmake-build-debug-wsl/
 cmake-build-release/
@@ -54,4 +55,7 @@ Runnables/UnitTests
 Runnables/UnrestrictedWalkingShell
 Runnables/ValidationShell
 Runnables/Standalones/Build
+Scripts/PMFrunBenchmark.sh
+test/instances/ahrem*
+test/instances/bonn*
 test/instances/randomInstance*
