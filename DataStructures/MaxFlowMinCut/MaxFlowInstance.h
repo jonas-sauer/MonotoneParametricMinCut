@@ -54,7 +54,7 @@ public:
     }
 
     template<bool VERBOSE = true>
-    inline void fromDimacs(const std::string& fileName) noexcept {
+    inline void fromDimacs(const std::string& fileName, const FlowType infinity) noexcept {
         const std::string fileNameWithExtension = FileSystem::ensureExtension(fileName, ".max");
         if constexpr (VERBOSE) std::cout << "Reading DIMACS max-flow graph from: " << fileNameWithExtension << std::endl << std::flush;
         std::ifstream is(fileNameWithExtension);
@@ -125,7 +125,7 @@ public:
                         std::cout << "ERROR, " << tokens[2] << " does not name a vertex!" << std::endl;
                         break;
                     }
-                    temp.addEdge(from, to).set(Capacity, capacity);
+                    temp.addEdge(from, to).set(Capacity, capacity >= infinity ? INFTY : capacity);
                     temp.addEdge(to, from).set(Capacity, 0);
                     if constexpr (VERBOSE) bar++;
                 }
