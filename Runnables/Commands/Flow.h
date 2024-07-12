@@ -363,7 +363,8 @@ private:
     template<typename SEARCH_ALGORITHM>
     inline void run() const noexcept {
         ParametricInstance instance(getParameter("Instance file"));
-        const double precision = std::pow(10, -getParameter<int>("Precision"));
+        const int exponent = getParameter<int>("Precision");
+        const double precision = (exponent < 0) ? 0 : std::pow(10, -exponent);
         ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM, true> chordScheme(instance, precision);
         Timer timer;
         chordScheme.run();
@@ -397,7 +398,8 @@ private:
     template<typename SEARCH_ALGORITHM>
     inline void run() const noexcept {
         ParametricInstance instance(getParameter("Instance file"));
-        const double precision = std::pow(10, -getParameter<int>("Precision"));
+        const int exponent = getParameter<int>("Precision");
+        const double precision = (exponent < 0) ? 0 : std::pow(10, -exponent);
         ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM, true> chordScheme(instance, precision);
         Timer timer;
         chordScheme.run();
