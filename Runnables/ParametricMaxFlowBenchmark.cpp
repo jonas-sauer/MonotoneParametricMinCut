@@ -211,9 +211,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         } else {
             throw std::runtime_error("No valid mode was selected");
         }
-    } else if (algorithm == "chordSchemeNoContraction[EIBFS]") {
+    } else if (algorithm == "chordSchemeNoContraction[PushRelabel]") {
         if (mode == "whole") {
-            ChordSchemeNoContraction<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
+            ChordSchemeNoContraction<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
                     graph, epsilon);
             Timer timer;
             algo.run();
