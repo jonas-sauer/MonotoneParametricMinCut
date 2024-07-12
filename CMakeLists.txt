@@ -17,6 +17,8 @@ include_directories(${CAIRO_INCLUDE_DIR})
 find_package(OpenMP REQUIRED)
 add_subdirectory(MapServer/mongoose)
 
+add_executable(ParametricMaxFlowBenchmark Runnables/ParametricMaxFlowBenchmark.cpp)
+
 #HalloWorldMapServer
 add_executable(HalloWorldMapServer MapServer/HalloWorldMapServer.cpp)
 target_link_libraries(HalloWorldMapServer PUBLIC OpenMP::OpenMP_CXX PRIVATE Threads::Threads dl mongoose)
