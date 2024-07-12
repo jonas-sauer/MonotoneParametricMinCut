@@ -76,6 +76,8 @@ if __name__ == '__main__':
     print(configStuff)
     print(runs)
 
+    runsSoFar = set()
+
     with open("PMFrunBenchmark.sh", 'w') as shellScript:
         shellScript.write("#!/bin/bash\n\n")
         shellScript.write("mkdir -p ../Data/Output\n\n")
@@ -84,6 +86,8 @@ if __name__ == '__main__':
                 for algorithm in run[1]:
                     for mode in run[2]:
                         for epsilon in run[3]:
+                            if (instance, algorithm, mode, epsilon) in runsSoFar:
+                                continue
                             if (mode == "whole"):
                                 shellScript.write(
                                     "../build/BenchmarkParametricMaxFlow -i ../Data/" + instance + " -o ../Data/Output/parametricRuntimes.csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
@@ -92,3 +96,4 @@ if __name__ == '__main__':
                                     "../build/BenchmarkParametricMaxFlow -i ../Data/" + instance + " -o ../Data/Output/" + algorithm + "_" + mode + ".csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
                             shellScript.write(
                                 "echo \"finished run -i ../Data/" + instance + " -a " + algorithm + " -m " + mode + " -e " + epsilon + "\"\n")
+                            runsSoFar.add((instance, algorithm, mode, epsilon))
