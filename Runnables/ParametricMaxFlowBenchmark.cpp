@@ -47,14 +47,14 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
 
     if (algorithm == "parametricIBFS") {
         if (mode == "whole") {
-            ParametricIBFS<pmf::linearFlowFunction, false> algo(graph);
             Timer timer;
+            ParametricIBFS<pmf::linearFlowFunction, false> algo(graph);
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
         } else if (mode == "specific") {
-            ParametricIBFS<pmf::linearFlowFunction, true> algo(graph);
             Timer timer;
+            ParametricIBFS<pmf::linearFlowFunction, true> algo(graph);
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -71,16 +71,16 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[IBFS]") {
         if (mode == "whole") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
         } else if (mode == "specific") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -96,16 +96,16 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[PushRelabel]") {
         if (mode == "whole") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
         } else if (mode == "specific") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -121,41 +121,16 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[EIBFS]") {
         if (mode == "whole") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, ExcessesIBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
         } else if (mode == "specific") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, ExcessesIBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
                     graph, epsilon);
-            Timer timer;
-            algo.run();
-            runtime = timer.elapsedMicroseconds();
-            numBreakpoints = algo.getBreakpoints().size();
-            return algorithm + "," + instance + "," + epsilonPrecise + "," +
-                   std::to_string(graph.graph.numVertices()) + "," +
-                   std::to_string(graph.graph.numEdges()) + "," +
-                   std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
-                   std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
-                   std::to_string(algo.getNumBadSplits()) +
-                   "\n";
-        } else {
-            throw std::runtime_error("No valid mode was selected");
-        }
-    } else if (algorithm == "chordScheme[IBFS]") {
-        if (mode == "whole") {
-            ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
-                    graph, epsilon);
-            Timer timer;
-            algo.run();
-            runtime = timer.elapsedMicroseconds();
-            numBreakpoints = algo.getBreakpoints().size();
-        } else if (mode == "specific") {
-            ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
-                    graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -171,16 +146,16 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordScheme[PushRelabel]") {
         if (mode == "whole") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, false> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
         } else if (mode == "specific") {
+            Timer timer;
             ChordScheme<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>, true> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -196,9 +171,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordSchemeNoContraction[EIBFS]") {
         if (mode == "whole") {
+            Timer timer;
             ChordSchemeNoContraction<pmf::linearFlowFunction, ExcessesIBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -207,9 +182,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordSchemeNoContraction[IBFS]") {
         if (mode == "whole") {
+            Timer timer;
             ChordSchemeNoContraction<pmf::linearFlowFunction, IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -218,9 +193,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         }
     } else if (algorithm == "chordSchemeNoContraction[PushRelabel]") {
         if (mode == "whole") {
+            Timer timer;
             ChordSchemeNoContraction<pmf::linearFlowFunction, PushRelabel<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>> algo(
                     graph, epsilon);
-            Timer timer;
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
@@ -233,11 +208,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             breakpointGetter.run();
             numBreakpoints = breakpointGetter.getBreakpoints().size();
 
-            ParametricWrapper wrapper(graph);
-
-            RestartableIBFS<ParametricWrapper, false> algo(wrapper);
-
             Timer timer;
+            ParametricWrapper wrapper(graph);
+            RestartableIBFS<ParametricWrapper, false> algo(wrapper);
             algo.run();
 
             for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
@@ -251,11 +224,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             breakpointGetter.run();
             numBreakpoints = breakpointGetter.getBreakpoints().size();
 
-            ParametricWrapper wrapper(graph);
-
-            RestartableIBFS<ParametricWrapper, true> algo(wrapper);
-
             Timer timer;
+            ParametricWrapper wrapper(graph);
+            RestartableIBFS<ParametricWrapper, true> algo(wrapper);
             algo.run();
 
             for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
@@ -279,11 +250,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             breakpointGetter.run();
             numBreakpoints = breakpointGetter.getBreakpoints().size();
 
-            ParametricWrapper wrapper(graph);
-
-            PushRelabel<ParametricWrapper, false> algo(wrapper);
-
             Timer timer;
+            ParametricWrapper wrapper(graph);
+            PushRelabel<ParametricWrapper, false> algo(wrapper);
             algo.run();
 
             for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
@@ -297,11 +266,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             breakpointGetter.run();
             numBreakpoints = breakpointGetter.getBreakpoints().size();
 
-            ParametricWrapper wrapper(graph);
-
-            PushRelabel<ParametricWrapper, true> algo(wrapper);
-
             Timer timer;
+            ParametricWrapper wrapper(graph);
+            PushRelabel<ParametricWrapper, true> algo(wrapper);
             algo.run();
 
             for (uint i = 1; i < breakpointGetter.getBreakpoints().size(); i++) {
