@@ -18,9 +18,6 @@ find_package(OpenMP REQUIRED)
 add_subdirectory(MapServer/mongoose)
 
 add_executable(ParametricMaxFlowBenchmark Runnables/ParametricMaxFlowBenchmark.cpp)
-add_executable(ParametricMaxFlowLoader Runnables/ParametricMaxFlowLoader.cpp)
-add_custom_target(ParametricMaxFlow)
-add_dependencies(ParametricMaxFlow ParametricMaxFlowBenchmark ParametricMaxFlowLoader)
 
 #HalloWorldMapServer
 add_executable(HalloWorldMapServer MapServer/HalloWorldMapServer.cpp)

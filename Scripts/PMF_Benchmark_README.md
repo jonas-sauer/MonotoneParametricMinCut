@@ -4,7 +4,7 @@ Build the executable with
 cd .. # This is because this ReadMe is not in the main directory.
 mkdir -p build
 cd build
-cmake .. && cmake --build . --target BenchmarkParametricMaxFlow
+cmake .. && cmake --build . --target ParametricMaxFlowBenchmark
 ```
 
 Run the BashScriptGenerator

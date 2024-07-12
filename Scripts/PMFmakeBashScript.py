@@ -86,9 +86,9 @@ if __name__ == '__main__':
                         for epsilon in run[3]:
                             if (mode == "whole"):
                                 shellScript.write(
-                                    "../build/BenchmarkParametricMaxFlow -i ../Data/" + instance + " -o ../Data/Output/parametricRuntimes.csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
+                                    "../build/ParametricMaxFlowBenchmark -i ../Data/" + instance + " -o ../Data/Output/parametricRuntimes.csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
                             else:
                                 shellScript.write(
-                                    "../build/BenchmarkParametricMaxFlow -i ../Data/" + instance + " -o ../Data/Output/" + algorithm + "_" + mode + ".csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
+                                    "../build/ParametricMaxFlowBenchmark -i ../Data/" + instance + " -o ../Data/Output/" + algorithm + "_" + mode + ".csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
                             shellScript.write(
                                 "echo \"finished run -i ../Data/" + instance + " -a " + algorithm + " -m " + mode + " -e " + epsilon + "\"\n")
