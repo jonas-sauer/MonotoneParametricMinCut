@@ -442,3 +442,65 @@ private:
         std::cout << "Restartable time: " << String::musToString(restartableTime) << std::endl;
     }
 };
+
+class PrecisionExperiment : public ParameterizedCommand {
+
+public:
+    PrecisionExperiment(BasicShell& shell) :
+        ParameterizedCommand(shell, "precisionExperiment", "Compares the solution of Parametric IBFS and chord scheme.") {
+        addParameter("Instance file");
+        addParameter("Chord scheme algorithm", {"Push-Relabel", "IBFS"});
+    }
+
+    using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
+
+    virtual void execute() noexcept {
+        if (getParameter("Chord scheme algorithm") == "Push-Relabel") {
+            run<PushRelabel<ChordSchemeWrapper>>();
+        } else {
+            run<IBFS<ChordSchemeWrapper>>();
+        }
+    }
+
+private:
+    template<typename SEARCH_ALGORITHM>
+    inline void run() const noexcept {
+        ParametricInstance instance(getParameter("Instance file"));
+        ParametricIBFS<ParametricInstance::FlowFunction, true> parametricIBFS(instance);
+        ChordScheme<pmf::linearFlowFunction, SEARCH_ALGORITHM, true> chordScheme(instance, 0);
+        parametricIBFS.run();
+        chordScheme.run();
+
+        const std::vector<double>& parametricBreakpoints = parametricIBFS.getBreakpoints();
+        const std::vector<double>& chordBreakpoints = chordScheme.getBreakpoints();
+        std::cout << "Parametric IBFS: " << parametricBreakpoints.size() << " breakpoints" << std::endl;
+        std::cout << "Chord scheme: " << chordBreakpoints.size() << " breakpoints" << std::endl;
+
+        std::cout << "Evaluate chord scheme:" << std::endl;
+        compare(parametricIBFS, chordScheme);
+        std::cout << "Evaluate parametric IBFS:" << std::endl;
+        compare(chordScheme, parametricIBFS);
+    }
+
+    template<typename TRUTH_ALGO, typename COMP_ALGO>
+    inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo) const noexcept {
+        const std::vector<double>& groundTruth = truthAlgo.getBreakpoints();
+        Progress progress(groundTruth.size());
+        double cumulativeError = 0;
+        size_t numErrors = 0;
+        for (const double breakpoint : groundTruth) {
+            const double actualFlow = truthAlgo.getFlowValue(breakpoint);
+            const double resultFlow = compAlgo.getFlowValue(breakpoint);
+            progress++;
+            if (resultFlow <= actualFlow + 1e-06) continue;
+            std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << actualFlow << " vs. " << resultFlow << " ( " << resultFlow - actualFlow << ")" << std::endl;
+            cumulativeError += (resultFlow - actualFlow)/actualFlow;
+            numErrors++;
+        }
+        progress.finished();
+        std::cout << "Errors: " << numErrors << "/" << groundTruth.size() << std::endl;
+        std::cout << "Cumulative error: " << cumulativeError << std::endl;
+        std::cout << "Average error: " << (numErrors == 0 ? 0 : cumulativeError/numErrors) << std::endl;
+        std::cout << "Accuracy: " << cumulativeError/groundTruth.size() << std::endl;
+    }
+};

@@ -22,6 +22,7 @@ int main(int argc, char** argv) {
     new TestParametricIBFS(shell);
     new RunChordScheme(shell);
     new TestChordScheme(shell);
+    new PrecisionExperiment(shell);
     shell.run();
     return 0;
 }
