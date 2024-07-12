@@ -4,6 +4,9 @@
 #include <numeric>
 #include <cstdlib>
 
+#include "../../Helpers/Types.h"
+#include "../../Helpers/IO/Serialization.h"
+
 namespace pmf {
 
     constexpr double epsilon = 1E-9;
@@ -222,7 +225,4 @@ namespace pmf {
     private:
         double a, b;
     };
-
-
-    constexpr ImplementationDetail::DistanceType Flow;
 } // namespace pmf

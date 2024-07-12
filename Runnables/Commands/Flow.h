@@ -240,11 +240,22 @@ public:
     RunParametricIBFS(BasicShell& shell) :
         ParameterizedCommand(shell, "runParametricIBFS", "Computes a parametric minimum s-t-cut on the given graph with Parametric IBFS.") {
         addParameter("Instance file");
+        addParameter("With measurements?");
     }
 
     virtual void execute() noexcept {
+        if (getParameter<bool>("With measurements?")) {
+            run<true>();
+        } else {
+            run<false>();
+        }
+    }
+
+private:
+    template<bool MEASUREMENTS>
+    inline void run() noexcept {
         ParametricInstance instance(getParameter("Instance file"));
-        ParametricIBFS<ParametricInstance::FlowFunction, true> algorithm(instance);
+        ParametricIBFS<ParametricInstance::FlowFunction, MEASUREMENTS> algorithm(instance);
         Timer timer;
         algorithm.run();
         std::cout << "Time: " << String::musToString(timer.elapsedMicroseconds()) << std::endl;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.22)
 project(RoutingFramework)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -18,6 +18,9 @@ find_package(OpenMP REQUIRED)
 add_subdirectory(MapServer/mongoose)
 
 add_executable(ParametricMaxFlowBenchmark Runnables/ParametricMaxFlowBenchmark.cpp)
+add_executable(ParametricMaxFlowLoader Runnables/ParametricMaxFlowLoader.cpp)
+add_custom_target(ParametricMaxFlow)
+add_dependencies(ParametricMaxFlow ParametricMaxFlowBenchmark ParametricMaxFlowLoader)
 
 #HalloWorldMapServer
 add_executable(HalloWorldMapServer MapServer/HalloWorldMapServer.cpp)
