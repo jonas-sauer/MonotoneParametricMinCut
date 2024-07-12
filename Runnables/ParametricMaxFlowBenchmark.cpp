@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include "../Helpers/Console/CommandLineParser.h"
 
@@ -25,6 +26,10 @@ using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
  */
 std::string runExperiment(std::string instance, std::string algorithm, std::string mode, double epsilon) {
     ParametricInstance graph;
+
+    std::stringstream epsilonHelper;
+    epsilonHelper << epsilon;
+    std::string epsilonPrecise = epsilonHelper.str();
 
     // Check if file exists as a binary or if we need to read in the .max file
     std::ifstream file(instance);
@@ -79,7 +84,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -104,7 +109,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -129,7 +134,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -154,7 +159,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -179,7 +184,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
             algo.run();
             runtime = timer.elapsedMicroseconds();
             numBreakpoints = algo.getBreakpoints().size();
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -260,7 +265,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
 
             runtime = timer.elapsedMicroseconds();
 
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -306,7 +311,7 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
 
             runtime = timer.elapsedMicroseconds();
 
-            return algorithm + "," + instance + "," + std::to_string(epsilon) + "," +
+            return algorithm + "," + instance + "," + epsilonPrecise + "," +
                    std::to_string(graph.graph.numVertices()) + "," +
                    std::to_string(graph.graph.numEdges()) + "," +
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
@@ -319,8 +324,8 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
         throw std::runtime_error("No valid algorithm was selected");
     }
 
-    return algorithm + "," + instance + "," + std::to_string(epsilon) + "," + std::to_string(graph.graph.numVertices()) + "," +
-           std::to_string(graph.graph.numEdges()) + "," + std::to_string(epsilon) + "," +
+    return algorithm + "," + instance + "," + epsilonPrecise + "," + std::to_string(graph.graph.numVertices()) + "," +
+           std::to_string(graph.graph.numEdges()) + "," + epsilonPrecise + "," +
            std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "\n";
 }
 
