@@ -54,14 +54,14 @@ public:
         addParameter("Input file");
         addParameter("Output file");
         addParameter("Random?");
-        addParameter("Edge probability", "1");
-        addParameter("Make sink edges parametric?", "true");
+        addParameter("Source edge probability", "1");
+        addParameter("Sink edge probability", "0");
     }
 
     virtual void execute() noexcept {
         StaticInstance staticInstance(getParameter("Input file"));
         if (getParameter<bool>("Random?")) {
-            ParametricInstance instance(staticInstance, getParameter<double>("Edge probability"), getParameter<bool>("Make sink edges parametric?"));
+            ParametricInstance instance(staticInstance, getParameter<double>("Source edge probability"), getParameter<double>("Sink edge probability"));
             Graph::printInfo(instance.graph);
             instance.graph.printAnalysis();
             instance.serialize(getParameter("Output file"));

@@ -221,7 +221,7 @@ public:
         std::cout << "Max sink capacity: " << maxSinkCapacity << std::endl;
     }
 
-    ParametricMaxFlowInstance(const StaticMaxFlowInstance<int>& staticInstance, const double edgeProbability, const bool sinkEdges) :
+    ParametricMaxFlowInstance(const StaticMaxFlowInstance<int>& staticInstance, const double sourceEdgeProbability, const double sinkEdgeProbability) :
         source(staticInstance.source),
         sink(staticInstance.sink),
         alphaMin(0),
@@ -238,7 +238,7 @@ public:
         std::uniform_int_distribution<> distribution(1, maxCapacity);
         std::uniform_real_distribution<> probDist(0, 1);
         for (const Edge edge : graph.edgesFrom(source)) {
-            if (probDist(randomGenerator) > edgeProbability) {
+            if (probDist(randomGenerator) > sourceEdgeProbability) {
                 graph.set(Capacity, edge, FlowFunction(0));
             } else {
                 const int slope = distribution(randomGenerator);
@@ -246,11 +246,11 @@ public:
                 graph.set(Capacity, edge, FlowFunction(slope, minValue));
             }
         }
-        if (sinkEdges) {
+        if (sinkEdgeProbability > 0) {
             alphaMax = 1;
             for (const Edge edge : graph.edgesFrom(sink)) {
                 const Edge reverseEdge = graph.get(ReverseEdge, edge);
-                if (probDist(randomGenerator) > edgeProbability) {
+                if (probDist(randomGenerator) > sinkEdgeProbability) {
                     graph.set(Capacity, reverseEdge, FlowFunction(0));
                 } else {
                     const int slope = distribution(randomGenerator);
