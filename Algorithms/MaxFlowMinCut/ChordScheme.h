@@ -62,7 +62,7 @@ public:
         if constexpr (MEASUREMENTS) {
             std::cout << "Contraction time: " << String::musToString(contractionTime) << std::endl;
             std::cout << "Flow time: " << String::musToString(flowTime) << std::endl;
-            std::cout << "#Bad splits: " << badSplits << std::endl;
+            std::cout << "#Vertices (total): " << totalVertices << std::endl;
         }
     }
 
@@ -106,14 +106,15 @@ public:
         return flowTime;
     }
 
-    inline size_t getNumBadSplits() const noexcept {
+    inline long long getTotalVertices() const noexcept {
         // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return badSplits;
+        return totalVertices;
     }
 
 private:
     inline Solution runSearch(ParametricWrapper& wrapper, const double alpha) noexcept {
         if constexpr (MEASUREMENTS) timer.restart();
+        if constexpr (MEASUREMENTS) totalVertices += wrapper.graph.numVertices();
         wrapper.setAlpha(alpha);
         SearchAlgorithm search(wrapper);
         search.run();
@@ -145,11 +146,6 @@ private:
         ParametricWrapper wrapperLeft = wrapper.contractSinkComponent(solMid.inSinkComponent);
         ParametricWrapper wrapperRight = wrapper.contractSourceComponent(solMid.inSinkComponent);
         if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
-        if constexpr (MEASUREMENTS) {
-            const size_t small = std::min(wrapperLeft.graph.numVertices(), wrapperRight.graph.numVertices());
-            const size_t large = std::max(wrapperLeft.graph.numVertices(), wrapperRight.graph.numVertices());
-            if (large >= 9 * small) badSplits++;
-        }
         recurse(left, mid, solLeft, solMid, wrapperLeft, wrapper);
         recurse(mid, right, solMid, solRight, wrapperRight, evalWrapper);
     }
@@ -175,6 +171,6 @@ private:
 
     double contractionTime = 0;
     double flowTime = 0;
-    size_t badSplits = 0;
+    long long totalVertices = 0;
     Timer timer;
 };
