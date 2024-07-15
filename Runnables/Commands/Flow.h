@@ -81,11 +81,12 @@ public:
     ParameterizedCommand(shell, "loadParametricMaxFlowInstanceFromDimacs", "Load the given parametric max-flow instance in DIMACS format.") {
         addParameter("Input file");
         addParameter("Output file");
+        addParameter("Infinity", "1073741823");
     }
 
     virtual void execute() noexcept {
         ParametricInstance instance;
-        instance.fromDimacs(getParameter("Input file"));
+        instance.fromDimacs(getParameter("Input file"), getParameter<double>("Infinity"));
         Graph::printInfo(instance.graph);
         instance.graph.printAnalysis();
         instance.serialize(getParameter("Output file"));

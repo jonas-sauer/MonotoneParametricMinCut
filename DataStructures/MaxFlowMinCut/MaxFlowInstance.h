@@ -286,7 +286,7 @@ public:
     }
 
     template<bool VERBOSE = true>
-    inline void fromDimacs(const std::string& fileName) noexcept {
+    inline void fromDimacs(const std::string& fileName, const FlowType infinity = INFTY) noexcept {
         const std::string fileNameWithExtension = FileSystem::ensureExtension(fileName, ".max");
         if constexpr (VERBOSE) std::cout << "Reading DIMACS max-flow graph from: " << fileNameWithExtension << std::endl << std::flush;
         std::ifstream is(fileNameWithExtension);
@@ -347,8 +347,11 @@ public:
                 } else {
                     const Vertex from(String::lexicalCast<size_t>(tokens[1]) - 1);
                     const Vertex to(String::lexicalCast<size_t>(tokens[2]) - 1);
-                    const FlowType capacityA = String::lexicalCast<FlowType>(tokens[3]);
-                    const FlowType capacityB = String::lexicalCast<FlowType>(tokens[4]);
+                    FlowType capacityA = String::lexicalCast<FlowType>(tokens[3]);
+                    if (capacityA >= infinity) capacityA = INFTY;
+                    capacityA = std::min(capacityA, infinity);
+                    FlowType capacityB = String::lexicalCast<FlowType>(tokens[4]);
+                    if (capacityB >= infinity) capacityB = INFTY;
                     if (from == source) hasEdgeFromSource[to] = true;
                     else if (from == sink) hasEdgeFromSink[to] = true;
                     if (!temp.isVertex(from)) {
