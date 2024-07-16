@@ -63,7 +63,9 @@ std::string runExperiment(std::string instance, std::string algorithm, std::stri
                    std::to_string(numBreakpoints) + "," + std::to_string(runtime) + "," +
                    std::to_string(algo.getNumIterations()) + "," +
                    std::to_string(algo.getNumBottlenecks()) + "," +
-                   std::to_string(algo.getNumAdoptions()) + "," + std::to_string(algo.getNumDrains()) + "," +
+                   std::to_string(algo.getNumAdoptions()) + "," +
+                   std::to_string(algo.getAvgDistance()) + "," +
+                   std::to_string(algo.getNumDrains()) + "," +
                    std::to_string(algo.getInitTime()) + "," + std::to_string(algo.getUpdateTime()) + "," +
                    std::to_string(algo.getReconnectTime()) + "," + std::to_string(algo.getDrainTime()) + "\n";
         }
