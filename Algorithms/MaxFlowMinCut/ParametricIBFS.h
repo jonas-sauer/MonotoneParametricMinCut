@@ -247,6 +247,7 @@ public:
         }
         if constexpr (MEASUREMENTS) {
             std::cout << "#Iterations: " << numIterations << std::endl;
+            std::cout << "#Bottlenecks: " << numBottlenecks << std::endl;
             std::cout << "#Adoptions: " << numAdoptions << std::endl;
             std::cout << "#Drains: " << numDrains << std::endl;
             std::cout << "Init time: " << String::musToString(initTime) << std::endl;
@@ -304,6 +305,11 @@ public:
     inline double getDrainTime() const noexcept {
         // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
         return drainTime;
+    }
+
+    inline long long getNumBottlenecks() const noexcept {
+        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return numBottlenecks;
     }
 
     inline long long getNumIterations() const noexcept {
@@ -422,6 +428,7 @@ private:
         assert(orphans_.empty());
         assert(threePassOrphans_.empty());
         while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
+            if constexpr (MEASUREMENTS) numBottlenecks++;
             const Vertex v(alphaQ_.front() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
             assert(e != noEdge);
@@ -837,6 +844,7 @@ private:
     double reconnectTime = 0;
     double drainTime = 0;
     long long numIterations = 0;
+    long long numBottlenecks = 0;
     long long numAdoptions = 0;
     long long numDrains = 0;
 };
