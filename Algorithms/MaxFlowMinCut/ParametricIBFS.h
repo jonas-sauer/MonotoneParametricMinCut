@@ -438,7 +438,6 @@ private:
             treeData_.removeChild(parent, v);
         }
     }
-
     inline void reconnectTree(const double nextAlpha) noexcept {
         size_t processedOrphans = 0;
         size_t processedUniqueOrphans = 0;
