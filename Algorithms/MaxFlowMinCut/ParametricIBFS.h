@@ -249,6 +249,7 @@ public:
             std::cout << "#Iterations: " << numIterations << std::endl;
             std::cout << "#Bottlenecks: " << numBottlenecks << std::endl;
             std::cout << "#Adoptions: " << numAdoptions << std::endl;
+            std::cout << "Avg. distance: " << getAvgDistance() << std::endl;
             std::cout << "#Drains: " << numDrains << std::endl;
             std::cout << "Init time: " << String::musToString(initTime) << std::endl;
             std::cout << "Update time: " << String::musToString(updateTime) << std::endl;
@@ -320,6 +321,11 @@ public:
     inline long long getNumAdoptions() const noexcept {
         // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
         return numAdoptions;
+    }
+
+    inline double getAvgDistance() const noexcept {
+        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
+        return avgDistance/static_cast<double>(numAdoptions);
     }
 
     inline long long getNumDrains() const noexcept {
@@ -438,6 +444,7 @@ private:
             treeData_.removeChild(parent, v);
         }
     }
+
     inline void reconnectTree(const double nextAlpha) noexcept {
         size_t processedOrphans = 0;
         size_t processedUniqueOrphans = 0;
@@ -457,14 +464,20 @@ private:
             orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) {
-                if constexpr (MEASUREMENTS) numAdoptions++;
+                if constexpr (MEASUREMENTS) {
+                    numAdoptions++;
+                    avgDistance += dist_[v];
+                }
                 continue;
             }
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
                 removeTreeEdge<false>(e, child, v, nextAlpha);
             });
             if (adoptWithNewDist(v, nextAlpha)) {
-                if constexpr (MEASUREMENTS) numAdoptions++;
+                if constexpr (MEASUREMENTS) {
+                    numAdoptions++;
+                    avgDistance += dist_[v];
+                }
                 continue;
             }
             moved.emplace_back(v);
@@ -537,7 +550,10 @@ private:
                 // Pass 3 (only if pass 2 succeeded): Finalize the adoption and update the distances of potential children.
                 //std::cout << "Third pass of " << v << " with distance " << dist_[v] << std::endl;
                 reconnectTreeThirdPass(v, nextAlpha);
-                if constexpr (MEASUREMENTS) numAdoptions++;
+                if constexpr (MEASUREMENTS) {
+                    numAdoptions++;
+                    avgDistance += dist_[v];
+                }
             } else {
                 // If pass 2 failed, v leaves the sink component.
                 moved.emplace_back(v);
@@ -562,7 +578,10 @@ private:
             const Vertex v = orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) {
-                if constexpr (MEASUREMENTS) numAdoptions++;
+                if constexpr (MEASUREMENTS) {
+                    numAdoptions++;
+                    avgDistance += dist_[v];
+                }
                 continue;
             }
             //std::cout << "First pass of " << v << " with distance " << dist_[v] << " failed!" << std::endl;
@@ -845,5 +864,6 @@ private:
     long long numIterations = 0;
     long long numBottlenecks = 0;
     long long numAdoptions = 0;
+    long long avgDistance = 0;
     long long numDrains = 0;
 };
