@@ -12,48 +12,21 @@ set(CMAKE_CXX_FLAGS_RELEASE "-ffast-math -DNDEBUG -O3")
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-find_package(Cairo REQUIRED)
-include_directories(${CAIRO_INCLUDE_DIR})
-find_package(OpenMP REQUIRED)
-add_subdirectory(MapServer/mongoose)
 
 add_executable(ParametricMaxFlowBenchmark Runnables/ParametricMaxFlowBenchmark.cpp)
-
-#HalloWorldMapServer
-add_executable(HalloWorldMapServer MapServer/HalloWorldMapServer.cpp)
-target_link_libraries(HalloWorldMapServer PUBLIC OpenMP::OpenMP_CXX PRIVATE Threads::Threads dl mongoose)
 
 #Shells
 function(add_shell name)
     add_executable(${ARGV})
-    target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX ${CAIRO_LIBRARIES})
 endfunction()
 
-set(SHELLS Assignment BenchmarkShell BikeSharing CH DelayExperimentsShell FlowShell IsochroneShell MultimodalCoverageShell NetworkBuilder NetworkOrderShell PartitionShell QueriesShell ULTRA UltraAssignment ULTRAExperimentsShell UnrestrictedWalkingShell ValidationShell)
+set(SHELLS FlowShell)
 foreach(f ${SHELLS})
     add_shell(${f} Runnables/${f}.cpp)
 endforeach()
 
 add_custom_target(Shells)
 add_dependencies(Shells ${SHELLS})
-
-#MapServers
-set(MAP_SERVERS DemandMapServer RaptorMapServer)
-function(add_server name)
-    add_executable(${ARGV})
-    target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX PRIVATE Threads::Threads dl mongoose ${CAIRO_LIBRARIES})
-endfunction()
-
-foreach(f ${MAP_SERVERS})
-    add_server(${f} Runnables/${f}.cpp)
-endforeach()
-
-add_custom_target(MapServers)
-add_dependencies(MapServers ${MAP_SERVERS})
-
-#UnitTests
-add_executable(UnitTests Runnables/UnitTests.cpp)
-target_link_libraries(UnitTests PUBLIC OpenMP::OpenMP_CXX)
 
 # tests
 option(TESTS "Build the tests" ON)
