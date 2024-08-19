@@ -5,6 +5,7 @@
 
 #include "IBFS.h"
 
+#include "../../DataStructures/Container/ExternalKHeap.h"
 #include "../../DataStructures/Graph/Graph.h"
 #include "../../DataStructures/MaxFlowMinCut/FlowUtils.h"
 #include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"

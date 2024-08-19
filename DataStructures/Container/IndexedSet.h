@@ -1,6 +1,5 @@
 #pragma once
 
-#include <set>
 #include <limits>
 
 #include "../../Helpers/Types.h"
@@ -9,23 +8,6 @@
 #include "../../Helpers/IO/Serialization.h"
 #include "../../Helpers/Vector/Vector.h"
 #include "../../Helpers/Vector/Permutation.h"
-
-template<typename VALUE>
-class Set : public std::set<VALUE> {
-
-public:
-    using Value = VALUE;
-    using Type = Set<Value>;
-
-private:
-    using Super = std::set<Value>;
-
-public:
-    inline bool contains(const Value& value) const noexcept {
-        return Super::count(value) == 1;
-    }
-
-};
 
 template<bool RESIZEABLE = false, typename VALUE_TYPE = size_t>
 class IndexedSet {

@@ -926,17 +926,6 @@ public:
         out << "                       hash : " << std::setw(tabSize) << String::prettyInt(hash) << std::endl;
     }
 
-    inline void printAdjacencyList(std::ostream& out = std::cout) const noexcept {
-        for (const Vertex vertex : vertices()) {
-            out << std::setw(log10(numVertices()) + 1) << std::left << vertex << std::right << " -> ";
-            Enumeration edgeList;
-            for (const Edge edge : edgesFrom(vertex)) {
-                edgeList << "(" << Graph::edgeToString(*this, edge) << ")" << sep;
-            }
-            out << edgeList << std::endl;
-        }
-    }
-
 private:
     inline void moveEdge(const Edge oldEdge, const Edge newEdge) noexcept {
         Assert(isEdge(oldEdge), oldEdge << " is not a valid edge!");

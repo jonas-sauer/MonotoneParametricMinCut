@@ -11,8 +11,4 @@ namespace Construct {
     enum LatLongTag {LatLong};
 
     enum CompleteTag {Complete};
-
-    enum SplitByOriginTag {SplitByOrigin};
-    enum SplitByDestinationTag {SplitByDestination};
-
 }
