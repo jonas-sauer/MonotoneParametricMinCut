@@ -9,8 +9,6 @@
 #include <utility>
 #include <type_traits>
 
-#include "File.h"
-
 #include "../Assert.h"
 #include "../Meta.h"
 #include "../Vector/Vector.h"
@@ -182,8 +180,7 @@ namespace IO {
             if (header == FileHeader) {         // Assume that the following vector was serialized using this code
                 operator()(object);
             } else {                            // The following data was not serialized using this code
-                warning("Trying to deserialize a file (", fileName, ") without magic header!");
-                exit(1);
+                Ensure(false, "Trying to deserialize a file (" << fileName << ") without magic header!");
             }
         }
 

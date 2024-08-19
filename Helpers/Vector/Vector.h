@@ -8,7 +8,6 @@
 #include <concepts>
 #include <cmath>
 
-#include "../Helpers.h"
 #include "../Assert.h"
 
 namespace Vector {
@@ -414,38 +413,6 @@ namespace Vector {
             out << vector[i];
             if (i != vector.size() - 1) out << separator;
         }
-    }
-
-    template<typename T, typename TO_STRING, typename STREAM = std::ostream>
-    inline void printConciseMapped(const std::vector<T>& vector, const TO_STRING& toString, STREAM& out = std::cout, const std::string& separator = ", ") noexcept {
-        for (size_t i = 0; i < vector.size(); i++) {
-            out << toString(vector[i]);
-            if (i != vector.size() - 1) out << separator;
-        }
-    }
-
-    inline double difference(const std::vector<bool>& firstVector, const std::vector<bool>& secondVector) noexcept {
-        Assert(firstVector.size() == secondVector.size(), "Vectors have different sizes!");
-        if (firstVector.size() != secondVector.size()) return -1;
-        size_t common = 1;
-        size_t different = 0;
-        for (size_t i = 0; i < firstVector.size(); i++) {
-            if (firstVector[i] && secondVector[i]) {
-                common++;
-            } else if (firstVector[i] != secondVector[i]) {
-                different++;
-            }
-        }
-        return different / (double)common;
-    }
-
-    template<typename T>
-    inline std::vector<T> flatten(const std::vector<std::vector<T>>& vector) noexcept {
-        std::vector<T> result;
-        for (const std::vector<T>& e : vector) {
-            result += e;
-        }
-        return result;
     }
 
     template<typename T, typename F>

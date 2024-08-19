@@ -4,8 +4,6 @@
 #include <string>
 #include <cassert>
 
-#include "HighlightText.h"
-
 inline void ensure(const bool assumption) noexcept {
     if (!assumption) exit(1);
 }

@@ -14,8 +14,6 @@ inline constexpr int intMax = std::numeric_limits<int>::max();
 inline constexpr int INFTY = std::numeric_limits<int>::max() / 2;
 inline constexpr double doubleMax = std::numeric_limits<double>::max();
 
-inline constexpr int EARTH_RADIUS_IN_CENTIMETRE = 637813700;
-
 inline constexpr int FORWARD = 0;
 inline constexpr int BACKWARD = 1;
 

@@ -7,8 +7,5 @@ namespace Construct {
     enum RandomTag {Random};
     enum InvertTag {Invert};
 
-    enum XYTag {XY};
-    enum LatLongTag {LatLong};
-
     enum CompleteTag {Complete};
 }

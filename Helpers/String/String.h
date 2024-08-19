@@ -278,30 +278,6 @@ namespace String {
         return result.str();
     }
 
-    inline std::string colorToString(int r, int g, int b) {
-        int rLow = r % 16;
-        int rHigh = (r / 16) % 16;
-        int gLow = g % 16;
-        int gHigh = (g / 16) % 16;
-        int bLow = b % 16;
-        int bHigh = (b / 16) % 16;
-        std::stringstream color;
-        color << std::hex << rHigh << std::hex << rLow << std::hex << gHigh << std::hex << gLow << std::hex << bHigh << std::hex << bLow;
-        return color.str();
-    }
-
-    inline bool isColor(const std::string& color) {
-        if (color.size() != 6) return false;
-        for (int i = 0; i < 6; i++) {
-            const char c = color[i];
-            if (c >= '0' && c <= '9') continue;
-            if (c >= 'a' && c <= 'f') continue;
-            if (c >= 'A' && c <= 'F') continue;
-            return false;
-        }
-        return true;
-    }
-
     template<typename T>
     inline std::string secToString(T t, T infinity = std::numeric_limits<T>::max()) {
         if (t >= infinity) return "infinity";
@@ -398,31 +374,6 @@ namespace String {
     inline std::string musToString(double t) {return musToString<int>(t);}
     inline std::string musToString(double t, int infinity) {return musToString<int>(t, infinity);}
 
-    inline std::string timeString() {
-        time_t now = time(0);
-        tm *ltm = localtime(&now);
-        const int seconds = (((ltm->tm_hour * 60) + ltm->tm_min) * 60) + ltm->tm_sec;
-        return secToTime(seconds, true);
-    }
-
-    inline std::string dateString() {
-        time_t now = time(0);
-        tm *ltm = localtime(&now);
-        const std::string year = std::to_string(ltm->tm_year + 1900);
-        const std::string month = std::to_string(ltm->tm_mon + 1);
-        const std::string day = std::to_string(ltm->tm_mday);
-        std::stringstream ss;
-        if (year.size() == 1) ss << "000";
-        if (year.size() == 2) ss << "00";
-        if (year.size() == 3) ss << '0';
-        ss << year;
-        if (month.size() == 1) ss << '0';
-        ss << month;
-        if (day.size() == 1) ss << '0';
-        ss << day;
-        return ss.str();
-    }
-
     inline std::string bytesToString(const long long bytes, const double k = 1000.0) {
         if (bytes <= 1) return prettyInt(bytes) + "Byte";
         if (bytes < k) return prettyInt(bytes) + "Bytes";
@@ -434,33 +385,6 @@ namespace String {
         if (b < k) return prettyDouble(b) + "GB";
         b = b / k;
         return prettyDouble(b) + "TB";
-    }
-
-    inline int parseSeconds(const std::string& time) {
-        int seconds = 0;
-        int value = 0;
-        for (size_t i = 0; i < time.size(); i++) {
-            if (String::isDigit(time[i])) {
-                value = (value * 10) + static_cast<int>(time[i] - '0');
-            } else if (time[i] == ':') {
-                seconds = (seconds * 60) + value;
-                value = 0;
-            } else {
-                error("The string " + time + " is not in the format HH:MM:SS");
-                return -1;
-            }
-        }
-        return (seconds * 60) + value;
-    }
-
-    inline int parseDay(const std::string& time) {
-        if (time.size() != 8) error("The string " + time + " is not in the format YYYYMMDD");
-        int year = lexicalCast<int>(time.substr(0, 4)) - 1900;
-        int month = lexicalCast<int>(time.substr(4, 2)) - 1;
-        int day = lexicalCast<int>(time.substr(6, 2));
-        std::tm t = {0,0,12,day,month,year, 0, 0, 0, 0, 0};
-        time_t seconds = std::mktime(&t);
-        return (seconds < 0) ? (seconds / (60 * 60 * 24)) - 1 : (seconds / (60 * 60 * 24));
     }
 
     std::string trim(const std::string& s) {
@@ -522,42 +446,4 @@ namespace String {
         }
         return ss.str();
     }
-
-    inline std::string longestCommonSubstring(const std::string& str1, const std::string& str2) {
-        if(str1.empty() || str2.empty()) return "";
-
-        size_t* curr = new size_t[str2.size()];
-        size_t* prev = new size_t[str2.size()];
-        size_t maxSubstr = 0;
-        size_t pos;
-
-        for(size_t i = 0; i < str1.size(); ++i) {
-            for(size_t j = 0; j < str2.size(); ++j) {
-                if(str1[i] != str2[j]) {
-                    curr[j] = 0;
-                } else {
-                    if(i == 0 || j == 0) {
-                        curr[j] = 1;
-                    } else {
-                        curr[j] = prev[j - 1] + 1;
-                    }
-                    if (maxSubstr < curr[j]) {
-                        maxSubstr = curr[j];
-                        pos = j - curr[j] + 1;
-                    }
-                }
-            }
-            std::swap(curr, prev);
-        }
-
-        delete[] curr;
-        delete[] prev;
-
-        std::stringstream ss;
-        for (size_t i = 0; i < maxSubstr; i++) {
-            ss << str2[pos + i];
-        }
-        return ss.str();
-    }
-
 }
