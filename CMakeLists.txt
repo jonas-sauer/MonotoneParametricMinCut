@@ -20,7 +20,7 @@ function(add_shell name)
     add_executable(${ARGV})
 endfunction()
 
-set(SHELLS FlowShell)
+set(SHELLS FlowShell InstanceLoader)
 foreach(f ${SHELLS})
     add_shell(${f} Runnables/${f}.cpp)
 endforeach()

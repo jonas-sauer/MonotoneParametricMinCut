@@ -192,35 +192,6 @@ public:
         deserialize(fileName);
     }
 
-    template<typename T>
-    explicit ParametricMaxFlowInstance(const StaticMaxFlowInstance<T>& staticInstance) : source(staticInstance.source), sink(staticInstance.sink), alphaMin(0), alphaMax(2) {
-        Graph::copy(staticInstance.graph, graph);
-        for (const Edge e : graph.edges()) {
-            graph.set(Capacity, e, FlowFunction(staticInstance.graph.get(Capacity, e)));
-        }
-        FlowType minSourceCapacity = INFTY;
-        FlowType maxSourceCapacity = 0;
-        for (const Edge edge : graph.edgesFrom(source)) {
-            const FlowType capacity = staticInstance.graph.get(Capacity, edge);
-            minSourceCapacity = std::min(capacity, minSourceCapacity);
-            maxSourceCapacity = std::max(capacity, maxSourceCapacity);
-            graph.set(Capacity, edge, FlowFunction(capacity, 0));
-        }
-        std::cout << "Min source capacity: " << minSourceCapacity << std::endl;
-        std::cout << "Max source capacity: " << maxSourceCapacity << std::endl;
-        FlowType minSinkCapacity = INFTY;
-        FlowType maxSinkCapacity = 0;
-        for (const Edge edge : graph.edgesFrom(sink)) {
-            const Edge reverseEdge = graph.get(ReverseEdge, edge);
-            const FlowType capacity = staticInstance.graph.get(Capacity, reverseEdge);
-            minSinkCapacity = std::min(capacity, minSinkCapacity);
-            maxSinkCapacity = std::max(capacity, maxSinkCapacity);
-            graph.set(Capacity, reverseEdge, FlowFunction(-capacity, 2 * capacity));
-        }
-        std::cout << "Min sink capacity: " << minSinkCapacity << std::endl;
-        std::cout << "Max sink capacity: " << maxSinkCapacity << std::endl;
-    }
-
     ParametricMaxFlowInstance(const StaticMaxFlowInstance<int>& staticInstance, const double sourceEdgeProbability, const double sinkEdgeProbability) :
         source(staticInstance.source),
         sink(staticInstance.sink),
