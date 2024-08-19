@@ -14,19 +14,8 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 add_executable(Benchmark Runnables/Benchmark.cpp)
-
-#Shells
-function(add_shell name)
-    add_executable(${ARGV})
-endfunction()
-
-set(SHELLS FlowShell InstanceLoader)
-foreach(f ${SHELLS})
-    add_shell(${f} Runnables/${f}.cpp)
-endforeach()
-
-add_custom_target(Shells)
-add_dependencies(Shells ${SHELLS})
+add_executable(InstanceLoader Runnables/InstanceLoader.cpp)
+add_executable(PrecisionExperiment Runnables/PrecisionExperiment.cpp)
 
 # tests
 option(TESTS "Build the tests" ON)

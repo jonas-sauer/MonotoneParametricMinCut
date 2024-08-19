@@ -12,8 +12,6 @@
 #include "../Utils/Utils.h"
 
 #include "../../Container/IndexedSet.h"
-#include "../../Geometry/Point.h"
-#include "../../Geometry/Rectangle.h"
 
 #include "../../../Helpers/FileSystem/FileSystem.h"
 #include "../../../Helpers/IO/Serialization.h"
@@ -545,24 +543,11 @@ public:
         size_t reverseEdgeEntryCount = 0;
         size_t reverseEdgeErrorCount = 0;
         long long graphDistance = 0;
-        double minSpeed = intMax;
-        double maxSpeed = -intMax;
-        double avgSpeed = 0;
         long long hash = 0;
-        Geometry::Rectangle boundingBox;
-        if constexpr (HasVertexAttribute(Coordinates)) {
-            if (!empty()) {
-                boundingBox = Geometry::Rectangle(get(Coordinates, Vertex(0)));
-            }
-        }
         std::vector<size_t> inDegree(numVertices(), 0);
         IndexedSet<false, Vertex> neighbors(numVertices());
         for (const Vertex v : vertices()) {
             vertexCount++;
-            if constexpr (HasVertexAttribute(Coordinates)) {
-                boundingBox.extend(get(Coordinates, v));
-                hash += get(Coordinates, v).latitude + get(Coordinates, v).longitude;
-            }
             neighbors.clear();
             for (const Edge e : edgesFrom(v)) {
                 const Vertex u = get(ToVertex, e);
@@ -579,16 +564,6 @@ public:
                 if constexpr (HasEdgeAttribute(ViaVertex)) {
                     if (isVertex(get(ViaVertex, e))) edgeWithViaVertexCount++;
                     hash += get(ViaVertex, e);
-                }
-                if constexpr (HasEdgeAttribute(TravelTime) && HasVertexAttribute(Coordinates)) {
-                    const double dist = Geometry::geoDistanceInCM(get(Coordinates, v), get(Coordinates, u));
-                    if (dist > 50000 || get(TravelTime, e) > 10) {
-                        const double speed = (dist * 0.036) / get(TravelTime, e);
-                        graphDistance += dist;
-                        avgSpeed += (dist * speed);
-                        if (minSpeed > speed) minSpeed = speed;
-                        if (maxSpeed < speed) maxSpeed = speed;
-                    }
                 }
                 if constexpr (HasEdgeAttribute(ReverseEdge)) {
                     if (isEdge(get(ReverseEdge, e))) {
@@ -651,20 +626,11 @@ public:
             out << "        #ReverseEdgeEntries : " << std::setw(tabSize) << String::prettyInt(reverseEdgeEntryCount) << "  (" << String::percent(reverseEdgeEntryCount / (double) edgeCount) << ")" << std::endl;
             out << "         #ReverseEdgeErrors : " << std::setw(tabSize) << String::prettyInt(reverseEdgeErrorCount) << std::endl;
         }
-        if constexpr (HasEdgeAttribute(TravelTime) && HasVertexAttribute(Coordinates)) {
-            out << "              graphDistance : " << std::setw(tabSize) << String::prettyDouble(graphDistance / 100000.0, 3) << " km" << std::endl;
-            out << "                   minSpeed : " << std::setw(tabSize) << ((graphDistance == 0) ? "undefined" : String::prettyDouble(minSpeed)) << " km/h" << std::endl;
-            out << "                   maxSpeed : " << std::setw(tabSize) << ((graphDistance == 0) ? "undefined" : String::prettyDouble(maxSpeed)) << " km/h" << std::endl;
-            out << "                   avgSpeed : " << std::setw(tabSize) << ((graphDistance == 0) ? "undefined" : String::prettyDouble(avgSpeed / graphDistance)) << " km/h" << std::endl;
-        }
         if constexpr (HasEdgeAttribute(FromVertex)) {
             out << "          #FromVertexErrors : " << std::setw(tabSize) << String::prettyInt(fromVertexErrorCount) << std::endl;
         }
         if constexpr (HasEdgeAttribute(ViaVertex)) {
             out << "        #EdgesWithViaVertex : " << std::setw(tabSize) << String::prettyInt(edgeWithViaVertexCount) << "  (" << String::percent(edgeWithViaVertexCount / (double) edgeCount) << ")" << std::endl;
-        }
-        if constexpr (HasVertexAttribute(Coordinates)) {
-            out << "                boundingBox : " << std::setw(tabSize) << boundingBox << std::endl;
         }
         out << "                       hash : " << std::setw(tabSize) << String::prettyInt(hash) << std::endl;
     }

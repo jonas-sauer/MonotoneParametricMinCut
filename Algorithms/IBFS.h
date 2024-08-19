@@ -3,12 +3,12 @@
 #include <queue>
 #include <vector>
 
-#include "../../DataStructures/Graph/Graph.h"
-#include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
+#include "../DataStructures/Graph/Graph.h"
+#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
-#include "../../Helpers/Assert.h"
-#include "../../Helpers/Types.h"
-#include "../../Helpers/Vector/Vector.h"
+#include "../Helpers/Assert.h"
+#include "../Helpers/Types.h"
+#include "../Helpers/Vector/Vector.h"
 
 template<typename MAX_FLOW_INSTANCE>
 class IBFS {

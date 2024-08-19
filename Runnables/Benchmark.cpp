@@ -4,12 +4,12 @@
 
 #include "../Helpers/Console/CommandLineParser.h"
 
-#include "../Algorithms/MaxFlowMinCut/IBFS.h"
-#include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
-#include "../Algorithms/MaxFlowMinCut/PushRelabel.h"
-#include "../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
-#include "../Algorithms/MaxFlowMinCut/ChordScheme.h"
-#include "../Algorithms/MaxFlowMinCut/ChordSchemeNoContraction.h"
+#include "../Algorithms/IBFS.h"
+#include "../Algorithms/ParametricIBFS.h"
+#include "../Algorithms/PushRelabel.h"
+#include "../Algorithms/RestartableIBFS.h"
+#include "../Algorithms/ChordScheme.h"
+#include "../Algorithms/ChordSchemeNoContraction.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
@@ -90,12 +90,12 @@ inline void usage() noexcept {
 }
 
 int main(int argc, char **argv) {
-    CommandLineParser parser(argc, argv);
+    CommandLineParser clp(argc, argv);
 
-    const auto inputFileName = parser.value<std::string>("i");
-    const auto outputFileName = parser.value<std::string>("o");
-    const auto algorithm = parser.value<std::string>("a");
-    const auto epsilon = parser.value<double>("e");
+    const auto inputFileName = clp.value<std::string>("i");
+    const auto outputFileName = clp.value<std::string>("o");
+    const auto algorithm = clp.value<std::string>("a");
+    const auto epsilon = clp.value<double>("e");
 
     if (inputFileName.empty() || outputFileName.empty()) {
         usage();

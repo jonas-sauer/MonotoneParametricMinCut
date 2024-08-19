@@ -10,8 +10,6 @@
 
 #include "Conversion.h"
 
-#include "../../Geometry/Point.h"
-
 #include "../../../Helpers/Assert.h"
 #include "../../../Helpers/IO/Serialization.h"
 

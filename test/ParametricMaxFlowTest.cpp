@@ -5,12 +5,12 @@
 
 #include "../Helpers/Console/Progress.h"
 
-#include "../Algorithms/MaxFlowMinCut/ExcessesIBFS.h"
-#include "../Algorithms/MaxFlowMinCut/IBFS.h"
-#include "../Algorithms/MaxFlowMinCut/ParametricIBFS.h"
-#include "../Algorithms/MaxFlowMinCut/PushRelabel.h"
-#include "../Algorithms/MaxFlowMinCut/RestartableIBFS.h"
-#include "../Algorithms/MaxFlowMinCut/ChordScheme.h"
+#include "../Algorithms/ExcessesIBFS.h"
+#include "../Algorithms/IBFS.h"
+#include "../Algorithms/ParametricIBFS.h"
+#include "../Algorithms/PushRelabel.h"
+#include "../Algorithms/RestartableIBFS.h"
+#include "../Algorithms/ChordScheme.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;

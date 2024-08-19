@@ -1,5 +1,5 @@
 #include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
+#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
 
 using StaticInstance = StaticMaxFlowInstance<int>;

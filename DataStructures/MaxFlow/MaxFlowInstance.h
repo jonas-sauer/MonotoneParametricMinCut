@@ -4,8 +4,6 @@
 #include <vector>
 #include <string>
 
-#include "../../Shell/Shell.h"
-
 #include "../../Helpers/Console/ProgressBar.h"
 #include "../../Helpers/IO/Serialization.h"
 #include "../../Helpers/String/String.h"

@@ -3,7 +3,6 @@
 #include <limits>
 
 #include "../../Attributes/Attributes.h"
-#include "../../Geometry/Point.h"
 
 #include "../../../Helpers/Meta.h"
 #include "../../../Helpers/Types.h"

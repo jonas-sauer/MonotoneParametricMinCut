@@ -3,15 +3,15 @@
 #include <queue>
 #include <vector>
 
-#include "../../DataStructures/Graph/Graph.h"
-#include "../../DataStructures/MaxFlowMinCut/MaxFlowInstance.h"
+#include "../DataStructures/Graph/Graph.h"
+#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
-#include "../../Helpers/Assert.h"
-#include "../../Helpers/Types.h"
-#include "../../Helpers/Vector/Vector.h"
+#include "../Helpers/Assert.h"
+#include "../Helpers/Types.h"
+#include "../Helpers/Vector/Vector.h"
 
-template<typename MAX_FLOW_INSTANCE>
-class ExcessesIBFS {
+template<typename MAX_FLOW_INSTANCE, bool MEASUREMENTS = false>
+class RestartableIBFS {
 
 public:
     using MaxFlowInstance = MAX_FLOW_INSTANCE;
@@ -82,6 +82,10 @@ private:
             Assert(buckets_[dist][positionOfVertex_[vertex]] == vertex, "Vertex is not in bucket!");
         }
 
+        inline bool contains(const Vertex vertex) const noexcept {
+            return positionOfVertex_[vertex] != -1;
+        }
+
         inline void addVertex(const Vertex vertex, const int dist) noexcept {
             if (positionOfVertex_[vertex] != -1) {
                 assertVertexInBucket(vertex, dist);
@@ -110,6 +114,11 @@ private:
 
         inline bool empty() const noexcept {
             return buckets_.empty();
+        }
+
+        inline Vertex front() noexcept {
+            Assert(!empty(), "Buckets are empty!");
+            return buckets_[minBucket_].back();
         }
 
         inline Vertex pop() noexcept {
@@ -187,7 +196,7 @@ private:
 
         inline void compute(const std::vector<int>& dist) {
             for (size_t i = 0; i < dist.size(); i++) {
-                inSinkComponent[i] = dist[i] < 0;
+                inSinkComponent[i] = (dist[i] < 0);
             }
         }
 
@@ -211,7 +220,7 @@ private:
     };
 
 public:
-    explicit ExcessesIBFS(const MaxFlowInstance& instance) :
+    explicit RestartableIBFS(const MaxFlowInstance& instance) :
         instance(instance),
         graph(instance.graph),
         n(graph.numVertices()),
@@ -224,14 +233,35 @@ public:
         treeData(n),
         excessVertices{ExcessBuckets(n), ExcessBuckets(n)},
         orphans{n, n},
+        threePassOrphans{n, n},
+        processedOrphans(0),
+        processedUniqueOrphans(0),
+        orphanTimestamp(n, 0),
+        currentTimestamp(0),
+        threePass(false),
         cut(n) {
     }
 
 public:
     inline void run() noexcept {
+        if (MEASUREMENTS) timer.restart();
         initialize<FORWARD>();
         initialize<BACKWARD>();
         runAfterInitialize();
+        if (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
+    }
+
+    inline void continueAfterUpdate() noexcept {
+        if (MEASUREMENTS) timer.restart();
+        std::swap(Q[FORWARD], nextQ[FORWARD]);
+        std::swap(Q[BACKWARD], nextQ[BACKWARD]);
+        updateCapacities();
+        if (MEASUREMENTS) {
+            updateTime += timer.elapsedMicroseconds();
+            timer.restart();
+        }
+        runAfterInitialize();
+        if (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
     }
 
     inline std::vector<Vertex> getSourceComponent() const noexcept {
@@ -242,36 +272,25 @@ public:
         return cut.getSinkComponent();
     }
 
-    inline const std::vector<bool>& getInSinkComponent() const noexcept {
-        return cut.inSinkComponent;
-    }
-
-    inline std::vector<Edge> getCutEdges() const noexcept {
-        std::vector<Edge> edges;
-        for (const Vertex vertex : graph.vertices()) {
-            if (cut.inSinkComponent[vertex]) continue;
-            for (const Edge edge : graph.edgesFrom(vertex)) {
-                const Vertex to = graph.get(ToVertex, edge);
-                if (!cut.inSinkComponent[to]) continue;
-                edges.emplace_back(edge);
-            }
-        }
-        return edges;
-    }
-
     //TODO: Maintain the flow value throughout the algorithm.
     inline FlowType getFlowValue() const noexcept {
         FlowType flow = 0;
-        for (const Vertex vertex : graph.vertices()) {
-            if (cut.inSinkComponent[vertex]) continue;
-            for (const Edge edge : graph.edgesFrom(vertex)) {
+        for (const Vertex from : cut.getSourceComponent()) {
+            for (const Edge edge : graph.edgesFrom(from)) {
                 const Vertex to = graph.get(ToVertex, edge);
                 if (!cut.inSinkComponent[to]) continue;
-                Assert(!isEdgeResidual(edge), "Cut edge is not saturated!");
                 flow += instance.getCapacity(edge);
             }
         }
         return flow;
+    }
+
+    inline double getUpdateTime() const noexcept {
+        return updateTime;
+    }
+
+    inline double getFlowTime() const noexcept {
+        return flowTime;
     }
 
 private:
@@ -282,6 +301,61 @@ private:
         maxDistance[DIRECTION] = 1;
         currentEdge[terminal[DIRECTION]] = graph.beginEdgeFrom(terminal[DIRECTION]);
         nextQ[DIRECTION].emplace_back(terminal[DIRECTION]);
+    }
+
+    inline void updateCapacities() noexcept {
+        Edge edgeFromSource = graph.beginEdgeFrom(terminal[FORWARD]);
+        const std::vector<FlowType>& sourceDiff = instance.getSourceDiff();
+        for (size_t i = 0; i < sourceDiff.size(); i++, edgeFromSource++) {
+            Assert(sourceDiff[i] >= 0, "Capacity of source-incident edge has decreased!");
+            if (sourceDiff[i] == 0) continue;
+            residualCapacity[edgeFromSource] += sourceDiff[i];
+            const Vertex to = graph.get(ToVertex, edgeFromSource);
+            const FlowType add = residualCapacity[edgeFromSource];
+            const Edge edgeToSource = graph.get(ReverseEdge, edgeFromSource);
+            residualCapacity[edgeFromSource] = 0;
+            residualCapacity[edgeToSource] += add;
+            excess[to] += add;
+            handleUpdateExcess(to);
+        }
+
+        Edge edgeFromSink = graph.beginEdgeFrom(terminal[BACKWARD]);
+        const std::vector<FlowType>& sinkDiff = instance.getSinkDiff();
+        for (size_t i = 0; i < sinkDiff.size(); i++, edgeFromSink++) {
+            Assert(sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
+            const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
+            const Vertex from = graph.get(ToVertex, edgeFromSink);
+            residualCapacity[edgeToSink] += sinkDiff[i];
+            if (residualCapacity[edgeToSink] < 0) {
+                const FlowType add = -residualCapacity[edgeToSink];
+                residualCapacity[edgeFromSink] -= add;
+                residualCapacity[edgeToSink] = 0;
+                excess[from] += add;
+                handleUpdateExcess(from);
+            }
+            if (!pmf::isNumberPositive(residualCapacity[edgeToSink]) && treeData.parentEdge[from] == edgeToSink) {
+                makeOrphan<BACKWARD>(from);
+            }
+        }
+        resetAdoptionCounter();
+        adoptOrphans<BACKWARD>();
+        drainExcesses<BACKWARD>();
+    }
+
+    inline void handleUpdateExcess(const Vertex vertex) noexcept {
+        if (distance[vertex] == 0) {
+            // Add vertex as a root to the source tree and continue the BFS from there
+            setDistance<FORWARD>(vertex, maxDistance[FORWARD]);
+            nextQ[FORWARD].emplace_back(vertex);
+        } else if (isVertexInTree<BACKWARD>(vertex)) {
+            // Register the excess for draining.
+            Assert(getExcess<BACKWARD>(vertex) > 0, "Vertex does not have excess!");
+            Assert(treeData.parentVertex[vertex] != noVertex, "Sink component is not a tree!");
+            excessVertices[BACKWARD].addVertex(vertex, getDistance<BACKWARD>(vertex));
+        } else {
+            // Turn vertex into a root
+            treeData.removeVertex(vertex);
+        }
     }
 
     inline void runAfterInitialize() noexcept {
@@ -338,17 +412,19 @@ private:
         const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
         const FlowType flow = findBottleneckCapacity(sourceEndpoint, sinkEndpoint, edgeTowardsSink);
         pushFlow<BACKWARD>(sourceEndpoint, sinkEndpoint, edgeTowardsSink, edgeTowardsSource, flow);
+        resetAdoptionCounter();
         registerAndDrainExcess<FORWARD>(sourceEndpoint);
         registerAndDrainExcess<BACKWARD>(sinkEndpoint);
     }
 
     inline FlowType findBottleneckCapacity(const Vertex sourceEndpoint, const Vertex sinkEndpoint, const Edge edgeTowardsSink) const noexcept {
         auto[sourceBottleneck, sourceRoot] = findBottleneckCapacity(sourceEndpoint);
-        auto[sinkBottleneck, sinkRoot] = findBottleneckCapacity(sinkEndpoint);
-        if (sourceRoot == terminal[FORWARD] && sinkRoot == terminal[BACKWARD]) return residualCapacity[edgeTowardsSink];
-        else if (sourceRoot == terminal[FORWARD]) return std::min(sourceBottleneck, residualCapacity[edgeTowardsSink]);
-        else if (sinkRoot == terminal[BACKWARD]) return std::min(sinkBottleneck, residualCapacity[edgeTowardsSink]);
-        return std::min({excess[sourceRoot], sourceBottleneck, residualCapacity[edgeTowardsSink], sinkBottleneck, -excess[sinkRoot]});
+        FlowType bottleneck = std::min({excess[sourceRoot], sourceBottleneck, residualCapacity[edgeTowardsSink]});
+        if (sourceRoot != terminal[FORWARD]) {
+            auto[sinkBottleneck, sinkRoot] = findBottleneckCapacity(sinkEndpoint);
+            bottleneck = std::min(bottleneck, sinkBottleneck);
+        }
+        return bottleneck;
     }
 
     inline std::pair<FlowType, Vertex> findBottleneckCapacity(const Vertex start) const noexcept {
@@ -366,10 +442,11 @@ private:
     inline void registerAndDrainExcess(const Vertex start) noexcept {
         const FlowType exc = getExcess<DIRECTION>(start);
         if (exc < 0) return;
-        else if (pmf::isNumberPositive(exc)) {
+        else if (exc > 0) {
             excessVertices[DIRECTION].addVertex(start, getDistance<DIRECTION>(start));
             drainExcesses<DIRECTION>();
-        } else {
+        }
+        else {
             makeOrphan<DIRECTION>(start);
             adoptOrphans<DIRECTION>();
         }
@@ -379,7 +456,7 @@ private:
     inline void drainExcesses() noexcept {
         while (!excessVertices[DIRECTION].empty()) {
             const Vertex vertex = excessVertices[DIRECTION].front();
-            Assert(hasPositiveExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
+            Assert(hasNonNegativeExcess<DIRECTION>(vertex), "Trying to drain zero excess!");
             drainExcess<DIRECTION>(vertex);
             adoptOrphans<DIRECTION>();
         }
@@ -390,7 +467,7 @@ private:
         while (treeData.parentVertex[vertex] != noVertex) {
             const Vertex parentVertex = treeData.parentVertex[vertex];
             const Edge edgeTowardsSink = treeData.parentEdge[vertex];
-            Assert(isEdgeResidual(edgeTowardsSink), "Tree edge is not residual!");
+            Assert(isEdgeResidualLax(edgeTowardsSink), "Tree edge is not residual!");
             const Edge edgeTowardsSource = graph.get(ReverseEdge, edgeTowardsSink);
             const FlowType exc = getExcess<DIRECTION>(vertex);
             const FlowType res = residualCapacity[edgeTowardsSink];
@@ -403,7 +480,7 @@ private:
                 excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             vertex = parentVertex;
-            if (hasPositiveExcess<DIRECTION>(vertex)) {
+            if (getExcess<DIRECTION>(vertex) > 0) {
                 excessVertices[DIRECTION].addVertex(vertex, getDistance<DIRECTION>(vertex));
             }
             else Assert(treeData.parentVertex[vertex] == noVertex, "Non-root vertex has zero excess!");
@@ -419,11 +496,32 @@ private:
         treeData.removeVertex(vertex);
     }
 
-    //TODO: Three-pass/hybrid adoption
+    inline void resetAdoptionCounter() noexcept {
+        processedOrphans = 0;
+        processedUniqueOrphans = 0;
+        currentTimestamp++;
+        threePass = false;
+    }
+
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
+        if (threePass) {
+            adoptOrphansThreePass<DIRECTION>();
+            return;
+        }
         while (!orphans[DIRECTION].empty()) {
-            const Vertex orphan = orphans[DIRECTION].pop();
+            const Vertex orphan = orphans[DIRECTION].front();
+            processedOrphans++;
+            if (orphanTimestamp[orphan] != currentTimestamp) {
+                processedUniqueOrphans++;
+                orphanTimestamp[orphan] = currentTimestamp;
+            }
+            if (processedOrphans >= 3 * processedUniqueOrphans) {
+                threePass = true;
+                adoptOrphansThreePass<DIRECTION>();
+                return;
+            }
+            orphans[DIRECTION].pop();
             if (adoptWithSameDistance<DIRECTION>(orphan)) continue;
             if (getDistance<DIRECTION>(orphan) == maxDistance[DIRECTION]) {
                 removeOrphan<DIRECTION>(orphan);
@@ -435,6 +533,135 @@ private:
             if (!adoptWithNewDistance<DIRECTION>(orphan)) {
                 removeOrphan<DIRECTION>(orphan);
             }
+        }
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansThreePass() noexcept {
+        adoptOrphansFirstPass<DIRECTION>();
+        std::vector<Vertex> moved;
+        while (!threePassOrphans[DIRECTION].empty()) {
+            const Vertex vertex = threePassOrphans[DIRECTION].pop();
+            if (treeData.parentEdge[vertex] == noEdge) {
+                //std::cout << "Second pass of " << vertex << " with distance " << distance[vertex] << std::endl;
+                if (adoptOrphansSecondPass<DIRECTION>(vertex)) {
+                    //std::cout << "Distance increased to " << distance[vertex] << std::endl;
+                    continue;
+                }
+            }
+            if (treeData.parentEdge[vertex] != noEdge) {
+                //std::cout << "Third pass of " << vertex << " with distance " << distance[vertex] << " and max distance " << maxDistance[DIRECTION] << std::endl;
+                adoptOrphansThirdPass<DIRECTION>(vertex);
+            } else {
+                moved.emplace_back(vertex);
+            }
+        }
+        for (const Vertex vertex : moved) {
+            if (treeData.parentEdge[vertex] != noEdge) continue;
+            //std::cout << "Remove "<< vertex << " with excess " << excess[vertex] << std::endl;
+            removeOrphan<DIRECTION>(vertex);
+        }
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansFirstPass() noexcept {
+        while (!orphans[DIRECTION].empty()) {
+            const Vertex vertex = orphans[DIRECTION].pop();
+            excessVertices[DIRECTION].removeVertex(vertex, getDistance<DIRECTION>(vertex));
+            if (adoptWithSameDistance<DIRECTION>(vertex)) continue;
+            //std::cout << "First pass of " << vertex << " with distance " << distance[vertex] << " failed!" << std::endl;
+            if (getDistance<DIRECTION>(vertex) == maxDistance[DIRECTION]) {
+                removeOrphan<DIRECTION>(vertex);
+                continue;
+            }
+            treeData.removeChildren(vertex, [&](const Vertex child) {
+                orphans[DIRECTION].addVertex(child, getDistance<DIRECTION>(child));
+            });
+            const int newDistance = getDistance<DIRECTION>(vertex) + 1;
+            setDistance<DIRECTION>(vertex, newDistance);
+            threePassOrphans[DIRECTION].addVertex(vertex, newDistance);
+        }
+    }
+
+    template<int DIRECTION>
+    inline bool adoptOrphansSecondPass(const Vertex orphan) noexcept {
+        int newDistance = maxDistance[DIRECTION];
+        Edge newEdge = noEdge;
+        Edge newEdgeTowardsSink = noEdge;
+        Vertex newParent = noVertex;
+        for (const Edge edge : graph.edgesFrom(orphan)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            const Vertex from = graph.get(ToVertex, edge);
+            if (!isVertexInTree<DIRECTION>(from)) continue;
+            if (isVertexFree<DIRECTION>(from)) continue;
+            const int fromDistance = getDistance<DIRECTION>(from);
+            if (fromDistance < newDistance) {
+                newDistance = fromDistance;
+                newEdge = edge;
+                newEdgeTowardsSink = edgeTowardsSink;
+                newParent = from;
+            }
+        }
+        if (newEdge == noEdge) {
+            //std::cout << "Adoption failed" << std::endl;
+            return false;
+        }
+        treeData.parentEdge[orphan] = newEdgeTowardsSink;
+        if (newDistance + 1 > getDistance<DIRECTION>(orphan)) {
+            setDistance<DIRECTION>(orphan, newDistance + 1);
+            threePassOrphans[DIRECTION].addVertex(orphan, newDistance + 1);
+            return true;
+        }
+        return false;
+    }
+
+    template<int DIRECTION>
+    inline void adoptOrphansThirdPass(const Vertex vertex) noexcept {
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            const Vertex from = graph.get(ToVertex, edge);
+            if (!isEdgeAdmissible<DIRECTION>(vertex, from)) continue;
+            if (isVertexFree<DIRECTION>(from)) continue;
+            const int dist = getDistance<DIRECTION>(vertex);
+            if (getExcess<DIRECTION>(vertex) > 0)
+                excessVertices[DIRECTION].addVertex(vertex, dist);
+            treeData.addVertex(from, vertex, edgeTowardsSink);
+            currentEdge[vertex] = edge;
+            if (dist == maxDistance[DIRECTION]) {
+                nextQ[DIRECTION].emplace_back(vertex);
+            }
+            break;
+        }
+
+        //Don't try to adopt children beyond maxDistance. This will be done in the growth steps.
+        if (getDistance<DIRECTION>(vertex) == maxDistance[DIRECTION]) return;
+        for (const Edge edge : graph.edgesFrom(vertex)) {
+            const Vertex from = graph.get(ToVertex, edge);
+            if (from == terminal[DIRECTION] || isVertexInTree<!DIRECTION>(from)) continue;
+            const bool isFree = isVertexFree<DIRECTION>(from);
+            const int fromDist = getDistance<DIRECTION>(from);
+            const int vDist = getDistance<DIRECTION>(vertex);
+            const bool isDistanceGreater = fromDist > vDist + 1;
+            if (!isFree && !isDistanceGreater) continue;
+            const Edge edgeTowardsSink = getForwardEdge<DIRECTION>(edge);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            if (isDistanceGreater) {
+                //std::cout << "Decrease distance of " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
+                threePassOrphans[DIRECTION].decreaseBucket(from, fromDist, vDist + 1);
+            } else {
+                assert(isFree);
+                //std::cout << "Re-add orphan " << from << " from " << fromDist << " to " << vDist + 1 << std::endl;
+                if (fromDist == vDist) {
+                    if (threePassOrphans[DIRECTION].contains(from)) continue;
+                    threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
+                } else if (fromDist < vDist) {
+                    threePassOrphans[DIRECTION].addVertex(from, vDist + 1);
+                }
+            }
+            treeData.parentEdge[from] = edgeTowardsSink;
+            setDistance<DIRECTION>(from, vDist + 1);
         }
     }
 
@@ -475,7 +702,7 @@ private:
         }
         if (newEdge == noEdge) return false;
         setDistance<DIRECTION>(orphan, newDistance + 1);
-        if (hasPositiveExcess<DIRECTION>(orphan))
+        if (getExcess<DIRECTION>(orphan) > 0)
             excessVertices[DIRECTION].increaseBucket(orphan, oldDistance, newDistance + 1);
         currentEdge[orphan] = newEdge;
         treeData.addVertex(newParent, orphan, newEdgeTowardsSink);
@@ -486,7 +713,7 @@ private:
 
     template<int DIRECTION>
     inline void removeOrphan(const Vertex orphan) noexcept {
-        if (hasPositiveExcess<DIRECTION>(orphan)) {
+        if (getExcess<DIRECTION>(orphan) > 0) {
             excessVertices[DIRECTION].removeVertex(orphan, getDistance<DIRECTION>(orphan));
             setDistance<!DIRECTION>(orphan, maxDistance[!DIRECTION]);
             nextQ[!DIRECTION].emplace_back(orphan);
@@ -513,7 +740,7 @@ private:
     }
 
     template<int DIRECTION>
-    inline Edge getBackwardEdge(const Edge edge) noexcept {
+    inline Edge getBackwardEdge(const Edge edge) const noexcept {
         if (DIRECTION == FORWARD)
             return graph.get(ReverseEdge, edge);
         else
@@ -544,8 +771,14 @@ private:
     }
 
     template<int DIRECTION>
-    inline bool isVertexInTree(const Vertex vertex) noexcept {
+    inline bool isVertexInTree(const Vertex vertex) const noexcept {
         return getDistance<DIRECTION>(vertex) > 0;
+    }
+
+    template<int DIRECTION>
+    inline bool isVertexFree(const Vertex vertex) const noexcept {
+        // Vertices without a parent are either free or roots. Roots have negative excess, free vertices do not.
+        return treeData.parentEdge[vertex] == noEdge && getExcess<DIRECTION>(vertex) >= 0;
     }
 
     template<int DIRECTION>
@@ -557,9 +790,8 @@ private:
         return pmf::isNumberPositive(residualCapacity[edge]);
     }
 
-    template<int DIRECTION>
-    inline bool hasPositiveExcess(const Vertex vertex) const noexcept {
-        return pmf::isNumberPositive(getExcess<DIRECTION>(vertex));
+    inline bool isEdgeResidualLax(const Edge edge) const noexcept {
+        return !pmf::isNumberNegative(residualCapacity[edge]);
     }
 
     template<int DIRECTION>
@@ -571,9 +803,32 @@ private:
     inline void checkBuckets() const noexcept {
         for (size_t i = 0; static_cast<int>(i) <= excessVertices[DIRECTION].maxBucket; i++) {
             for (const Vertex vertex : excessVertices[DIRECTION].buckets[i]) {
-                Assert(hasPositiveExcess<DIRECTION>(vertex), "Vertex in bucket has no excess!");
+                Assert(getExcess<DIRECTION>(vertex) > 0, "Vertex in bucket has no excess!");
                 Assert(getDistance<DIRECTION>(vertex) == int(i), "Vertex is in wrong bucket!");
             }
+        }
+    }
+
+    template<int DIRECTION>
+    inline void checkTree() const noexcept {
+        for (const Vertex v : graph.vertices()) {
+            checkTree<DIRECTION>(v);
+        }
+    }
+
+    template<int DIRECTION>
+    inline void checkTree(const Vertex v) const noexcept {
+        if (!isVertexInTree<DIRECTION>(v)) return;
+        const Edge edge = treeData.parentEdge[v];
+        if (edge == noEdge) return;
+        const Vertex parent = treeData.parentVertex[v];
+        assert(getDistance<DIRECTION>(v) == getDistance<DIRECTION>(parent) + 1);
+        for (const Edge e : graph.edgesFrom(v)) {
+            const Edge edgeTowardsSink = getBackwardEdge<DIRECTION>(e);
+            const Vertex nonParent = graph.get(ToVertex, e);
+            if (!isEdgeResidual(edgeTowardsSink)) continue;
+            if (!isVertexInTree<DIRECTION>(nonParent)) continue;
+            assert(getDistance<DIRECTION>(v) <= getDistance<DIRECTION>(nonParent) + 1);
         }
     }
 
@@ -586,12 +841,12 @@ private:
     inline void checkDistanceInvariants(const Vertex vertex, const bool allowOrphans = false) const noexcept {
         const Vertex parent = treeData.parentVertex[vertex];
         if (abs(distance[vertex]) <= 1) {
-            Ensure(parent == noVertex, "Vertex " << vertex << " with distance <= 1 has parent " << parent << "!");
+            Assert(parent == noVertex, "Vertex " << vertex << " with distance <= 1 has parent " << parent << "!");
         } else {
             if (!graph.isVertex(parent)) {
-                Ensure(allowOrphans, "Vertex " << vertex << " has an invalid parent!");
+                Assert(allowOrphans, "Vertex " << vertex << " has an invalid parent!");
             } else {
-                Ensure(abs(distance[vertex]) == abs(distance[parent]) + 1, "Distance of " << vertex << " is " << distance[vertex] << ", but distance of " << parent << " is " << distance[parent] << "!");
+                Assert(abs(distance[vertex]) >= abs(distance[parent]) + 1, "Distance of " << vertex << " is " << distance[vertex] << ", but distance of " << parent << " is " << distance[parent] << "!");
             }
         }
     }
@@ -657,7 +912,9 @@ private:
 
     inline void checkFlowConservation(const Vertex vertex) const noexcept {
         if (vertex == terminal[FORWARD] || vertex == terminal[BACKWARD]) return;
-        Assert(getInflow(vertex) == excess[vertex], "Flow conservation not fulfilled!");
+        if (distance[vertex] < 0) Assert(excess[vertex] >= 0, "Vertex in sink component has a deficit!");
+        const FlowType inflow = getInflow(vertex);
+        Assert(pmf::areNumbersEqual(inflow, excess[vertex]), "Flow conservation not fulfilled!");
     }
 
     inline void checkCapacityConstraints() const noexcept {
@@ -671,6 +928,18 @@ private:
         for (const Vertex vertex : graph.vertices()) {
             if (getDistance<DIRECTION>(vertex) != maxDistance[DIRECTION]) continue;
             Assert(Vector::contains(Q[DIRECTION], vertex), "Vertex missing from queue");
+        }
+    }
+
+    inline void checkTreesDisconnected() noexcept {
+        for (const Vertex vertex : graph.vertices()) {
+            if (distance[vertex] <= 0) continue;
+            for (const Edge edge : graph.edgesFrom(vertex)) {
+                const Vertex to = graph.get(ToVertex, edge);
+                if (distance[to] >= 0) continue;
+                if (!isEdgeResidual(edge)) continue;
+                Assert(false, "Found connecting edge " << vertex << " -> " << to << " with residual capacity " << residualCapacity[edge] << " and distances " << distance[vertex] << "/" << maxDistance[FORWARD] << " and " << -distance[to]  << "/" << maxDistance[BACKWARD]);
+            }
         }
     }
 
@@ -692,5 +961,15 @@ private:
     std::vector<Vertex> nextQ[2];
     ExcessBuckets excessVertices[2];
     OrphanBuckets orphans[2];
+    OrphanBuckets threePassOrphans[2];
+    size_t processedOrphans;
+    size_t processedUniqueOrphans;
+    std::vector<int> orphanTimestamp;
+    int currentTimestamp;
+    bool threePass;
     Cut cut;
+
+    double updateTime = 0;
+    double flowTime = 0;
+    Timer timer;
 };
