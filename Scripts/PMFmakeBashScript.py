@@ -1,7 +1,7 @@
 import sys
 from enum import Enum
 
-configStuff = {"instanceSet": {}, "algorithmSet": {}, "modeSet": {}, "epsilonSet": {}}
+configStuff = {"instanceSet": {}, "algorithmSet": {}, "epsilonSet": {}}
 
 runs = []
 
@@ -36,9 +36,6 @@ if __name__ == '__main__':
                 if str(line[1]).strip() == 'A':
                     print("Adding algorithm set" + words[1])
                     currentSetType = "algorithmSet"
-                if str(line[1]).strip() == 'M':
-                    print("Adding mode set" + words[1])
-                    currentSetType = "modeSet"
                 if str(line[1]).strip() == 'E':
                     print("Adding epsilon set" + words[1])
                     currentSetType = "epsilonSet"
@@ -56,11 +53,9 @@ if __name__ == '__main__':
                 if runReadStep == 1:
                     runReadName = "algorithmSet"
                 if runReadStep == 2:
-                    runReadName = "modeSet"
-                if runReadStep == 3:
                     runReadName = "epsilonSet"
-                if runReadStep == 4:
-                    print("To many info for one run")
+                if runReadStep == 3:
+                    print("Too many info for one run")
 
                 runStuff.append(set())
 
@@ -70,8 +65,8 @@ if __name__ == '__main__':
 
                 runReadStep += 1
 
-                if runReadStep == 4:
-                    runs.append((runStuff[0], runStuff[1], runStuff[2], runStuff[3]))
+                if runReadStep == 3:
+                    runs.append((runStuff[0], runStuff[1], runStuff[2]))
 
     print(configStuff)
     print(runs)
@@ -84,16 +79,11 @@ if __name__ == '__main__':
         for run in runs:
             for instance in run[0]:
                 for algorithm in run[1]:
-                    for mode in run[2]:
-                        for epsilon in run[3]:
-                            if (instance, algorithm, mode, epsilon) in runsSoFar:
-                                continue
-                            if (mode == "whole"):
-                                shellScript.write(
-                                    "../build/ParametricMaxFlowBenchmark -i ../Data/" + instance + " -o ../Data/Output/parametricRuntimes.csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
-                            else:
-                                shellScript.write(
-                                    "../build/ParametricMaxFlowBenchmark -i ../Data/" + instance + " -o ../Data/Output/" + algorithm + "_" + mode + ".csv -a " + algorithm + " -m " + mode + " -e " + epsilon + "\n")
-                            shellScript.write(
-                                "echo \"finished run -i ../Data/" + instance + " -a " + algorithm + " -m " + mode + " -e " + epsilon + "\"\n")
-                            runsSoFar.add((instance, algorithm, mode, epsilon))
+                    for epsilon in run[2]:
+                        if (instance, algorithm, epsilon) in runsSoFar:
+                            continue
+                        shellScript.write(
+                            "../build/Benchmark -i ../Data/" + instance + " -o ../Data/Output/" + algorithm + ".csv -a " + algorithm + " -e " + epsilon + "\n")
+                        shellScript.write(
+                            "echo \"finished run -i ../Data/" + instance + " -a " + algorithm + " -e " + epsilon + "\"\n")
+                        runsSoFar.add((instance, algorithm, epsilon))

@@ -13,7 +13,7 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-add_executable(ParametricMaxFlowBenchmark Runnables/ParametricMaxFlowBenchmark.cpp)
+add_executable(Benchmark Runnables/Benchmark.cpp)
 
 #Shells
 function(add_shell name)

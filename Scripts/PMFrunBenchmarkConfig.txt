@@ -2,26 +2,19 @@
 # Denotes a comment that will be ignored
 # \<X> means that now some set of config stuff is defined until the next line starting with \ happens
 # \I <NAME> means that the following lines will be added to instance set <NAME>
-# For instances it as assumed that they are in the Data folder and the path will automatically be set to support this assumption
-# Instance names should not have a file ending. The code will first search for a binary and if that does not exist it will check for a DIMACS instance
+# For instances it is assumed that they are in the Data folder and the path will automatically be set to support this assumption
+# Instance names should not have a file ending. Instances are assumed to be in binary format
 # \A <NAME> means that the following lines will be added to the algorithm set <NAME>
-# \M <NAME> means that the following lines will be added to the modes set <NAME>
 # \E <NAME> means that the following lines will be added to the epsilon values set <NAME>
-# \R <NAME> means that a run is defined. It must be followed by 4 lines which are interpreted as follows
+# \R <NAME> means that a run is defined. It must be followed by 3 lines which are interpreted as follows
 #   1. the names of all instance sets to be used separated by space
 #   2. the names of all algorithm sets to be run separated by space
-#   3. the names of all mode sets to be run separated by space
-#   4. the names of all epsilon sets to be run separated by space
-# TODO If two run blocks define the same call twice it will actually be run twice Consider kicking out duplicates there
-# Output for runs with mode whole will be placed in a single CSV-file in Data/Output/parametricRuntimes.csv
-# For every other algorithm they will be placed in Data/Output/<ALGO>_<MODE>.csv
-# TODO the csv files currently do not get headers. Consider adding this automated as well
+#   3. the names of all epsilon sets to be run separated by space
+# Output will be placed in Data/Output/<ALGO>.csv
+# TODO the csv files currently do not get headers. Consider adding this automated
 
-\I smallInstances
-Instances/smallTest
-
-\I mediumInstances
-Instances/ahrem
+\I aggregationInstances
+Instances/Aggregation/small/ahrem
 
 \A ourAlgorithm
 parametricIBFS
@@ -36,14 +29,7 @@ chordScheme[PushRelabel]
 chordSchemeNoContraction[IBFS]
 chordSchemeNoContraction[PushRelabel]
 
-\M wholeTimeOnly
-whole
-
-\M regularModes
-whole
-specific
-
-\E epsilonIndependant
+\E epsilonIndependent
 1.0
 
 \E multiEpsilon
@@ -52,13 +38,11 @@ specific
 1E-12
 
 \R
-smallInstances mediumInstances
+aggregationInstances
 chordScheme
-regularModes
 multiEpsilon
 
 \R
-smallInstances
+aggregationInstances
 chordScheme chordSchemeWithSlow
-wholeTimeOnly
 multiEpsilon
