@@ -2,11 +2,6 @@ import simexpal
 import os
 import pandas as pd
 
-def write(file, content):
-	f = open(file, "w")
-	f.write(content)
-	f.close()
-
 if __name__ == "__main__":
 	if not os.path.exists("results/"):
 		os.makedirs("results/")
