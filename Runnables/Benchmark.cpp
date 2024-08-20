@@ -17,12 +17,13 @@ using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
 using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
 using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
 
-inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream& out) noexcept {
+inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
     ParametricIBFS<pmf::linearFlowFunction, true> algo(instance);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
-    out << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
+    out << headerPrefix + "breakpoints,runtime,iterations,bottlenecks,adoptions,avgDistance,drains,initTime,updateTime,reconnectTime,drainTime\n";
+    out << rowPrefix << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
            std::to_string(algo.getNumIterations()) + "," +
            std::to_string(algo.getNumBottlenecks()) + "," +
            std::to_string(algo.getNumAdoptions()) + "," +
@@ -33,27 +34,29 @@ inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream&
 }
 
 template<typename ALGO>
-inline void runChordScheme(const ParametricInstance& instance, const double epsilon, std::ofstream& out) noexcept {
+inline void runChordScheme(const ParametricInstance& instance, const double epsilon, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
     ChordScheme<pmf::linearFlowFunction, ALGO, true> algo(instance, epsilon);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
-    out << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
+    out << headerPrefix + "breakpoints,runtime,contractionTime,flowTime,totalVertices\n";
+    out << rowPrefix << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
            std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
            std::to_string(algo.getTotalVertices()) + "\n";
 }
 
 template<typename ALGO>
-inline void runChordSchemeNoContraction(const ParametricInstance& instance, const double epsilon, std::ofstream& out) noexcept {
+inline void runChordSchemeNoContraction(const ParametricInstance& instance, const double epsilon, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
     ChordSchemeNoContraction<pmf::linearFlowFunction, ALGO> algo(instance, epsilon);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
-    out << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "\n";
+    out << headerPrefix + "breakpoints,runtime\n";
+    out << rowPrefix << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "\n";
 }
 
 template<typename ALGO>
-inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofstream& out) noexcept {
+inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     ParametricIBFS<pmf::linearFlowFunction, false> breakpointGetter(instance);
     breakpointGetter.run();
 
@@ -69,15 +72,15 @@ inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofs
 
     const double runtime = timer.elapsedMicroseconds();
 
-    out << std::to_string(breakpointGetter.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
+    out << headerPrefix + "breakpoints,runtime,updateTime,flowTime\n";
+    out << rowPrefix << std::to_string(breakpointGetter.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
            std::to_string(algo.getUpdateTime()) + "," + std::to_string(algo.getFlowTime()) + "\n";
 }
 
 inline void usage() noexcept {
     std::cout << "Benchmarks a parametric max-flow algorithm. Arguments:" << std::endl;
     std::cout << "\t-i:   Parametric max-flow instance in binary format." << std::endl;
-    std::cout << "\t-o:   Output CSV file to which the statistics are appended. Note that the number and meaning of the columns" << std::endl;
-    std::cout << "\t      depends on the algorithm, so use a different output file for each algorithm type." << std::endl;
+    std::cout << "\t-o:   Output CSV file to which the statistics are written." << std::endl;
     std::cout << "\t-e:   Chord scheme only: Desired precision (default: 0)" << std::endl;
     std::cout << "\t-a:   Algorithm. Options are:" << std::endl;
     std::cout << "\t\t    parametricIBFS" << std::endl;
@@ -109,23 +112,24 @@ int main(int argc, char **argv) {
     epsilonHelper << epsilon;
     const std::string epsilonPrecise = epsilonHelper.str();
 
-    out << algorithm + "," + inputFileName + "," + std::to_string(instance.graph.numVertices()) + "," +
-           std::to_string(instance.graph.numEdges()) + "," + epsilonPrecise + ",";
+    const std::string headerPrefix = "algorithm,instance,vertices,edges,epsilon,";
+    const std::string rowPrefix = algorithm + "," + String::split(inputFileName, '/').back() + "," + std::to_string(instance.graph.numVertices())
+            + "," + std::to_string(instance.graph.numEdges()) + "," + epsilonPrecise + ",";
 
     if (algorithm == "parametricIBFS") {
-        runParametricIBFS(instance, out);
+        runParametricIBFS(instance, out, headerPrefix, rowPrefix);
     } else if (algorithm == "chordScheme[IBFS]") {
-        runChordScheme<IBFS<ChordSchemeWrapper>>(instance, epsilon, out);
+        runChordScheme<IBFS<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
     } else if (algorithm == "chordScheme[PushRelabel]") {
-        runChordScheme<PushRelabel<ChordSchemeWrapper>>(instance, epsilon, out);
+        runChordScheme<PushRelabel<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
     } else if (algorithm == "chordSchemeNoContraction[IBFS]") {
-        runChordSchemeNoContraction<IBFS<ChordSchemeWrapper>>(instance, epsilon, out);
+        runChordSchemeNoContraction<IBFS<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
     } else if (algorithm == "chordSchemeNoContraction[PushRelabel]") {
-        runChordSchemeNoContraction<PushRelabel<ChordSchemeWrapper>>(instance, epsilon, out);
+        runChordSchemeNoContraction<PushRelabel<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
     } else if (algorithm == "restartableIBFS") {
-        runRestartableAlgorithm<RestartableIBFS<ParametricWrapper, true>>(instance, out);
+        runRestartableAlgorithm<RestartableIBFS<ParametricWrapper, true>>(instance, out, headerPrefix, rowPrefix);
     } else if (algorithm == "restartablePushRelabel") {
-        runRestartableAlgorithm<PushRelabel<ParametricWrapper, true>>(instance, out);
+        runRestartableAlgorithm<PushRelabel<ParametricWrapper, true>>(instance, out, headerPrefix, rowPrefix);
     }
     else {
         usage();
