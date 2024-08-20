@@ -7,6 +7,10 @@ cmake-build-debug/
 cmake-build-debug-wsl/
 cmake-build-release/
 cmake-build-release-wsl/
+Benchmark/aux/
+Benchmark/builds/
+Benchmark/output/
+Benchmark/*.cache
 Data/
 Scripts/PMFrunBenchmark.sh
 test/instances/ahrem*

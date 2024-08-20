@@ -1,0 +1,251 @@
+instdir: "../Data/Instances"
+
+instances:
+  - repo: local
+    subdir: Aggregation/small
+    set: [ small, precision, restart ]
+    items:
+      - ahrem
+  - repo: local
+    subdir: Aggregation/small
+    set: [ small ]
+    items:
+      - altenholz
+      - altenrath
+      - belm
+      - berga
+      - bockelskamp
+      - bokeloh
+      - braunlage
+      - buisdorf
+      - butzweiler
+      - duengenheim
+      - edendorf
+      - erlenbach
+      - erp
+      - friesheim
+      - gerolstein
+      - gevenich
+      - gluecksburg
+      - goddula
+      - goldenstedt
+      - groebzig
+  - repo: local
+    subdir: Aggregation/medium
+    set: [ medium, precision, nocontract, restart ]
+    items:
+      - euskirchen
+  - repo: local
+    subdir: Aggregation/medium
+    set: [ medium ]
+    items:
+      - aldenhoven
+      - andernach
+      - bad_harzburg
+      - bad_neunahr
+      - bergedorf
+      - celle
+      - forsbach
+  - repo: local
+    subdir: Aggregation/large
+    set: [ large, precision, nocontract ]
+    items:
+      - bonn
+  - repo: local
+    subdir: Aggregation/large
+    set: [ large, precision ]
+    items:
+      - big_set
+      - cologne
+  - repo: local
+    subdir: Aggregation/group
+    set: [ group ]
+    items:
+      - gruppe1
+      - gruppe2
+      - gruppe3
+      - gruppe4
+      - gruppe5
+      - gruppe6
+      - gruppe7
+      - gruppe8
+      - gruppe9
+      - gruppe10
+      - gruppe11
+      - gruppe12
+  - repo: local
+    subdir: Vision
+    set: [ vision, liver-parametric ]
+    items:
+      - liver.n6c10-par-10-00
+  - repo: local
+    subdir: Vision
+    set: [ vision ]
+    items:
+      - adhead-n6c10-par-10-00
+      - adhead-n6c100-par-10-00
+      - adhead-n26c10-par-10-00
+      - adhead-n26c100-par-10-00
+      - babyface-n6c10-par-10-00
+      - babyface-n6c100-par-10-00
+      - babyface-n26c10-par-10-00
+      - babyface-n26c100-par-10-00
+      - bone-n6c10-par-10-00
+      - bone-n6c100-par-10-00
+      - bone-n26c10-par-10-00
+      - bone-n26c100-par-10-00
+      - liver-n6c100-par-10-00
+      - liver-n26c10-par-10-00
+      - liver-n26c100-par-10-00
+  - repo: local
+    subdir: Vision
+    set: [ liver-parametric ]
+    items:
+      - liver-n6c10-par-01-00
+      - liver-n6c10-par-01-01
+      - liver-n6c10-par-01-05
+      - liver-n6c10-par-01-10
+      - liver-n6c10-par-05-00
+      - liver-n6c10-par-05-01
+      - liver-n6c10-par-05-05
+      - liver-n6c10-par-05-10
+      - liver-n6c10-par-10-00
+      - liver-n6c10-par-10-01
+      - liver-n6c10-par-10-05
+      - liver-n6c10-par-10-10
+
+builds:
+  - name: ParametricMaxFlow
+    git: git@github.com:TheoreticalTree/ParametricMaxFlow.git
+    recursive-clone: true
+    configure:
+      - args:
+          - 'cmake'
+          - '-DCMAKE_INSTALL_PREFIX=@THIS_PREFIX_DIR@'
+          - '-DCMAKE_BUILD_TYPE=Release'
+          - '@THIS_CLONE_DIR@'
+    compile:
+      - args:
+          - 'make'
+          - '-j10'  #@PARALLELISM@'
+          - 'ParametricMaxFlowBenchmark'
+    install:
+      - args:
+          - 'mkdir'
+          - '-p'
+          - '@THIS_PREFIX_DIR@/bin'
+      - args:
+          - 'cp'
+          - '@THIS_COMPILE_DIR@/ParametricMaxFlowBenchmark'
+          - '@THIS_PREFIX_DIR@/bin/ParametricMaxFlowBenchmark'
+
+revisions:
+  - name: 'main-head'
+    build_version:
+      'ParametricMaxFlow': 'main'
+
+experiments:
+  - name: parametricIBFS
+    use_builds: [ ParametricMaxFlow ]
+    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '-a', 'parametricIBFS', '-m', 'specific' ]
+    stdout: out
+    output:
+      extensions: [ 'out', 'stats.csv' ]
+  - name: chordScheme
+    use_builds: [ ParametricMaxFlow ]
+    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'specific' ]
+    stdout: out
+    output:
+      extensions: [ 'out', 'stats.csv' ]
+  - name: chordSchemeNoContraction
+    use_builds: [ ParametricMaxFlow ]
+    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'whole' ]
+    stdout: out
+    output:
+      extensions: [ 'out', 'stats.csv' ]
+  - name: restartable
+    use_builds: [ ParametricMaxFlow ]
+    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'specific' ]
+    stdout: out
+    output:
+      extensions: [ 'out', 'stats.csv' ]
+  - name: chordPrecision
+    use_builds: [ ParametricMaxFlow ]
+    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'specific' ]
+    stdout: out
+    output:
+      extensions: [ 'out', 'stats.csv' ]
+
+variants:
+  - axis: 'chordAlgo'
+    items:
+      - name: 'chordSchemeIBFS'
+        extra_args: [ '-a', 'chordScheme[IBFS]' ]
+      - name: 'chordSchemePushRelabel'
+        extra_args: [ '-a', 'chordScheme[PushRelabel]' ]
+  - axis: 'chordAlgoNoContraction'
+    items:
+      - name: 'chordSchemeNoContractionIBFS'
+        extra_args: [ '-a', 'chordSchemeNoContractionIBFS' ]
+      - name: 'chordSchemeNoContractionPushRelabel'
+        extra_args: [ '-a', 'chordSchemeNoContractionPushRelabel' ]
+  - axis: 'restartableAlgo'
+    items:
+      - name: 'restartableIBFS'
+        extra_args: [ '-a', 'restartableIBFS' ]
+      - name: 'restartablePushRelabel'
+        extra_args: [ '-a', 'restartablePushRelabel' ]
+  - axis: 'epsilon'
+    items:
+      - name: 'eps0'
+        extra_args: [ '-e', '1' ]
+      - name: 'eps1'
+        extra_args: [ '-e', '0.1' ]
+      - name: 'eps2'
+        extra_args: [ '-e', '0.01' ]
+      - name: 'eps3'
+        extra_args: [ '-e', '0.001' ]
+      - name: 'eps4'
+        extra_args: [ '-e', '0.0001' ]
+      - name: 'eps5'
+        extra_args: [ '-e', '0.00001' ]
+      - name: 'eps6'
+        extra_args: [ '-e', '0.000001' ]
+      - name: 'eps7'
+        extra_args: [ '-e', '0.0000001' ]
+      - name: 'eps8'
+        extra_args: [ '-e', '0.00000001' ]
+      - name: 'eps9'
+        extra_args: [ '-e', '0.000000001' ]
+      - name: 'eps10'
+        extra_args: [ '-e', '0.0000000001' ]
+      - name: 'eps11'
+        extra_args: [ '-e', '0.00000000001' ]
+      - name: 'eps12'
+        extra_args: [ '-e', '0.000000000001' ]
+      - name: 'eps13'
+        extra_args: [ '-e', '0.0000000000001' ]
+      - name: 'eps14'
+        extra_args: [ '-e', '0.00000000000001' ]
+      - name: 'epsinf'
+        extra_args: [ '-e', '0' ]
+
+matrix:
+  include:
+    - experiments: [ parametricIBFS ]
+      instsets: [ 'small', 'medium', 'large', 'group', 'vision', 'liver-parametric' ]
+      axes: [ ]
+    - experiments: [ chordScheme ]
+      instsets: [ 'small', 'medium', 'large', 'group', 'vision', 'liver-parametric' ]
+      axes: [ chordAlgo ]
+    - experiments: [ chordSchemeNoContraction ]
+      instsets: [ 'nocontract' ]
+      axes: [ chordAlgoNoContraction, epsilon ]
+      variants: [ eps3, eps4, eps5, eps6, eps7 ]
+    - experiments: [ restartable ]
+      instsets: [ 'restart' ]
+      axes: [ restartableAlgo ]
+    - experiments: [ chordPrecision ]
+      instsets: [ 'precision' ]
+      axes: [ epsilon, chordAlgo ]
+      variants: [ chordSchemeIBFS ]
