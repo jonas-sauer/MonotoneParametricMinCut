@@ -116,7 +116,7 @@ instances:
 
 builds:
   - name: ParametricMaxFlow
-    git: git@github.com:TheoreticalTree/ParametricMaxFlow.git
+    git: git@github.com:jonas-sauer/ParametricMaxFlow.git
     recursive-clone: true
     configure:
       - args:
@@ -128,7 +128,7 @@ builds:
       - args:
           - 'make'
           - '-j10'  #@PARALLELISM@'
-          - 'ParametricMaxFlowBenchmark'
+          - 'Benchmark'
     install:
       - args:
           - 'mkdir'
@@ -136,8 +136,8 @@ builds:
           - '@THIS_PREFIX_DIR@/bin'
       - args:
           - 'cp'
-          - '@THIS_COMPILE_DIR@/ParametricMaxFlowBenchmark'
-          - '@THIS_PREFIX_DIR@/bin/ParametricMaxFlowBenchmark'
+          - '@THIS_COMPILE_DIR@/Benchmark'
+          - '@THIS_PREFIX_DIR@/bin/Benchmark'
 
 revisions:
   - name: 'main-head'
@@ -147,31 +147,31 @@ revisions:
 experiments:
   - name: parametricIBFS
     use_builds: [ ParametricMaxFlow ]
-    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '-a', 'parametricIBFS', '-m', 'specific' ]
+    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '-a', 'parametricIBFS' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: chordScheme
     use_builds: [ ParametricMaxFlow ]
-    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'specific' ]
+    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: chordSchemeNoContraction
     use_builds: [ ParametricMaxFlow ]
-    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'whole' ]
+    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: restartable
     use_builds: [ ParametricMaxFlow ]
-    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'specific' ]
+    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: chordPrecision
     use_builds: [ ParametricMaxFlow ]
-    args: [ 'ParametricMaxFlowBenchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@', '-m', 'specific' ]
+    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
