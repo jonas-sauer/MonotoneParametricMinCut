@@ -10,9 +10,9 @@ cmake-build-release-wsl/
 Benchmark/aux/
 Benchmark/builds/
 Benchmark/output/
+Benchmark/results/
 Benchmark/*.cache
 Data/
-Scripts/PMFrunBenchmark.sh
 test/instances/ahrem*
 test/instances/bonn*
 test/instances/randomInstance*

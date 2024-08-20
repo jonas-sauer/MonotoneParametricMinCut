@@ -186,9 +186,9 @@ variants:
   - axis: 'chordAlgoNoContraction'
     items:
       - name: 'chordSchemeNoContractionIBFS'
-        extra_args: [ '-a', 'chordSchemeNoContractionIBFS' ]
+        extra_args: [ '-a', 'chordSchemeNoContraction[IBFS]' ]
       - name: 'chordSchemeNoContractionPushRelabel'
-        extra_args: [ '-a', 'chordSchemeNoContractionPushRelabel' ]
+        extra_args: [ '-a', 'chordSchemeNoContraction[PushRelabel]' ]
   - axis: 'restartableAlgo'
     items:
       - name: 'restartableIBFS'
@@ -241,7 +241,7 @@ matrix:
     - experiments: [ chordSchemeNoContraction ]
       instsets: [ 'nocontract' ]
       axes: [ chordAlgoNoContraction, epsilon ]
-      variants: [ eps3, eps4, eps5, eps6, eps7 ]
+      variants: [ chordSchemeNoContractionIBFS, eps3, eps4, eps5, eps6, eps7 ]
     - experiments: [ restartable ]
       instsets: [ 'restart' ]
       axes: [ restartableAlgo ]
