@@ -543,8 +543,6 @@ public:
                         break;
                     } else {
                         const Edge edge = addEdge(from, to);
-                        //ToDo
-                        //addEdge(from, to, AnyAttribute(weight));
                         edgeAttributes.forEach([&](auto& values) {
                             using ValueType = typename std::remove_reference_t<decltype (values)>::value_type;
                             if constexpr (std::is_arithmetic<ValueType>::value && !std::is_same_v<ValueType, bool>) {

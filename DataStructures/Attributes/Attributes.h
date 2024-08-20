@@ -166,7 +166,6 @@ public:
 
     static_assert(!Meta::HasDuplicateAttribute<AttributeList>(), "It is not possible to use two attributes with the same name!");
     static_assert(!HasAttribute(Unknown), "'Unknown' cannot be used as an Attribute Name!");
-    static_assert(!HasAttribute(AnyAttribute), "'AnyAttribute' cannot be used as an Attribute Name!");
 
 public:
     Attributes() : Super(), defaultValue(ValueType()), values() {}

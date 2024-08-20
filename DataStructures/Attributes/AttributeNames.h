@@ -69,33 +69,20 @@ namespace ImplementationDetail {
     using LengthType = AttributeNameWrapper<1>;
     using DistanceType = AttributeNameWrapper<2>;
     using TravelTimeType = AttributeNameWrapper<3>;
-    using DepartureVertexType = AttributeNameWrapper<4>;
-    using ArrivalVertexType = AttributeNameWrapper<5>;
-    using DepartureTimeType = AttributeNameWrapper<6>;
-    using ArrivalTimeType = AttributeNameWrapper<7>;
-    using TripIDType = AttributeNameWrapper<8>;
-    using FromVertexType = AttributeNameWrapper<9>;
-    using ToVertexType = AttributeNameWrapper<10>;
-    using ViaVertexType = AttributeNameWrapper<11>;
-    using ReverseEdgeType = AttributeNameWrapper<12>;
-    // 13 is unused
-    using FunctionType = AttributeNameWrapper<14>;
-    using CapacityType = AttributeNameWrapper<15>;
-    using ValidType = AttributeNameWrapper<16>;
-    using IncomingEdgePointerType = AttributeNameWrapper<17>;
-    using CoordinatesType = AttributeNameWrapper<18>;
-    using BeginOutType = AttributeNameWrapper<19>;
-    using OutDegreeType = AttributeNameWrapper<20>;
-    using IncomingEdgesType = AttributeNameWrapper<21>;
-    // 22 is unused
-    using AnyAttributeType = AttributeNameWrapper<23>;
-    using SizeType = AttributeNameWrapper<24>;
-    using ProfileIndexType = AttributeNameWrapper<25>;
-    using OriginalEdgeType = AttributeNameWrapper<26>;
-    // 27 is unused
-    using MinOriginDelayType = AttributeNameWrapper<28>;
-    using MaxOriginDelayType = AttributeNameWrapper<29>;
-    using UnknownType = AttributeNameWrapper<30>;
+    using FromVertexType = AttributeNameWrapper<4>;
+    using ToVertexType = AttributeNameWrapper<5>;
+    using ViaVertexType = AttributeNameWrapper<6>;
+    using ReverseEdgeType = AttributeNameWrapper<7>;
+    using FunctionType = AttributeNameWrapper<8>;
+    using CapacityType = AttributeNameWrapper<9>;
+    using ValidType = AttributeNameWrapper<10>;
+    using IncomingEdgePointerType = AttributeNameWrapper<11>;
+    using CoordinatesType = AttributeNameWrapper<12>;
+    using BeginOutType = AttributeNameWrapper<13>;
+    using OutDegreeType = AttributeNameWrapper<14>;
+    using IncomingEdgesType = AttributeNameWrapper<15>;
+    using SizeType = AttributeNameWrapper<16>;
+    using UnknownType = AttributeNameWrapper<17>;
     // Ensure that Unknown is the last entry!
 
 }
@@ -104,11 +91,6 @@ constexpr ImplementationDetail::WeightType Weight;
 constexpr ImplementationDetail::LengthType Length;
 constexpr ImplementationDetail::DistanceType Distance;
 constexpr ImplementationDetail::TravelTimeType TravelTime;
-constexpr ImplementationDetail::DepartureVertexType DepartureVertex;
-constexpr ImplementationDetail::ArrivalVertexType ArrivalVertex;
-constexpr ImplementationDetail::DepartureTimeType DepartureTime;
-constexpr ImplementationDetail::ArrivalTimeType ArrivalTime;
-constexpr ImplementationDetail::TripIDType TripID;
 constexpr ImplementationDetail::FromVertexType FromVertex;
 constexpr ImplementationDetail::ToVertexType ToVertex;
 constexpr ImplementationDetail::ViaVertexType ViaVertex;
@@ -121,12 +103,7 @@ constexpr ImplementationDetail::CoordinatesType Coordinates;
 constexpr ImplementationDetail::BeginOutType BeginOut;
 constexpr ImplementationDetail::OutDegreeType OutDegree;
 constexpr ImplementationDetail::IncomingEdgesType IncomingEdges;
-constexpr ImplementationDetail::AnyAttributeType AnyAttribute;
 constexpr ImplementationDetail::SizeType Size;
-constexpr ImplementationDetail::ProfileIndexType ProfileIndex;
-constexpr ImplementationDetail::OriginalEdgeType OriginalEdge;
-constexpr ImplementationDetail::MinOriginDelayType MinOriginDelay;
-constexpr ImplementationDetail::MaxOriginDelayType MaxOriginDelay;
 constexpr ImplementationDetail::UnknownType Unknown;
 // Ensure that Unknown is the last entry!
 
@@ -137,33 +114,20 @@ namespace ImplementationDetail {
         /*  1 */ "Length",
         /*  2 */ "Distance",
         /*  3 */ "TravelTime",
-        /*  4 */ "DepartureVertex",
-        /*  5 */ "ArrivalVertex",
-        /*  6 */ "DepartureTime",
-        /*  7 */ "ArrivalTime",
-        /*  8 */ "TripID",
-        /*  9 */ "FromVertex",
-        /* 10 */ "ToVertex",
-        /* 11 */ "ViaVertex",
-        /* 12 */ "ReverseEdge",
-        /* 13 */ "(Unused)",
-        /* 14 */ "Function",
-        /* 15 */ "Capacity",
-        /* 16 */ "Valid",
-        /* 17 */ "IncomingEdgePointer",
-        /* 18 */ "Coordinates",
-        /* 19 */ "BeginOut",
-        /* 20 */ "OutDegree",
-        /* 21 */ "IncomingEdges",
-        /* 22 */ "(Unused)",
-        /* 23 */ "AnyAttribute",
-        /* 24 */ "Size",
-        /* 25 */ "ProfileIndex",
-        /* 26 */ "OriginalEdge",
-        /* 27 */ "(Unused)",
-        /* 28 */ "MinOriginDelay",
-        /* 29 */ "MaxOriginDelay",
-        /* 30 */ "Unknown"
+        /*  4 */ "FromVertex",
+        /*  5 */ "ToVertex",
+        /*  6 */ "ViaVertex",
+        /*  7 */ "ReverseEdge",
+        /*  8 */ "Function",
+        /*  9 */ "Capacity",
+        /* 10 */ "Valid",
+        /* 11 */ "IncomingEdgePointer",
+        /* 12 */ "Coordinates",
+        /* 13 */ "BeginOut",
+        /* 14 */ "OutDegree",
+        /* 15 */ "IncomingEdges",
+        /* 16 */ "Size",
+        /* 17 */ "Unknown"
         // Ensure that Unknown is the last entry!
     };
 
@@ -190,7 +154,7 @@ inline TYPE getAttributeValue(const AttributeNameWrapper<ATTRIBUTE_NAME>, const 
 
 template<AttributeNameType ATTRIBUTE_NAME, typename TYPE, AttributeNameType HEAD_NAME, typename HEAD_TYPE, typename... TAIL>
 inline TYPE getAttributeValue(const AttributeNameWrapper<ATTRIBUTE_NAME>, const TYPE& defaultValue, const AttributeValueWrapper<HEAD_NAME, HEAD_TYPE>& head, const TAIL&... tail) noexcept {
-    if constexpr ((HEAD_NAME == ATTRIBUTE_NAME) || ((HEAD_NAME == AnyAttribute) && (std::is_convertible<HEAD_TYPE, TYPE>::value))) {
+    if constexpr (HEAD_NAME == ATTRIBUTE_NAME) {
         return head.value();
     } else {
         return getAttributeValue(AttributeNameWrapper<ATTRIBUTE_NAME>(), defaultValue, tail...);
