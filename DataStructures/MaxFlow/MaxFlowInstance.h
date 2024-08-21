@@ -256,8 +256,8 @@ public:
 
     template<bool VERBOSE = true>
     inline void fromDimacs(const std::string& fileName, const FlowType infinity = INFTY) noexcept {
-        const std::string fileNameWithExtension = FileSystem::ensureExtension(fileName, ".max");
-        if constexpr (VERBOSE) std::cout << "Reading DIMACS max-flow graph from: " << fileNameWithExtension << std::endl << std::flush;
+        const std::string fileNameWithExtension = FileSystem::ensureExtension(fileName, ".pmax");
+        if constexpr (VERBOSE) std::cout << "Reading DIMACS parametric max-flow graph from: " << fileNameWithExtension << std::endl << std::flush;
         std::ifstream is(fileNameWithExtension);
         Assert(is.is_open(), "Cannot open file: " << fileNameWithExtension);
         ProgressBar bar(1);
