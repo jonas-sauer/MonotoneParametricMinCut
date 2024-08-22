@@ -100,7 +100,12 @@ def createLiverTable(frames):
 	chordIBFS = selectColumns(chordIBFS, selectorChordIBFS)
 
 	tbl = pbfs.merge(chordIBFS, on='instance')
-	tbl = tbl.loc[tbl['instance'].str.contains('liver-n6c10-')]
+	prefix = 'liver-n6c10-par-'
+	tbl = tbl.loc[tbl['instance'].str.contains(prefix)]
+	tbl['instance'] = tbl['instance'].str.replace(prefix, '')
+	tbl.insert(loc=0, column='p_src', value=tbl['instance'].str.split('-').str[0].astype(float)/10)
+	tbl.insert(loc=1, column='p_snk', value=tbl['instance'].str.split('-').str[1].astype(float)/10)
+	tbl = tbl.drop('instance', axis=1)
 	tbl['speedup'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
 	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
 	tbl['bottlenecksPerBreakpointPBFS'] = tbl['bottlenecksPerBreakpointPBFS'].round(1)
