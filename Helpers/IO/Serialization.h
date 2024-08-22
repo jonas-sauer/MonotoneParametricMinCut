@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -12,7 +13,6 @@
 #include "../Assert.h"
 #include "../Meta.h"
 #include "../Vector/Vector.h"
-#include "../FileSystem/FileSystem.h"
 
 namespace IO {
 
@@ -74,12 +74,17 @@ namespace IO {
     }
 
     //################################################# Serialization #################################################################//
+    inline const std::string& ensureDirectoryExists(const std::string& fileName) noexcept {
+        std::filesystem::create_directories(fileName);
+        return fileName;
+    }
+
     class Serialization {
 
     public:
         template<typename... Ts>
         Serialization(const std::string& fileName, const Ts&... objects) :
-            fileName(FileSystem::ensureDirectoryExists(fileName)),
+            fileName(ensureDirectoryExists(fileName)),
             os(fileName, std::ios::binary) {
             checkStream(os, fileName);
             serialize(FileHeader);          // Magic Header signaling that the following data represents a vector serialized by this code

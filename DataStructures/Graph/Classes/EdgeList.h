@@ -12,13 +12,13 @@
 
 #include "../Utils/Utils.h"
 
-#include "../../../Helpers/FileSystem/FileSystem.h"
 #include "../../../Helpers/IO/Serialization.h"
 #include "../../../Helpers/Vector/Permutation.h"
 #include "../../../Helpers/Console/ProgressBar.h"
 #include "../../../Helpers/Ranges/Range.h"
 #include "../../../Helpers/Ranges/SubRange.h"
 #include "../../../Helpers/Ranges/DirectEdgeRange.h"
+#include "../../../Helpers/String/String.h"
 
 template<typename LIST_OF_VERTEX_ATTRIBUTES, typename LIST_OF_EDGE_ATTRIBUTES>
 class EdgeListImplementation {
@@ -503,7 +503,7 @@ public:
     template<bool VERBOSE = false>
     inline void fromDimacs(const std::string& fileBaseName, const double coordinateFactor = 1) noexcept {
         clear();
-        const std::string grFilename = FileSystem::ensureExtension(fileBaseName, ".gr");
+        const std::string grFilename = String::ensureFileExtension(fileBaseName, ".gr");
         if (VERBOSE) std::cout << "Reading dimacs graph from: " << grFilename << std::endl << std::flush;
         std::ifstream grIs(grFilename);
         Assert(grIs.is_open(), "cannot open file: " << grFilename);
@@ -560,7 +560,7 @@ public:
             std::cout << "WARNING, found " << numEdges() << " edges, but " << edgeCount << " edges were declared." << std::endl;
         }
         if constexpr (HasVertexAttribute(Coordinates)) {
-            const std::string coFilename = FileSystem::ensureExtension(fileBaseName, ".co");
+            const std::string coFilename = String::ensureFileExtension(fileBaseName, ".co");
             if (VERBOSE) std::cout << "Reading dimacs coordinates from: " << coFilename << std::endl << std::flush;
             if (VERBOSE) bar.init(vertexCount);
             std::ifstream coIs(coFilename);

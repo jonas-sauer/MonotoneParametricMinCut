@@ -13,7 +13,6 @@
 
 #include "../../Container/IndexedSet.h"
 
-#include "../../../Helpers/FileSystem/FileSystem.h"
 #include "../../../Helpers/IO/Serialization.h"
 #include "../../../Helpers/Vector/Permutation.h"
 #include "../../../Helpers/Ranges/Range.h"

@@ -446,4 +446,12 @@ namespace String {
         }
         return ss.str();
     }
+
+    inline std::string ensureFileExtension(const std::string& fileName, const std::string& extension) noexcept {
+        if (endsWith(fileName, extension)) {
+            return fileName;
+        } else {
+            return fileName + extension;
+        }
+    }
 }
