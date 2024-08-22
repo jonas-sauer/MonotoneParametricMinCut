@@ -14,7 +14,7 @@ def findInstances():
 			newPath = newRoot + "/" + os.path.splitext(file)[0].replace('.', '-')
 			instances.append((oldPath, newPath))
 
-loader = "../cmake-build-release-wsl/InstanceLoader"
+loader = "../cmake-build-release/InstanceLoader"
 infinity = 999999
 
 def exec(cmd):

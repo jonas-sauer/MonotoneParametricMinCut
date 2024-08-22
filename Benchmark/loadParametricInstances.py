@@ -2,7 +2,7 @@ import os
 
 rawInstancesPath = "../Data/RawInstances"
 instancesPath = "../Data/Instances"
-loader = "../cmake-build-release-wsl/InstanceLoader"
+loader = "../cmake-build-release/InstanceLoader"
 
 def exec(cmd):
 	print(cmd)

@@ -4,6 +4,9 @@ import pandas as pd
 import numpy as np
 import functools as ft
 
+def flatten(pivot):
+	pivot.columns = pivot.columns.to_series().str.join("_")
+
 def aggregateParametricIBFS(df):
 	df['iterationsPerBreakpoint'] = df['iterations']/df['breakpoints']
 	df['bottlenecksPerIteration'] = df['bottlenecks']/df['iterations']
@@ -45,103 +48,115 @@ def selectColumns(df, selector):
 	return df.rename(columns=selector)[selector.values()]
 
 def createMainTable(frames):
-	selectorPBFS = {'instance': 'instance', 'vertices': 'vertices', 'edges': 'edges', 'runtime': 'runtimePBFS',
-					'breakpoints': 'breakpointsPBFS', 'adoptionsPerBreakpoint': 'adoptionsPerBreakpointPBFS',
-					'loopToInitRatio': 'loopToInitRatioPBFS'}
+	if not 'parametricIBFS' in frames:
+		return
+	if not 'chordScheme' in frames:
+		return
+
+	selectorPBFS = {'instance': 'instance', 'vertices': 'vertices', 'edges': 'edges', 'runtime': 'runtime_PBFS',
+					'breakpoints': 'breakpoints_PBFS', 'adoptionsPerBreakpoint': 'adoptionsPerBreakpoint_PBFS',
+					'loopToInitRatio': 'loopToInitRatio_PBFS'}
 	pbfs = selectColumns(frames['parametricIBFS'], selectorPBFS)
 
 	chordIBFS = frames['chordScheme'].loc[lambda df: df['algorithm'] == 'chordScheme[IBFS]']
-	selectorChordIBFS = {'instance': 'instance', 'runtime': 'runtimeDSIBFS', 'breakpoints': 'breakpointsDSIBFS',
-						 'avgVertices': 'avgVerticesDSIBFS', 'contractionRatio': 'contractionRatioDSIBFS'}
+	selectorChordIBFS = {'instance': 'instance', 'runtime': 'runtime_chordScheme[IBFS]', 'breakpoints': 'breakpoints_chordScheme[IBFS]',
+						 'avgVertices': 'avgVertices_chordScheme[IBFS]', 'contractionRatio': 'contractionRatio_chordScheme[IBFS]'}
 	chordIBFS = selectColumns(chordIBFS, selectorChordIBFS)
 
 	tbl = pbfs.merge(chordIBFS, on='instance')
-	tbl['speedup'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
-	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
-	tbl['adoptionsPerBreakpointPBFS'] = tbl['adoptionsPerBreakpointPBFS'].round(1)
-	tbl['loopToInitRatioPBFS'] = tbl['loopToInitRatioPBFS'].round(2)
-	tbl['runtimeDSIBFS'] = (tbl['runtimeDSIBFS']/1000).round(1)
-	tbl['avgVerticesDSIBFS'] = tbl['avgVerticesDSIBFS'].round(2)
-	tbl['contractionRatioDSIBFS'] = (tbl['contractionRatioDSIBFS']*100).astype(int).astype(str) + "%"
+	tbl['speedup'] = (tbl['runtime_chordScheme[IBFS]']/tbl['runtime_PBFS']).round(2)
+	tbl['runtime_PBFS'] = (tbl['runtime_PBFS']/1000).round(1)
+	tbl['adoptionsPerBreakpoint_PBFS'] = tbl['adoptionsPerBreakpoint_PBFS'].round(1)
+	tbl['loopToInitRatio_PBFS'] = tbl['loopToInitRatio_PBFS'].round(2)
+	tbl['runtime_chordScheme[IBFS]'] = (tbl['runtime_chordScheme[IBFS]']/1000).round(1)
+	tbl['avgVertices_chordScheme[IBFS]'] = tbl['avgVertices_chordScheme[IBFS]'].round(2)
+	tbl['contractionRatio_chordScheme[IBFS]'] = (tbl['contractionRatio_chordScheme[IBFS]']*100).astype(int).astype(str) + "%"
 	tbl.to_csv("results/mainTable.csv", index=False)
 
 def createAllAlgorithmsTable(frames):
+	if not 'parametricIBFS' in frames:
+		return
+	if not 'chordScheme' in frames:
+		return
+
 	selectorPBFS = {'instance': 'instance', 'vertices': 'vertices', 'edges': 'edges', 'breakpoints': 'breakpoints',
-					'runtime': 'runtimePBFS'}
+					'runtime': 'runtime_PBFS'}
 	pbfs = selectColumns(frames['parametricIBFS'], selectorPBFS)
 
-	chordIBFS = frames['chordScheme'].loc[lambda df: df['algorithm'] == 'chordScheme[IBFS]']
-	selectorChordIBFS = {'instance': 'instance', 'runtime': 'runtimeDSIBFS'}
-	chordIBFS = selectColumns(chordIBFS, selectorChordIBFS)
+	chord = frames['chordScheme'].copy()
+	chord['runtime'] = (chord['runtime']/1000).round(1)
+	pivot = chord.pivot_table(index=['instance'], columns=['algorithm'], values=['runtime'])
+	flatten(pivot)
 
-	chordPRF = frames['chordScheme'].loc[lambda df: df['algorithm'] == 'chordScheme[PushRelabel]']
-	selectorChordPRF = {'instance': 'instance', 'runtime': 'runtimeDSPRF'}
-	chordPRF = selectColumns(chordPRF, selectorChordPRF)
-
-	tbl = pbfs.merge(chordIBFS, on='instance').merge(chordPRF, on='instance')
-	tbl['speedupPBFSIBFS'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
-	tbl['speedupPBFSPRF'] = (tbl['runtimeDSPRF']/tbl['runtimePBFS']).round(2)
-	tbl['speedupIBFSPRF'] = (tbl['runtimeDSPRF']/tbl['runtimeDSIBFS']).round(2)
-	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
-	tbl['runtimeDSIBFS'] = (tbl['runtimeDSIBFS']/1000).round(1)
-	tbl['runtimeDSPRF'] = (tbl['runtimeDSPRF']/1000).round(1)
+	tbl = pbfs.merge(pivot, on='instance')
+	tbl['runtime_PBFS'] = (tbl['runtime_PBFS']/1000).round(1)
+	tbl['speedup_PBFS_IBFS'] = (tbl['runtime_chordScheme[IBFS]']/tbl['runtime_PBFS']).round(2)
+	tbl['speedup_PBFS_PRF'] = (tbl['runtime_chordScheme[PushRelabel]']/tbl['runtime_PBFS']).round(2)
+	tbl['speedup_IBFS_PRF'] = (tbl['runtime_chordScheme[PushRelabel]']/tbl['runtime_chordScheme[IBFS]']).round(2)
 	tbl.to_csv("results/allAlgorithmsTable.csv", index=False)
 
 def createLiverTable(frames):
-	selectorPBFS = {'instance': 'instance', 'runtime': 'runtimePBFS', 'breakpoints': 'breakpointsPBFS',
-					'bottlenecksPerBreakpoint': 'bottlenecksPerBreakpointPBFS',
-					'adoptionsPerBottleneck': 'adoptionsPerBottleneckPBFS',
-					'avgDistance': 'avgDistancePBFS', 'loopToInitRatio': 'loopToInitRatioPBFS'}
+	if not 'parametricIBFS' in frames:
+		return
+	if not 'chordScheme' in frames:
+		return
+
+	selectorPBFS = {'instance': 'instance', 'runtime': 'runtime_PBFS', 'breakpoints': 'breakpoints_PBFS',
+					'bottlenecksPerBreakpoint': 'bottlenecksPerBreakpoint_PBFS',
+					'adoptionsPerBottleneck': 'adoptionsPerBottleneck_PBFS',
+					'avgDistance': 'avgDistance_PBFS', 'loopToInitRatio': 'loopToInitRatio_PBFS'}
 	pbfs = selectColumns(frames['parametricIBFS'], selectorPBFS)
 
 	chordIBFS = frames['chordScheme'].loc[lambda df: df['algorithm'] == 'chordScheme[IBFS]']
-	selectorChordIBFS = {'instance': 'instance', 'runtime': 'runtimeDSIBFS', 'breakpoints': 'breakpointsDSIBFS',
-						 'avgVertices': 'avgVerticesDSIBFS', 'contractionRatio': 'contractionRatioDSIBFS'}
+	selectorChordIBFS = {'instance': 'instance', 'runtime': 'runtime_chordScheme[IBFS]',
+						 'breakpoints': 'breakpoints_chordScheme[IBFS]', 'avgVertices': 'avgVertices_chordScheme[IBFS]',
+						 'contractionRatio': 'contractionRatio_chordScheme[IBFS]'}
 	chordIBFS = selectColumns(chordIBFS, selectorChordIBFS)
 
 	tbl = pbfs.merge(chordIBFS, on='instance')
 	prefix = 'liver-n6c10-par-'
 	tbl = tbl.loc[tbl['instance'].str.contains(prefix)]
 	tbl['instance'] = tbl['instance'].str.replace(prefix, '')
-	tbl.insert(loc=0, column='p_src', value=tbl['instance'].str.split('-').str[0].astype(float)/10)
-	tbl.insert(loc=1, column='p_snk', value=tbl['instance'].str.split('-').str[1].astype(float)/10)
+	temp = tbl['instance'].str.split('-').str
+	tbl.insert(loc=0, column='p_src', value=temp[0].astype(float)/10)
+	tbl.insert(loc=1, column='p_snk', value=temp[1].astype(float)/10)
 	tbl = tbl.drop('instance', axis=1)
-	tbl['speedup'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
-	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
-	tbl['bottlenecksPerBreakpointPBFS'] = tbl['bottlenecksPerBreakpointPBFS'].round(1)
-	tbl['adoptionsPerBottleneckPBFS'] = tbl['adoptionsPerBottleneckPBFS'].round(1)
-	tbl['avgDistancePBFS'] = tbl['avgDistancePBFS'].round(1)
-	tbl['loopToInitRatioPBFS'] = tbl['loopToInitRatioPBFS'].round(2)
-	tbl['runtimeDSIBFS'] = (tbl['runtimeDSIBFS']/1000).round(1)
-	tbl['avgVerticesDSIBFS'] = tbl['avgVerticesDSIBFS'].round(2)
-	tbl['contractionRatioDSIBFS'] = (tbl['contractionRatioDSIBFS']*100).astype(int).astype(str) + "%"
+	tbl['speedup'] = (tbl['runtime_chordScheme[IBFS]']/tbl['runtime_PBFS']).round(2)
+	tbl['runtime_PBFS'] = (tbl['runtime_PBFS']/1000).round(1)
+	tbl['bottlenecksPerBreakpoint_PBFS'] = tbl['bottlenecksPerBreakpoint_PBFS'].round(1)
+	tbl['adoptionsPerBottleneck_PBFS'] = tbl['adoptionsPerBottleneck_PBFS'].round(1)
+	tbl['avgDistance_PBFS'] = tbl['avgDistance_PBFS'].round(1)
+	tbl['loopToInitRatio_PBFS'] = tbl['loopToInitRatio_PBFS'].round(2)
+	tbl['runtime_chordScheme[IBFS]'] = (tbl['runtime_chordScheme[IBFS]']/1000).round(1)
+	tbl['avgVertices_chordScheme[IBFS]'] = tbl['avgVertices_chordScheme[IBFS]'].round(2)
+	tbl['contractionRatio_chordScheme[IBFS]'] = (tbl['contractionRatio_chordScheme[IBFS]']*100).astype(int).astype(str) + "%"
 	tbl.to_csv("results/liverTable.csv", index=False)
 
 def createEpsilonTable(frames):
-	selectorPBFS = {'instance': 'instance', 'runtime': 'runtimePBFS'}
+	if not 'parametricIBFS' in frames:
+		return
+	if not 'chordPrecision' in frames:
+		return
+
+	selectorPBFS = {'instance': 'instance', 'runtime': 'runtime_PBFS'}
 	pbfs = selectColumns(frames['parametricIBFS'], selectorPBFS)
 
-	selectorChord = {'instance': 'instance', 'epsilon': 'exponent', 'runtime': 'runtimeDS',
+	selectorChord = {'instance': 'instance', 'epsilon': 'exponent', 'runtime': 'runtime_DS',
 					 'breakpoints': 'breakpoints'}
 	chord = selectColumns(frames['chordPrecision'], selectorChord)
 
 	tbl = pbfs.merge(chord, on='instance')
-	tbl['slowdown'] = tbl['runtimeDS']/tbl['runtimePBFS']
-	tbl = tbl.drop(columns=['runtimePBFS', 'runtimeDS'])
+	tbl['slowdown'] = tbl['runtime_DS']/tbl['runtime_PBFS']
+	tbl = tbl.drop(columns=['runtime_PBFS', 'runtime_DS'])
 	np.seterr(divide = 'ignore')
-	tbl['exponent'] = np.abs(np.log10(tbl['exponent'])).replace(np.inf, np.nan).astype("Int32")
+	tbl['exponent'] = np.abs(np.log10(tbl['exponent'])).replace(np.inf, 1000).astype(int)
 	np.seterr(divide = 'warn')
 	tbl = tbl.sort_values(by=['exponent'])
 
-	tbls = []
-	for instance in tbl['instance'].unique():
-		filtered = tbl.loc[tbl['instance'] == instance].copy()
-		filtered['breakpoints'] = filtered['breakpoints']/filtered.iloc[-1]['breakpoints']
-		selector = {"exponent": "exponent", "breakpoints": "breakpoints_" + instance, "slowdown": "slowdown_" + instance}
-		filtered = selectColumns(filtered, selector)
-		tbls.append(filtered)
-	tbl = ft.reduce(lambda left, right: pd.merge(left=left, right=right, how='left', left_on=['exponent'],right_on=['exponent']), tbls)
-	tbl.to_csv("results/epsilonTable.csv", index=False, sep='\t')
+	pivot = tbl.pivot_table(index=['exponent'], columns=['instance'], values=['breakpoints', 'slowdown'])
+	pivot['breakpoints'] = pivot['breakpoints']/pivot['breakpoints'].iloc[-1]
+	flatten(pivot)
+	pivot.to_csv("results/epsilonTable.csv", index=False, sep='\t')
 
 if __name__ == "__main__":
 	if not os.path.exists("results/"):
