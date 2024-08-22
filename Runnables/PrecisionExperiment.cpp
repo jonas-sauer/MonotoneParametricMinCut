@@ -49,7 +49,7 @@ inline void runPrecisionExperiment(const std::string& instanceFile, std::ofstrea
 
     out << "instance,tolerance,algorithm,groundTruthBreakpoints,errors,cumulativeError,avgError,accuracy\n";
     std::cout << "Evaluate chord scheme:" << std::endl;
-    out << instanceFile << "," << tolerancePrecise << ",chordScheme,";
+    out << String::split(instanceFile, '/').back() << "," << tolerancePrecise << ",chordScheme,";
     compare(parametricIBFS, chordScheme, tolerance, out);
     std::cout << "Evaluate parametric IBFS:" << std::endl;
     out << instanceFile << "," << tolerancePrecise << ",parametricIBFS,";
