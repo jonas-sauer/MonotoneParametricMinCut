@@ -1,41 +1,35 @@
 #pragma once
 
-#include <sys/time.h>
+#include <chrono>
 
 class Timer {
 
 public:
+    using TimePoint = std::chrono::time_point<std::chrono::steady_clock>;
+    using Microseconds = std::chrono::duration<double, std::micro>;
+    using Milliseconds = std::chrono::duration<double, std::milli>;
+
     Timer() : start(timestamp()) {}
 
     inline void restart() noexcept {
         start = timestamp();
     }
 
-    inline double elapsedMicroseconds() const noexcept {
-        double cur = timestamp();
-        return cur - start;
+    [[nodiscard]] inline double elapsedMicroseconds() const noexcept {
+        return std::chrono::duration_cast<Microseconds>(timestamp() - start).count();
     }
 
-    inline double elapsedMilliseconds() const noexcept {
-        double cur = timestamp();
-        return (cur - start) / 1000.0;
-    }
-
-    inline void advance(double targetTime) noexcept {
-        double cur = timestamp();
-        start = cur - targetTime;
+    [[nodiscard]] inline double elapsedMilliseconds() const noexcept {
+        return std::chrono::duration_cast<Milliseconds>(timestamp() - start).count();
     }
 
 private:
-    inline static double timestamp() noexcept {
-        timeval tp;
-        gettimeofday(&tp, nullptr);
-        double mus = static_cast<double>(tp.tv_usec);
-        return (tp.tv_sec * 1000000.0) + mus;
+    inline static TimePoint timestamp() noexcept {
+        return std::chrono::steady_clock::now();
     }
 
 private:
-    double start;
+    TimePoint start;
 
 };
 
