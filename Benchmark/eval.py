@@ -56,7 +56,13 @@ def createMainTable(frames):
 	chordIBFS = selectColumns(chordIBFS, selectorChordIBFS)
 
 	tbl = pbfs.merge(chordIBFS, on='instance')
-	tbl['speedup'] = tbl['runtimeDSIBFS']/tbl['runtimePBFS']
+	tbl['speedup'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
+	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
+	tbl['adoptionsPerBreakpointPBFS'] = tbl['adoptionsPerBreakpointPBFS'].round(1)
+	tbl['loopToInitRatioPBFS'] = tbl['loopToInitRatioPBFS'].round(2)
+	tbl['runtimeDSIBFS'] = (tbl['runtimeDSIBFS']/1000).round(1)
+	tbl['avgVerticesDSIBFS'] = tbl['avgVerticesDSIBFS'].round(2)
+	tbl['contractionRatioDSIBFS'] = (tbl['contractionRatioDSIBFS']*100).astype(int).astype(str) + "%"
 	tbl.to_csv("results/mainTable.csv", index=False)
 
 def createAllAlgorithmsTable(frames):
@@ -73,9 +79,12 @@ def createAllAlgorithmsTable(frames):
 	chordPRF = selectColumns(chordPRF, selectorChordPRF)
 
 	tbl = pbfs.merge(chordIBFS, on='instance').merge(chordPRF, on='instance')
-	tbl['speedupPBFSIBFS'] = tbl['runtimeDSIBFS']/tbl['runtimePBFS']
-	tbl['speedupPBFSPRF'] = tbl['runtimeDSPRF']/tbl['runtimePBFS']
-	tbl['speedupIBFSPRF'] = tbl['runtimeDSPRF']/tbl['runtimeDSIBFS']
+	tbl['speedupPBFSIBFS'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
+	tbl['speedupPBFSPRF'] = (tbl['runtimeDSPRF']/tbl['runtimePBFS']).round(2)
+	tbl['speedupIBFSPRF'] = (tbl['runtimeDSPRF']/tbl['runtimeDSIBFS']).round(2)
+	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
+	tbl['runtimeDSIBFS'] = (tbl['runtimeDSIBFS']/1000).round(1)
+	tbl['runtimeDSPRF'] = (tbl['runtimeDSPRF']/1000).round(1)
 	tbl.to_csv("results/allAlgorithmsTable.csv", index=False)
 
 def createLiverTable(frames):
@@ -92,10 +101,17 @@ def createLiverTable(frames):
 
 	tbl = pbfs.merge(chordIBFS, on='instance')
 	tbl = tbl.loc[tbl['instance'].str.contains('liver-n6c10-')]
-	tbl['speedup'] = tbl['runtimeDSIBFS']/tbl['runtimePBFS']
+	tbl['speedup'] = (tbl['runtimeDSIBFS']/tbl['runtimePBFS']).round(2)
+	tbl['runtimePBFS'] = (tbl['runtimePBFS']/1000).round(1)
+	tbl['bottlenecksPerBreakpointPBFS'] = tbl['bottlenecksPerBreakpointPBFS'].round(1)
+	tbl['adoptionsPerBottleneckPBFS'] = tbl['adoptionsPerBottleneckPBFS'].round(1)
+	tbl['avgDistancePBFS'] = tbl['avgDistancePBFS'].round(1)
+	tbl['loopToInitRatioPBFS'] = tbl['loopToInitRatioPBFS'].round(2)
+	tbl['runtimeDSIBFS'] = (tbl['runtimeDSIBFS']/1000).round(1)
+	tbl['avgVerticesDSIBFS'] = tbl['avgVerticesDSIBFS'].round(2)
+	tbl['contractionRatioDSIBFS'] = (tbl['contractionRatioDSIBFS']*100).astype(int).astype(str) + "%"
 	tbl.to_csv("results/liverTable.csv", index=False)
 
-#TODO: Columns per instance
 def createEpsilonTable(frames):
 	selectorPBFS = {'instance': 'instance', 'runtime': 'runtimePBFS'}
 	pbfs = selectColumns(frames['parametricIBFS'], selectorPBFS)
@@ -122,7 +138,6 @@ def createEpsilonTable(frames):
 	tbl = ft.reduce(lambda left, right: pd.merge(left=left, right=right, how='left', left_on=['exponent'],right_on=['exponent']), tbls)
 	tbl.to_csv("results/epsilonTable.csv", index=False, sep='\t')
 
-#TODO: Proper formatting of table entries
 if __name__ == "__main__":
 	if not os.path.exists("results/"):
 		os.makedirs("results/")
