@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"
+#include "../Helpers/FloatingPointMath.h"
 #include "../Helpers/Types.h"
 #include "../Helpers/Vector/Vector.h"
 
@@ -367,7 +367,7 @@ private:
     inline void registerAndDrainExcess(const Vertex start) noexcept {
         const FlowType exc = getExcess<DIRECTION>(start);
         if (exc < 0) return;
-        else if (pmf::isNumberPositive(exc)) {
+        else if (isNumberPositive(exc)) {
             excessVertices[DIRECTION].addVertex(start, getDistance<DIRECTION>(start));
             drainExcesses<DIRECTION>();
         } else {
@@ -397,7 +397,7 @@ private:
             const FlowType res = residualCapacity[edgeTowardsSink];
             const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
-            if (pmf::areNumbersEqual(flow, res)) {
+            if (areNumbersEqualAbsolute(flow, res)) {
                 makeOrphan<DIRECTION>(vertex);
             }
             if (flow == exc) {
@@ -555,17 +555,17 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return pmf::isNumberPositive(residualCapacity[edge]);
+        return isNumberPositive(residualCapacity[edge]);
     }
 
     template<int DIRECTION>
     inline bool hasPositiveExcess(const Vertex vertex) const noexcept {
-        return pmf::isNumberPositive(getExcess<DIRECTION>(vertex));
+        return isNumberPositive(getExcess<DIRECTION>(vertex));
     }
 
     template<int DIRECTION>
     inline bool hasNonNegativeExcess(const Vertex vertex) const noexcept {
-        return !pmf::isNumberNegative(getExcess<DIRECTION>(vertex));
+        return !isNumberNegative(getExcess<DIRECTION>(vertex));
     }
 
     template<int DIRECTION>

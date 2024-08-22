@@ -88,7 +88,7 @@ inline ParametricInstance createRandomParametricInstance(const uint n) noexcept 
 }
 
 template<typename ALGORITHM1, typename ALGORITHM2>
-inline void compareAlgorithmResults(const ALGORITHM1& algo1, const ALGORITHM2& algo2, const double tolerance = pmf::epsilon) noexcept {
+inline void compareAlgorithmResults(const ALGORITHM1& algo1, const ALGORITHM2& algo2, const double tolerance = 1e-9) noexcept {
     EXPECT_NEAR(algo1.getFlowValue(), algo2.getFlowValue(), tolerance);
     EXPECT_EQ(algo1.getSinkComponent(), algo2.getSinkComponent());
 }
@@ -255,12 +255,12 @@ TEST(parametricMaxFlow, randomRestartable) {
 
 TEST(parametricMaxFlow, randomParametricIBFSPushRelabel) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
-    validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, pmf::epsilon);
+    validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-9);
 }
 
 TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
-    validateParametricIBFS<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(instance, pmf::epsilon);
+    validateParametricIBFS<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(instance, 1e-9);
 }
 
 const std::string ahremPath = "../../Data/Instances/Aggregation/small/ahrem";

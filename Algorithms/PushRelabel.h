@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"
+#include "../Helpers/FloatingPointMath.h"
 #include "../Helpers/Types.h"
 #include "../Helpers/Vector/Vector.h"
 
@@ -259,7 +259,7 @@ private:
         while (!vertexBuckets.empty()) {
             const Vertex vertex = vertexBuckets.pop();
             discharge(vertex);
-            if (distance[vertex] < n && pmf::isNumberPositive(excess[vertex]))
+            if (distance[vertex] < n && isNumberPositive(excess[vertex]))
                 makeVertexActive(vertex);
 
             if (workSinceLastUpdate > workLimit) {
@@ -316,7 +316,7 @@ private:
             Assert(sinkDiff[i] <= 0, "Capacity of sink-incident edge has increased!");
             const Edge edgeToSink = graph.get(ReverseEdge, edgeFromSink);
             residualCapacity[edgeToSink] += sinkDiff[i];
-            if (pmf::isNumberNegative(residualCapacity[edgeToSink])) {
+            if (isNumberNegative(residualCapacity[edgeToSink])) {
                 const FlowType add = -residualCapacity[edgeToSink];
                 const Vertex from = graph.get(ToVertex, edgeFromSink);
                 residualCapacity[edgeFromSink] -= add;
@@ -391,7 +391,7 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return pmf::isNumberPositive(residualCapacity[edge]);
+        return isNumberPositive(residualCapacity[edge]);
     }
 
     inline void makeVertexActive(const Vertex vertex) noexcept {

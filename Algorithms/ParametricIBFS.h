@@ -8,10 +8,10 @@
 #include "../DataStructures/Container/ExternalKHeap.h"
 #include "../DataStructures/Graph/Graph.h"
 #include "../DataStructures/MaxFlow/FlowFunction.h"
-#include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"
+#include "../Helpers/FloatingPointMath.h"
 #include "../Helpers/Meta.h"
 #include "../Helpers/Timer.h"
 #include "../Helpers/Types.h"
@@ -232,7 +232,7 @@ public:
         initialize();
         if constexpr (MEASUREMENTS) initTime = timer.elapsedMicroseconds();
         double alpha = alphaMin_;
-        while (pmf::doubleLessThanAbs(alpha, alphaMax_)) {
+        while (isNumberLessThanAbsolute(alpha, alphaMax_)) {
             if constexpr (MEASUREMENTS) numIterations++;
             if (alphaQ_.empty()) break;
             assert(alphaQ_.front()->value_ > alpha);
@@ -741,7 +741,7 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge, const double alpha) const noexcept {
-        return pmf::doubleIsPositive(residualCapacity_[edge].eval(alpha));
+        return isNumberPositive(residualCapacity_[edge].eval(alpha));
     }
 
     inline void checkTree(const bool allowOrphans, const double alpha) const noexcept {
@@ -781,7 +781,7 @@ private:
 
     inline void checkCapacityConstraints(const double alpha) const noexcept {
         for (const Edge edge : graph_.edges()) {
-            Assert(!pmf::isNumberNegative(residualCapacity_[edge].eval(alpha)), "Capacity constraint violated!");
+            Assert(!isNumberNegative(residualCapacity_[edge].eval(alpha)), "Capacity constraint violated!");
         }
     }
 
@@ -819,7 +819,7 @@ private:
         if (!allowExcesses) Assert(excess_at_vertex_[vertex] == FlowFunction(0), "Vertex " << vertex << " has excess!");
         const FlowFunction inflow = getInflow(vertex);
         const FlowFunction netInflow = inflow - excess_at_vertex_[vertex];
-        Assert(pmf::doubleEqualAbs(netInflow.eval(alpha), 0), "Flow conservation not fulfilled!");
+        Assert(areNumbersEqualAbsolute(netInflow.eval(alpha), 0), "Flow conservation not fulfilled!");
     }
 
     inline void checkDisconnected(const Vertex v, const double alpha) const noexcept {

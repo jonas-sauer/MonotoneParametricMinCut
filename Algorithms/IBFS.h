@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"
+#include "../Helpers/FloatingPointMath.h"
 #include "../Helpers/Types.h"
 #include "../Helpers/Vector/Vector.h"
 
@@ -611,7 +611,7 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return pmf::isNumberPositive(residualCapacity[edge]);
+        return isNumberPositive(residualCapacity[edge]);
     }
 
     inline void checkDistanceInvariants(const bool allowOrphans = false) const noexcept {

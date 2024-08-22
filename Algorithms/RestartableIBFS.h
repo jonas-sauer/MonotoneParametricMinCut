@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"
+#include "../Helpers/FloatingPointMath.h"
 #include "../Helpers/Types.h"
 #include "../Helpers/Vector/Vector.h"
 
@@ -334,7 +334,7 @@ private:
                 excess[from] += add;
                 handleUpdateExcess(from);
             }
-            if (!pmf::isNumberPositive(residualCapacity[edgeToSink]) && treeData.parentEdge[from] == edgeToSink) {
+            if (!isNumberPositive(residualCapacity[edgeToSink]) && treeData.parentEdge[from] == edgeToSink) {
                 makeOrphan<BACKWARD>(from);
             }
         }
@@ -474,7 +474,7 @@ private:
             const FlowType res = residualCapacity[edgeTowardsSink];
             const FlowType flow = std::min(res, exc);
             pushFlow<DIRECTION>(vertex, parentVertex, edgeTowardsSink, edgeTowardsSource, flow);
-            if (pmf::areNumbersEqual(flow, res)) {
+            if (areNumbersEqualAbsolute(flow, res)) {
                 makeOrphan<DIRECTION>(vertex);
             }
             if (flow == exc) {
@@ -788,16 +788,16 @@ private:
     }
 
     inline bool isEdgeResidual(const Edge edge) const noexcept {
-        return pmf::isNumberPositive(residualCapacity[edge]);
+        return isNumberPositive(residualCapacity[edge]);
     }
 
     inline bool isEdgeResidualLax(const Edge edge) const noexcept {
-        return !pmf::isNumberNegative(residualCapacity[edge]);
+        return !isNumberNegative(residualCapacity[edge]);
     }
 
     template<int DIRECTION>
     inline bool hasNonNegativeExcess(const Vertex vertex) const noexcept {
-        return !pmf::isNumberNegative(getExcess<DIRECTION>(vertex));
+        return !isNumberNegative(getExcess<DIRECTION>(vertex));
     }
 
     template<int DIRECTION>
@@ -915,7 +915,7 @@ private:
         if (vertex == terminal[FORWARD] || vertex == terminal[BACKWARD]) return;
         if (distance[vertex] < 0) Assert(excess[vertex] >= 0, "Vertex in sink component has a deficit!");
         const FlowType inflow = getInflow(vertex);
-        Assert(pmf::areNumbersEqual(inflow, excess[vertex]), "Flow conservation not fulfilled!");
+        Assert(areNumbersEqualAbsolute(inflow, excess[vertex]), "Flow conservation not fulfilled!");
     }
 
     inline void checkCapacityConstraints() const noexcept {

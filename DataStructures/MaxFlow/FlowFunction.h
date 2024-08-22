@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-#include "FlowUtils.h"
+#include "../../Helpers/FloatingPointMath.h"
 #include "../../Helpers/Types.h"
 #include "../../Helpers/IO/Serialization.h"
 
@@ -73,7 +73,7 @@ public:
 
     [[nodiscard]] inline double getNextZeroCrossing(const double minVal) const noexcept override {
         if (a == 0) {
-            if (b <= pmf::epsilon) {
+            if (b <= FLOAT_EPS) {
                 return minVal;
             } else {
                 return CONST_INF;
@@ -145,7 +145,7 @@ public:
     }
 
     inline bool operator==(const LinearFlowFunction &rhs) const noexcept {
-        return pmf::doubleEqualAbs(a, rhs.a) && pmf::doubleEqualAbs(b, rhs.b);
+        return areNumbersEqualAbsolute(a, rhs.a) && areNumbersEqualAbsolute(b, rhs.b);
     }
 
     inline void serialize(IO::Serialization& serialize) const noexcept override {
