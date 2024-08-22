@@ -11,7 +11,7 @@ def findInstances():
 			if not file.endswith(".max"):
 				continue
 			oldPath = root + "/" + file
-			newPath = newRoot + "/" + os.path.splitext(file)[0]
+			newPath = newRoot + "/" + os.path.splitext(file)[0].replace('.', '-')
 			instances.append((oldPath, newPath))
 
 loader = "../cmake-build-release-wsl/InstanceLoader"
@@ -22,7 +22,7 @@ def exec(cmd):
 	os.system(cmd)
 
 def loadInstance(mode, input, output, p_src = "", p_snk = ""):
-	cmd = loader + " -m " + mode + " -i " + input + " -o " + output + " -inf " + infinity
+	cmd = loader + " -m " + mode + " -i " + input + " -o " + output + " -inf " + str(infinity)
 	if p_src:
 		cmd += " -p_src " + p_src
 	if p_snk:
@@ -47,7 +47,7 @@ def makeInstanceParametric(instance, p_src, p_snk):
 def makeParametric():
 	print("Making instances parametric...")
 	for (_,instance) in instances:
-		if any(i in instance for i in detailed_analysis_instances):
+		if any(i.replace('.', '-') in instance for i in detailed_analysis_instances):
 			for p_src in all_source_probabilities:
 				for p_snk in all_sink_probabilities:
 					makeInstanceParametric(instance, p_src, p_snk)

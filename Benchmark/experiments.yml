@@ -77,7 +77,7 @@ instances:
     subdir: Vision
     set: [ vision, liver-parametric ]
     items:
-      - liver.n6c10-par-10-00
+      - liver-n6c10-par-10-00
   - repo: local
     subdir: Vision
     set: [ vision ]
@@ -109,7 +109,6 @@ instances:
       - liver-n6c10-par-05-01
       - liver-n6c10-par-05-05
       - liver-n6c10-par-05-10
-      - liver-n6c10-par-10-00
       - liver-n6c10-par-10-01
       - liver-n6c10-par-10-05
       - liver-n6c10-par-10-10
