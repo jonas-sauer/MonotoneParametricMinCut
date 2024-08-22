@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "../DataStructures/Graph/Graph.h"
+#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
 
 #include "../Algorithms/IBFS.h"
@@ -11,15 +13,15 @@
 #include "../Algorithms/ChordScheme.h"
 #include "../Algorithms/ChordSchemeNoContraction.h"
 
-using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
-using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
-using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
-using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
-using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
+using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
+using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
+using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
+using ParametricWrapper = RestartableMaxFlowWrapper<LinearFlowFunction>;
+using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<LinearFlowFunction>;
 
 inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
-    ParametricIBFS<pmf::linearFlowFunction, true> algo(instance);
+    ParametricIBFS<LinearFlowFunction, true> algo(instance);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime,iterations,bottlenecks,adoptions,avgDistance,drains,initTime,updateTime,reconnectTime,drainTime\n";
@@ -36,7 +38,7 @@ inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream&
 template<typename ALGO>
 inline void runChordScheme(const ParametricInstance& instance, const double epsilon, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
-    ChordScheme<pmf::linearFlowFunction, ALGO, true> algo(instance, epsilon);
+    ChordScheme<LinearFlowFunction, ALGO, true> algo(instance, epsilon);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime,contractionTime,flowTime,totalVertices\n";
@@ -48,7 +50,7 @@ inline void runChordScheme(const ParametricInstance& instance, const double epsi
 template<typename ALGO>
 inline void runChordSchemeNoContraction(const ParametricInstance& instance, const double epsilon, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
-    ChordSchemeNoContraction<pmf::linearFlowFunction, ALGO> algo(instance, epsilon);
+    ChordSchemeNoContraction<LinearFlowFunction, ALGO> algo(instance, epsilon);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime\n";
@@ -57,7 +59,7 @@ inline void runChordSchemeNoContraction(const ParametricInstance& instance, cons
 
 template<typename ALGO>
 inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
-    ParametricIBFS<pmf::linearFlowFunction, false> breakpointGetter(instance);
+    ParametricIBFS<LinearFlowFunction, false> breakpointGetter(instance);
     breakpointGetter.run();
 
     Timer timer;

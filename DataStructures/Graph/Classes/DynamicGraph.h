@@ -782,7 +782,6 @@ public:
         size_t edgeWithViaVertexCount = 0;
         size_t reverseEdgeEntryCount = 0;
         size_t reverseEdgeErrorCount = 0;
-        long long graphDistance = 0;
         long long hash = 0;
         for (const Vertex v : vertices()) {
             vertexCount++;

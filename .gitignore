@@ -13,6 +13,3 @@ Benchmark/output/
 Benchmark/results/
 Benchmark/*.cache
 Data/
-test/instances/ahrem*
-test/instances/bonn*
-test/instances/randomInstance*

@@ -3,7 +3,7 @@
 #include "../Helpers/Console/CommandLineParser.h"
 
 using StaticInstance = StaticMaxFlowInstance<int>;
-using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
+using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
 
 inline void loadStaticFromDimacs(const std::string& inputFile, const std::string& outputFile, const int infinity = INFTY) noexcept {
     StaticInstance instance;

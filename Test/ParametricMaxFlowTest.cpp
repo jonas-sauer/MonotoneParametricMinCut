@@ -12,17 +12,17 @@
 #include "../Algorithms/RestartableIBFS.h"
 #include "../Algorithms/ChordScheme.h"
 
-using FlowEdgeList = ParametricFlowGraphEdgeList<pmf::linearFlowFunction>;
-using FlowGraph = ParametricFlowGraph<pmf::linearFlowFunction>;
-using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
-using ParametricWrapper = RestartableMaxFlowWrapper<pmf::linearFlowFunction>;
+using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
+using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
+using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
+using ParametricWrapper = RestartableMaxFlowWrapper<LinearFlowFunction>;
 
 
 TEST(parametricMaxFlow, smallTest) {
     ParametricInstance instance;
-    instance.fromDimacs("../../test/instances/smallTest");
+    instance.fromDimacs("../../Test/Instances/smallTest");
 
-    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
+    ParametricIBFS<LinearFlowFunction> algo(instance);
     algo.run();
 
     const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
@@ -38,9 +38,9 @@ TEST(parametricMaxFlow, smallTest) {
     EXPECT_DOUBLE_EQ(vertexBreakpoints[4], INFTY);
 }
 
-inline void addEdge(FlowEdgeList& edgeList, const Vertex from, const Vertex to, const pmf::linearFlowFunction& cap) noexcept {
+inline void addEdge(FlowEdgeList& edgeList, const Vertex from, const Vertex to, const LinearFlowFunction& cap) noexcept {
     edgeList.addEdge(from, to).set(Capacity, cap);
-    edgeList.addEdge(to, from).set(Capacity, pmf::linearFlowFunction(0));
+    edgeList.addEdge(to, from).set(Capacity, LinearFlowFunction(0));
 }
 
 inline ParametricInstance createRandomParametricInstance(const uint n) noexcept {
@@ -56,7 +56,7 @@ inline ParametricInstance createRandomParametricInstance(const uint n) noexcept 
             double a, b;
             a = disR(rng);
             b = disR(rng);
-            addEdge(edgeList, Vertex(0), Vertex(i), pmf::linearFlowFunction(a, b));
+            addEdge(edgeList, Vertex(0), Vertex(i), LinearFlowFunction(a, b));
         }
     }
 
@@ -65,7 +65,7 @@ inline ParametricInstance createRandomParametricInstance(const uint n) noexcept 
             double a, b;
             a = disR(rng);
             b = disR(rng);
-            addEdge(edgeList, Vertex(i), Vertex(1), pmf::linearFlowFunction(-a, a+b));
+            addEdge(edgeList, Vertex(i), Vertex(1), LinearFlowFunction(-a, a + b));
         }
     }
 
@@ -77,7 +77,7 @@ inline ParametricInstance createRandomParametricInstance(const uint n) noexcept 
 
             if (disN(rng) % (n * n) < 20) {
                 double b = disR(rng);
-                addEdge(edgeList, Vertex(v), Vertex(2), pmf::linearFlowFunction(b));
+                addEdge(edgeList, Vertex(v), Vertex(2), LinearFlowFunction(b));
             }
         }
     }
@@ -138,7 +138,7 @@ inline void compareParametricAlgorithmResults(const PARAMETRIC_ALGO& parametricA
 
 template<typename STATIC_ALGO, typename RESTARTABLE_ALGO>
 inline void validateParametricIBFS(const ParametricInstance& instance, const double tolerance) {
-    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
+    ParametricIBFS<LinearFlowFunction> algo(instance);
     algo.run();
     ParametricWrapper wrapper(instance);
     RESTARTABLE_ALGO restartableAlgo(wrapper);
@@ -164,7 +164,7 @@ inline void validateParametricIBFS(const ParametricInstance& instance, const dou
 
 template<typename RESTARTABLE_ALGO>
 inline void validateParametricIBFSFast(const ParametricInstance& instance, const double tolerance) {
-    ParametricIBFS<pmf::linearFlowFunction> algo(instance);
+    ParametricIBFS<LinearFlowFunction> algo(instance);
     algo.run();
     ParametricWrapper wrapper(instance);
     RESTARTABLE_ALGO restartableAlgo(wrapper);
@@ -186,8 +186,8 @@ inline void validateParametricIBFSFast(const ParametricInstance& instance, const
 
 template<typename STATIC_ALGO>
 inline void validateChordScheme(const ParametricInstance& instance, const double precision, const double tolerance) {
-    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>;
-    using Chord = ChordScheme<pmf::linearFlowFunction, SearchAlgorithm>;
+    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<LinearFlowFunction>>;
+    using Chord = ChordScheme<LinearFlowFunction, SearchAlgorithm>;
     Chord algo(instance, precision);
     algo.run();
     ParametricWrapper wrapper(instance);
@@ -206,11 +206,11 @@ inline void validateChordScheme(const ParametricInstance& instance, const double
 }
 
 inline void compareParametricAlgorithms(const ParametricInstance& instance, const double precision, const double tolerance) {
-    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>>;
-    using Chord = ChordScheme<pmf::linearFlowFunction, SearchAlgorithm>;
+    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<LinearFlowFunction>>;
+    using Chord = ChordScheme<LinearFlowFunction, SearchAlgorithm>;
     Chord chordScheme(instance, precision);
     chordScheme.run();
-    ParametricIBFS<pmf::linearFlowFunction> parametricIBFS(instance);
+    ParametricIBFS<LinearFlowFunction> parametricIBFS(instance);
     parametricIBFS.run();
 
     const std::vector<double>& parametricBreakpoints = parametricIBFS.getBreakpoints();
@@ -263,32 +263,35 @@ TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
     validateParametricIBFS<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(instance, pmf::epsilon);
 }
 
+const std::string ahremPath = "../../Data/Instances/Aggregation/small/ahrem";
+const std::string bonnPath = "../../Data/Instances/Aggregation/large/bonn";
+
 TEST(parametricMaxFlow, ahremParametricIBFS) {
-    const ParametricInstance instance("../../test/instances/ahrem");
+    const ParametricInstance instance(ahremPath);
     validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-4);
 }
 
 TEST(parametricMaxFlow, ahremChord) {
-    const ParametricInstance instance("../../test/instances/ahrem");
+    const ParametricInstance instance(ahremPath);
     validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-5);
 }
 
 TEST(parametricMaxFlow, ahremCompare) {
-    const ParametricInstance instance("../../test/instances/ahrem");
+    const ParametricInstance instance(ahremPath);
     compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }
 
 TEST(parametricMaxFlow, bonnParametricIBFS) {
-    const ParametricInstance instance("../../test/instances/bonn");
+    const ParametricInstance instance(bonnPath);
     validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-3);
 }
 
 TEST(parametricMaxFlow, bonnChord) {
-    const ParametricInstance instance("../../test/instances/bonn");
+    const ParametricInstance instance(bonnPath);
     validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-4);
 }
 
 TEST(parametricMaxFlow, bonnCompare) {
-    const ParametricInstance instance("../../test/instances/bonn");
+    const ParametricInstance instance(bonnPath);
     compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }

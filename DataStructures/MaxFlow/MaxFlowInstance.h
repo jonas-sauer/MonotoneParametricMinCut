@@ -11,7 +11,7 @@
 
 #include "../Graph/Graph.h"
 
-#include "FlowUtils.h"
+#include "FlowFunction.h"
 
 template<typename FLOW_TYPE = int>
 class StaticMaxFlowInstance {
@@ -173,7 +173,7 @@ public:
     Vertex sink;
 };
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
+template<Meta::Derived<FlowFunction> FLOW_FUNCTION>
 class ParametricMaxFlowInstance {
 public:
     using FlowFunction = FLOW_FUNCTION;
@@ -382,7 +382,7 @@ public:
     double alphaMax;
 };
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
+template<Meta::Derived<FlowFunction> FLOW_FUNCTION>
 class RestartableMaxFlowWrapper {
 public:
     using FlowFunction = FLOW_FUNCTION;
@@ -458,7 +458,7 @@ public:
     std::vector<FlowType> sinkDiff;
 };
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION>
+template<Meta::Derived<FlowFunction> FLOW_FUNCTION>
 class ChordSchemeMaxFlowWrapper {
 public:
     using FlowFunction = FLOW_FUNCTION;

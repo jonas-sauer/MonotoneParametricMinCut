@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../DataStructures/Graph/Graph.h"
+#include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"

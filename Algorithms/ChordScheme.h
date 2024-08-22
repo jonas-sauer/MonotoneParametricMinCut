@@ -5,7 +5,7 @@
 #include "PushRelabel.h"
 
 #include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowUtils.h"
+#include "../DataStructures/MaxFlow/FlowFunction.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
 #include "../Helpers/Assert.h"
@@ -13,7 +13,7 @@
 #include "../Helpers/Types.h"
 #include "../Helpers/Vector/Vector.h"
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM, bool MEASUREMENTS = false>
+template<Meta::Derived<FlowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM, bool MEASUREMENTS = false>
 class ChordScheme {
 public:
     using FlowFunction = FLOW_FUNCTION;

@@ -542,7 +542,6 @@ public:
         size_t edgeWithViaVertexCount = 0;
         size_t reverseEdgeEntryCount = 0;
         size_t reverseEdgeErrorCount = 0;
-        long long graphDistance = 0;
         long long hash = 0;
         std::vector<size_t> inDegree(numVertices(), 0);
         IndexedSet<false, Vertex> neighbors(numVertices());

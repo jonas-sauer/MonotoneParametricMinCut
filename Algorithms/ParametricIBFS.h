@@ -7,6 +7,7 @@
 
 #include "../DataStructures/Container/ExternalKHeap.h"
 #include "../DataStructures/Graph/Graph.h"
+#include "../DataStructures/MaxFlow/FlowFunction.h"
 #include "../DataStructures/MaxFlow/FlowUtils.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 
@@ -16,7 +17,7 @@
 #include "../Helpers/Types.h"
 #include "../Helpers/Vector/Vector.h"
 
-template<Meta::Derived<pmf::flowFunction> FLOW_FUNCTION, bool MEASUREMENTS = false>
+template<Meta::Derived<FlowFunction> FLOW_FUNCTION, bool MEASUREMENTS = false>
 class ParametricIBFS {
 public:
     using FlowFunction = FLOW_FUNCTION;

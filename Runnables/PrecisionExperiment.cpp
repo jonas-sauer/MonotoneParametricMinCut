@@ -6,10 +6,10 @@
 #include "../Helpers/Console/CommandLineParser.h"
 #include "../Helpers/Console/Progress.h"
 
-using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
-using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
-using PBFSAlgo = ParametricIBFS<pmf::linearFlowFunction, false>;
-using ChordAlgo = ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeWrapper>, false>;
+using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
+using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<LinearFlowFunction>;
+using PBFSAlgo = ParametricIBFS<LinearFlowFunction, false>;
+using ChordAlgo = ChordScheme<LinearFlowFunction, IBFS<ChordSchemeWrapper>, false>;
 
 template<typename TRUTH_ALGO, typename COMP_ALGO>
 inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, const double tolerance, std::ofstream& out) noexcept {
