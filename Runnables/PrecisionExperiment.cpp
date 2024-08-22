@@ -8,11 +8,11 @@
 
 using ParametricInstance = ParametricMaxFlowInstance<pmf::linearFlowFunction>;
 using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<pmf::linearFlowFunction>;
-using PBFSAlgo = ParametricIBFS<pmf::linearFlowFunction, true>;
-using ChordAlgo = ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeWrapper>, true>;
+using PBFSAlgo = ParametricIBFS<pmf::linearFlowFunction, false>;
+using ChordAlgo = ChordScheme<pmf::linearFlowFunction, IBFS<ChordSchemeWrapper>, false>;
 
 template<typename TRUTH_ALGO, typename COMP_ALGO>
-inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo) noexcept {
+inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, const double tolerance, std::ofstream& out) noexcept {
     const std::vector<double>& groundTruth = truthAlgo.getBreakpoints();
     Progress progress(groundTruth.size());
     double cumulativeError = 0;
@@ -21,20 +21,17 @@ inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo) noex
         const double actualFlow = truthAlgo.getFlowValue(breakpoint);
         const double resultFlow = compAlgo.getFlowValue(breakpoint);
         progress++;
-        if (resultFlow <= actualFlow + 1e-06) continue;
-        std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
-        std::cout << actualFlow << " vs. " << resultFlow << " ( " << resultFlow - actualFlow << ")" << std::endl;
+        if (resultFlow <= actualFlow + tolerance) continue;
         cumulativeError += (resultFlow - actualFlow)/actualFlow;
         numErrors++;
     }
     progress.finished();
-    std::cout << "Errors: " << numErrors << "/" << groundTruth.size() << std::endl;
-    std::cout << "Cumulative error: " << cumulativeError << std::endl;
-    std::cout << "Average error: " << (numErrors == 0 ? 0 : cumulativeError/static_cast<double>(numErrors)) << std::endl;
-    std::cout << "Accuracy: " << cumulativeError/groundTruth.size() << std::endl;
+    const double avgError = numErrors == 0 ? 0 : cumulativeError/static_cast<double>(numErrors);
+    const double accuracy = cumulativeError/groundTruth.size();
+    out << std::to_string(groundTruth.size()) << "," << std::to_string(numErrors) << "," << std::to_string(cumulativeError)  << "," << std::to_string(avgError) << "," << std::to_string(accuracy) << "\n";
 }
 
-inline void runPrecisionExperiment(const std::string& instanceFile) noexcept {
+inline void runPrecisionExperiment(const std::string& instanceFile, std::ofstream& out, const double tolerance) noexcept {
     ParametricInstance instance(instanceFile);
     PBFSAlgo parametricIBFS(instance);
     ChordAlgo chordScheme(instance, 0);
@@ -46,24 +43,39 @@ inline void runPrecisionExperiment(const std::string& instanceFile) noexcept {
     std::cout << "Parametric IBFS: " << parametricBreakpoints.size() << " breakpoints" << std::endl;
     std::cout << "Chord scheme: " << chordBreakpoints.size() << " breakpoints" << std::endl;
 
+    std::stringstream toleranceHelper;
+    toleranceHelper << tolerance;
+    const std::string tolerancePrecise = toleranceHelper.str();
+
+    out << "instance,tolerance,algorithm,groundTruthBreakpoints,errors,cumulativeError,avgError,accuracy\n";
     std::cout << "Evaluate chord scheme:" << std::endl;
-    compare(parametricIBFS, chordScheme);
+    out << instanceFile << "," << tolerancePrecise << ",chordScheme,";
+    compare(parametricIBFS, chordScheme, tolerance, out);
     std::cout << "Evaluate parametric IBFS:" << std::endl;
-    compare(chordScheme, parametricIBFS);
+    out << instanceFile << "," << tolerancePrecise << ",parametricIBFS,";
+    compare(chordScheme, parametricIBFS, tolerance, out);
 }
 
 inline void usage() noexcept {
-    std::cout << "Runs an experiment to compare the precision of Parametric IBFS and chord scheme with IBFS. Arguments:" << std::endl;
+    std::cout << "Evaluates the precision of the results computed by Parametric IBFS and chord scheme with IBFS. For each "
+              << "breakpoint computed by either algorithm, the flow values returned by the two algorithms are compared."
+              << "Arguments:" << std::endl;
     std::cout << "\t-i:   Parametric max-flow instance in binary format." << std::endl;
+    std::cout << "\t-o:   Output CSV file to which the statistics are written." << std::endl;
+    std::cout << "\t-t:   Maximum tolerance for absolute difference between flow values (default: 1e-06)." << std::endl;
 }
 
 int main(int argc, char** argv) {
     CommandLineParser clp(argc, argv);
     const auto instanceFile = clp.value<std::string>("i");
-    if (instanceFile.empty()) {
+    const auto outputFile = clp.value<std::string>("o");
+    const auto tolerance = clp.value<double>("t", 1e-06);
+
+    if (instanceFile.empty() || outputFile.empty()) {
         usage();
         return EXIT_SUCCESS;
     }
-    runPrecisionExperiment(instanceFile);
+    std::ofstream out(outputFile, std::ios::app);
+    runPrecisionExperiment(instanceFile, out, tolerance);
     return EXIT_SUCCESS;
 }

@@ -128,6 +128,10 @@ builds:
           - 'make'
           - '-j10'  #@PARALLELISM@'
           - 'Benchmark'
+      - args:
+          - 'make'
+          - '-j10'  #@PARALLELISM@'
+          - 'PrecisionExperiment'
     install:
       - args:
           - 'mkdir'
@@ -137,6 +141,10 @@ builds:
           - 'cp'
           - '@THIS_COMPILE_DIR@/Benchmark'
           - '@THIS_PREFIX_DIR@/bin/Benchmark'
+      - args:
+          - 'cp'
+          - '@THIS_COMPILE_DIR@/PrecisionExperiment'
+          - '@THIS_PREFIX_DIR@/bin/PrecisionExperiment'
 
 revisions:
   - name: 'main-head'
@@ -171,6 +179,12 @@ experiments:
   - name: chordPrecision
     use_builds: [ ParametricMaxFlow ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
+    stdout: out
+    output:
+      extensions: [ 'out', 'stats.csv' ]
+  - name: precision
+    use_builds: [ ParametricMaxFlow ]
+    args: [ 'PrecisionExperiment', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
@@ -248,3 +262,5 @@ matrix:
       instsets: [ 'precision' ]
       axes: [ epsilon, chordAlgo ]
       variants: [ chordSchemeIBFS ]
+    - experiments: [ precision ]
+      axes: [ ]
