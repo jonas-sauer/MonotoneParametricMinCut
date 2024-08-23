@@ -14,12 +14,12 @@
 #include "../Helpers/Vector/Vector.h"
 
 template<Meta::Derived<FlowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM>
-class ChordSchemeNoContraction {
+class DichotomicSchemeNoContraction {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using FlowType = FlowFunction::FlowType;
     using ParametricInstance = ParametricMaxFlowInstance<FlowFunction>;
-    using ParametricWrapper = ChordSchemeMaxFlowWrapper<FlowFunction>;
+    using ParametricWrapper = DichotomicSchemeMaxFlowWrapper<FlowFunction>;
     using SearchAlgorithm = SEARCH_ALGORITHM;
 
     struct Solution {
@@ -42,7 +42,7 @@ public:
         }
     };
 
-    ChordSchemeNoContraction(const ParametricInstance& instance, const double epsilon) : instance(instance), wrapper(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
+    DichotomicSchemeNoContraction(const ParametricInstance& instance, const double epsilon) : instance(instance), wrapper(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
 
     inline void run() noexcept {
         const Solution solMin = runSearch(instance.alphaMin);

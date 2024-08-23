@@ -1,15 +1,15 @@
 #include "../Algorithms/IBFS.h"
 #include "../Algorithms/ParametricIBFS.h"
-#include "../Algorithms/ChordScheme.h"
+#include "../Algorithms/DichotomicScheme.h"
 #include "../DataStructures/Graph/Graph.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
 #include "../Helpers/Console/Progress.h"
 
 using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
-using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<LinearFlowFunction>;
+using DichotomicSchemeWrapper = DichotomicSchemeMaxFlowWrapper<LinearFlowFunction>;
 using PBFSAlgo = ParametricIBFS<LinearFlowFunction, false>;
-using ChordAlgo = ChordScheme<LinearFlowFunction, IBFS<ChordSchemeWrapper>, false>;
+using DichotomicAlgo = DichotomicScheme<LinearFlowFunction, IBFS<DichotomicSchemeWrapper>, false>;
 
 template<typename TRUTH_ALGO, typename COMP_ALGO>
 inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, const double tolerance, std::ofstream& out) noexcept {
@@ -34,31 +34,31 @@ inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, cons
 inline void runPrecisionExperiment(const std::string& instanceFile, std::ofstream& out, const double tolerance) noexcept {
     ParametricInstance instance(instanceFile);
     PBFSAlgo parametricIBFS(instance);
-    ChordAlgo chordScheme(instance, 0);
+    DichotomicAlgo dichotomicScheme(instance, 0);
     parametricIBFS.run();
-    chordScheme.run();
+    dichotomicScheme.run();
 
     const std::vector<double>& parametricBreakpoints = parametricIBFS.getBreakpoints();
-    const std::vector<double>& chordBreakpoints = chordScheme.getBreakpoints();
+    const std::vector<double>& dichotomicBreakpoints = dichotomicScheme.getBreakpoints();
     std::cout << "Parametric IBFS: " << parametricBreakpoints.size() << " breakpoints" << std::endl;
-    std::cout << "Chord scheme: " << chordBreakpoints.size() << " breakpoints" << std::endl;
+    std::cout << "Dichotomic scheme: " << dichotomicBreakpoints.size() << " breakpoints" << std::endl;
 
     std::stringstream toleranceHelper;
     toleranceHelper << tolerance;
     const std::string tolerancePrecise = toleranceHelper.str();
 
     out << "instance,tolerance,algorithm,groundTruthBreakpoints,errors,cumulativeError,avgError,accuracy\n";
-    std::cout << "Evaluate chord scheme:" << std::endl;
+    std::cout << "Evaluate dichotomic scheme:" << std::endl;
     const std::string instanceName = String::split(instanceFile, '/').back();
-    out << instanceName << "," << tolerancePrecise << ",chordScheme,";
-    compare(parametricIBFS, chordScheme, tolerance, out);
+    out << instanceName << "," << tolerancePrecise << ",DS,";
+    compare(parametricIBFS, dichotomicScheme, tolerance, out);
     std::cout << "Evaluate parametric IBFS:" << std::endl;
-    out << instanceName << "," << tolerancePrecise << ",parametricIBFS,";
-    compare(chordScheme, parametricIBFS, tolerance, out);
+    out << instanceName << "," << tolerancePrecise << ",PBFS,";
+    compare(dichotomicScheme, parametricIBFS, tolerance, out);
 }
 
 inline void usage() noexcept {
-    std::cout << "Evaluates the precision of the results computed by Parametric IBFS and chord scheme with IBFS. For each "
+    std::cout << "Evaluates the precision of the results computed by parametric IBFS and dichotomic scheme with IBFS. For each "
               << "breakpoint computed by either algorithm, the flow values returned by the two algorithms are compared."
               << "Arguments:" << std::endl;
     std::cout << "\t-i:   Parametric max-flow instance in binary format." << std::endl;

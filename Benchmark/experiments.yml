@@ -152,19 +152,19 @@ revisions:
       'ParametricMaxFlow': 'main'
 
 experiments:
-  - name: parametricIBFS
+  - name: PBFS
     use_builds: [ ParametricMaxFlow ]
-    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '-a', 'parametricIBFS' ]
+    args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '-a', 'PBFS' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
-  - name: chordScheme
+  - name: DS
     use_builds: [ ParametricMaxFlow ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
-  - name: chordSchemeNoContraction
+  - name: DSNoContraction
     use_builds: [ ParametricMaxFlow ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
@@ -176,7 +176,7 @@ experiments:
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
-  - name: chordPrecision
+  - name: DSPrecision
     use_builds: [ ParametricMaxFlow ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
@@ -190,24 +190,24 @@ experiments:
       extensions: [ 'out', 'stats.csv' ]
 
 variants:
-  - axis: 'chordAlgo'
+  - axis: 'DSAlgo'
     items:
-      - name: 'chordSchemeIBFS'
-        extra_args: [ '-a', 'chordScheme[IBFS]' ]
-      - name: 'chordSchemePushRelabel'
-        extra_args: [ '-a', 'chordScheme[PushRelabel]' ]
-  - axis: 'chordAlgoNoContraction'
+      - name: 'DS-IBFS'
+        extra_args: [ '-a', 'DS[IBFS]' ]
+      - name: 'DS-PRF'
+        extra_args: [ '-a', 'DS[PRF]' ]
+  - axis: 'DSAlgoNoContraction'
     items:
-      - name: 'chordSchemeNoContractionIBFS'
-        extra_args: [ '-a', 'chordSchemeNoContraction[IBFS]' ]
-      - name: 'chordSchemeNoContractionPushRelabel'
-        extra_args: [ '-a', 'chordSchemeNoContraction[PushRelabel]' ]
+      - name: 'DSNoContraction-IBFS'
+        extra_args: [ '-a', 'DSNoContraction[IBFS]' ]
+      - name: 'DSNoContraction-PRF'
+        extra_args: [ '-a', 'DSNoContraction[PRF]' ]
   - axis: 'restartableAlgo'
     items:
       - name: 'restartableIBFS'
         extra_args: [ '-a', 'restartableIBFS' ]
-      - name: 'restartablePushRelabel'
-        extra_args: [ '-a', 'restartablePushRelabel' ]
+      - name: 'restartablePRF'
+        extra_args: [ '-a', 'restartablePRF' ]
   - axis: 'epsilon'
     items:
       - name: 'eps0'
@@ -245,22 +245,22 @@ variants:
 
 matrix:
   include:
-    - experiments: [ parametricIBFS ]
+    - experiments: [ PBFS ]
       instsets: [ 'small', 'medium', 'large', 'group', 'vision', 'liver-parametric' ]
       axes: [ ]
-    - experiments: [ chordScheme ]
+    - experiments: [ DS ]
       instsets: [ 'small', 'medium', 'large', 'group', 'vision', 'liver-parametric' ]
-      axes: [ chordAlgo ]
-    - experiments: [ chordSchemeNoContraction ]
+      axes: [ DSAlgo ]
+    - experiments: [ DSNoContraction ]
       instsets: [ 'nocontract' ]
-      axes: [ chordAlgoNoContraction, epsilon ]
-      variants: [ chordSchemeNoContractionIBFS, eps3, eps4, eps5, eps6, eps7 ]
+      axes: [ DSAlgoNoContraction, epsilon ]
+      variants: [ DSNoContraction-IBFS, eps3, eps4, eps5, eps6, eps7 ]
     - experiments: [ restartable ]
       instsets: [ 'restart' ]
       axes: [ restartableAlgo ]
-    - experiments: [ chordPrecision ]
+    - experiments: [ DSPrecision ]
       instsets: [ 'precision' ]
-      axes: [ epsilon, chordAlgo ]
-      variants: [ chordSchemeIBFS ]
+      axes: [ epsilon, DSAlgo ]
+      variants: [ DS-IBFS ]
     - experiments: [ precision ]
       axes: [ ]

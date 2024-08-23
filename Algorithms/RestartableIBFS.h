@@ -104,7 +104,7 @@ private:
     };
 
     struct OrphanBuckets {
-        OrphanBuckets(const int n) :
+        explicit OrphanBuckets(const int n) :
             positionOfVertex_(n, -1), minBucket_(INFTY) {
         }
 
@@ -265,8 +265,8 @@ public:
         currentEdge(n, noEdge),
         treeData(n),
         excessVertices{ExcessBuckets(n), ExcessBuckets(n)},
-        orphans{n, n},
-        threePassOrphans{n, n},
+        orphans{OrphanBuckets(n), OrphanBuckets(n)},
+        threePassOrphans{OrphanBuckets(n), OrphanBuckets(n)},
         processedOrphans(0),
         processedUniqueOrphans(0),
         orphanTimestamp(n, 0),
