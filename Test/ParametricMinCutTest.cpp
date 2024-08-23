@@ -5,12 +5,12 @@
 
 #include "../Helpers/Console/Progress.h"
 
-#include "../Algorithms/StaticMaxFlow/ExcessesIBFS.h"
-#include "../Algorithms/StaticMaxFlow/IBFS.h"
-#include "../Algorithms/ParametricMaxFlow/ParametricIBFS.h"
-#include "../Algorithms/StaticMaxFlow/PushRelabel.h"
-#include "../Algorithms/ParametricMaxFlow/RestartableIBFS.h"
-#include "../Algorithms/ParametricMaxFlow/DichotomicScheme.h"
+#include "../Algorithms/StaticMinCut/ExcessesIBFS.h"
+#include "../Algorithms/StaticMinCut/IBFS.h"
+#include "../Algorithms/ParametricMinCut/ParametricIBFS.h"
+#include "../Algorithms/StaticMinCut/PushRelabel.h"
+#include "../Algorithms/ParametricMinCut/RestartableIBFS.h"
+#include "../Algorithms/ParametricMinCut/DichotomicScheme.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
@@ -18,7 +18,7 @@ using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
 using ParametricWrapper = RestartableMaxFlowWrapper<LinearFlowFunction>;
 
 
-TEST(parametricMaxFlow, smallTest) {
+TEST(parametricMinCut, smallTest) {
     ParametricInstance instance;
     instance.fromDimacs("../../Test/Instances/smallTest");
 
@@ -238,22 +238,22 @@ inline void compareParametricAlgorithms(const ParametricInstance& instance, cons
     }
 }
 
-TEST(parametricMaxFlow, randomStatic) {
+TEST(parametricMinCut, randomStatic) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateStaticAlgorithms(instance, 100);
 }
 
-TEST(parametricMaxFlow, randomRestartable) {
+TEST(parametricMinCut, randomRestartable) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateRestartableAlgorithms(instance, 100);
 }
 
-TEST(parametricMaxFlow, randomParametricIBFSPushRelabel) {
+TEST(parametricMinCut, randomParametricIBFSPushRelabel) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-9);
 }
 
-TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
+TEST(parametricMinCut, randomParametricIBFSRestartableIBFS) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateParametricIBFS<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(instance, 1e-9);
 }
@@ -261,32 +261,32 @@ TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
 const std::string ahremPath = "../../Data/Instances/Aggregation/small/ahrem";
 const std::string bonnPath = "../../Data/Instances/Aggregation/large/bonn";
 
-TEST(parametricMaxFlow, ahremParametricIBFS) {
+TEST(parametricMinCut, ahremParametricIBFS) {
     const ParametricInstance instance(ahremPath);
     validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-4);
 }
 
-TEST(parametricMaxFlow, ahremDichotomic) {
+TEST(parametricMinCut, ahremDichotomic) {
     const ParametricInstance instance(ahremPath);
     validateDichotomicScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-5);
 }
 
-TEST(parametricMaxFlow, ahremCompare) {
+TEST(parametricMinCut, ahremCompare) {
     const ParametricInstance instance(ahremPath);
     compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }
 
-TEST(parametricMaxFlow, bonnParametricIBFS) {
+TEST(parametricMinCut, bonnParametricIBFS) {
     const ParametricInstance instance(bonnPath);
     validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-3);
 }
 
-TEST(parametricMaxFlow, bonnDichotomic) {
+TEST(parametricMinCut, bonnDichotomic) {
     const ParametricInstance instance(bonnPath);
     validateDichotomicScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-4);
 }
 
-TEST(parametricMaxFlow, bonnCompare) {
+TEST(parametricMinCut, bonnCompare) {
     const ParametricInstance instance(bonnPath);
     compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }

@@ -1,6 +1,6 @@
-#include "../Algorithms/StaticMaxFlow/IBFS.h"
-#include "../Algorithms/ParametricMaxFlow/ParametricIBFS.h"
-#include "../Algorithms/ParametricMaxFlow/DichotomicScheme.h"
+#include "../Algorithms/StaticMinCut/IBFS.h"
+#include "../Algorithms/ParametricMinCut/ParametricIBFS.h"
+#include "../Algorithms/ParametricMinCut/DichotomicScheme.h"
 #include "../DataStructures/Graph/Graph.h"
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
@@ -61,7 +61,7 @@ inline void usage() noexcept {
     std::cout << "Evaluates the precision of the results computed by parametric IBFS and dichotomic scheme with IBFS. For each "
               << "breakpoint computed by either algorithm, the flow values returned by the two algorithms are compared."
               << "Arguments:" << std::endl;
-    std::cout << "\t-i:   Parametric max-flow instance in binary format." << std::endl;
+    std::cout << "\t-i:   Parametric min-cut instance in binary format." << std::endl;
     std::cout << "\t-o:   Output CSV file to which the statistics are written." << std::endl;
     std::cout << "\t-t:   Maximum tolerance for absolute difference between flow values (default: 1e-06)." << std::endl;
 }

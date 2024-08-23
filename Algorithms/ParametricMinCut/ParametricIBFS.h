@@ -3,7 +3,7 @@
 #include <queue>
 #include <vector>
 
-#include "../StaticMaxFlow/IBFS.h"
+#include "../StaticMinCut/IBFS.h"
 
 #include "../../DataStructures/Container/ExternalKHeap.h"
 #include "../../DataStructures/Graph/Graph.h"

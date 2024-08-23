@@ -6,15 +6,13 @@
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
 
-#include "../Algorithms/StaticMaxFlow/IBFS.h"
-#include "../Algorithms/ParametricMaxFlow/ParametricIBFS.h"
-#include "../Algorithms/StaticMaxFlow/PushRelabel.h"
-#include "../Algorithms/ParametricMaxFlow/RestartableIBFS.h"
-#include "../Algorithms/ParametricMaxFlow/DichotomicScheme.h"
-#include "../Algorithms/ParametricMaxFlow/DichotomicSchemeNoContraction.h"
+#include "../Algorithms/StaticMinCut/IBFS.h"
+#include "../Algorithms/ParametricMinCut/ParametricIBFS.h"
+#include "../Algorithms/StaticMinCut/PushRelabel.h"
+#include "../Algorithms/ParametricMinCut/RestartableIBFS.h"
+#include "../Algorithms/ParametricMinCut/DichotomicScheme.h"
+#include "../Algorithms/ParametricMinCut/DichotomicSchemeNoContraction.h"
 
-using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
-using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
 using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
 using ParametricWrapper = RestartableMaxFlowWrapper<LinearFlowFunction>;
 using DichotomicSchemeWrapper = DichotomicSchemeMaxFlowWrapper<LinearFlowFunction>;
@@ -73,8 +71,8 @@ inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofs
 }
 
 inline void usage() noexcept {
-    std::cout << "Benchmarks a parametric max-flow algorithm. Arguments:" << std::endl;
-    std::cout << "\t-i:   Parametric max-flow instance in binary format." << std::endl;
+    std::cout << "Benchmarks a parametric min-cut algorithm. Arguments:" << std::endl;
+    std::cout << "\t-i:   Parametric min-cut instance in binary format." << std::endl;
     std::cout << "\t-o:   Output CSV file to which the statistics are written." << std::endl;
     std::cout << "\t-e:   Chord scheme only: Desired precision (default: 0)" << std::endl;
     std::cout << "\t-a:   Algorithm. Options are:" << std::endl;

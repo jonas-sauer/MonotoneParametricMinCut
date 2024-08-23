@@ -3,7 +3,7 @@
 #include <vector>
 #include <type_traits>
 
-#include "../StaticMaxFlow/PushRelabel.h"
+#include "../StaticMinCut/PushRelabel.h"
 
 #include "../../DataStructures/Graph/Graph.h"
 #include "../../DataStructures/MaxFlow/FlowFunction.h"

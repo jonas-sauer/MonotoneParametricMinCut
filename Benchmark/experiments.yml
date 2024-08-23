@@ -114,8 +114,8 @@ instances:
       - liver-n6c10-par-10-10
 
 builds:
-  - name: ParametricMaxFlow
-    git: git@github.com:jonas-sauer/ParametricMaxFlow.git
+  - name: MonotoneParametricMinCut
+    git: git@github.com:jonas-sauer/MonotoneParametricMinCut.git
     recursive-clone: true
     configure:
       - args:
@@ -149,41 +149,41 @@ builds:
 revisions:
   - name: 'main-head'
     build_version:
-      'ParametricMaxFlow': 'main'
+      'MonotoneParametricMinCut': 'main'
 
 experiments:
   - name: PBFS
-    use_builds: [ ParametricMaxFlow ]
+    use_builds: [ MonotoneParametricMinCut ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '-a', 'PBFS' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: DS
-    use_builds: [ ParametricMaxFlow ]
+    use_builds: [ MonotoneParametricMinCut ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: DSNoContraction
-    use_builds: [ ParametricMaxFlow ]
+    use_builds: [ MonotoneParametricMinCut ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: restartable
-    use_builds: [ ParametricMaxFlow ]
+    use_builds: [ MonotoneParametricMinCut ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: DSPrecision
-    use_builds: [ ParametricMaxFlow ]
+    use_builds: [ MonotoneParametricMinCut ]
     args: [ 'Benchmark', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@', '@EXTRA_ARGS@' ]
     stdout: out
     output:
       extensions: [ 'out', 'stats.csv' ]
   - name: precision
-    use_builds: [ ParametricMaxFlow ]
+    use_builds: [ MonotoneParametricMinCut ]
     args: [ 'PrecisionExperiment', '-i', '@INSTANCE@', '-o', '@OUTPUT:stats.csv@' ]
     stdout: out
     output:
