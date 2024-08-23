@@ -6,8 +6,6 @@ class Timer {
 
 public:
     using TimePoint = std::chrono::time_point<std::chrono::steady_clock>;
-    using Microseconds = std::chrono::duration<double, std::micro>;
-    using Milliseconds = std::chrono::duration<double, std::milli>;
 
     Timer() : start(timestamp()) {}
 
@@ -16,11 +14,16 @@ public:
     }
 
     [[nodiscard]] inline double elapsedMicroseconds() const noexcept {
-        return std::chrono::duration_cast<Microseconds>(timestamp() - start).count();
+        return elapsedTime<std::chrono::microseconds>();
     }
 
     [[nodiscard]] inline double elapsedMilliseconds() const noexcept {
-        return std::chrono::duration_cast<Milliseconds>(timestamp() - start).count();
+        return elapsedTime<std::chrono::milliseconds>();
+    }
+
+    template<typename UNIT>
+    [[nodiscard]] inline double elapsedTime() const noexcept {
+        return static_cast<double>(std::chrono::duration_cast<UNIT>(timestamp() - start).count());
     }
 
 private:
