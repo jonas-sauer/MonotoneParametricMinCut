@@ -20,7 +20,7 @@ public:
 
 private:
     struct TreeData {
-        TreeData(const size_t n) :
+        explicit TreeData(const size_t n) :
             parentEdge(n, noEdge),
             parentVertex(n , noVertex),
             firstChild(n, noVertex),
@@ -140,7 +140,7 @@ private:
     };
 
     struct Cut {
-        Cut(const int n) : inSinkComponent(n, false) {}
+        explicit Cut(const int n) : inSinkComponent(n, false) {}
 
         inline void compute(const std::vector<int>& dist) {
             for (size_t i = 0; i < dist.size(); i++) {
@@ -151,7 +151,7 @@ private:
         inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
-                if (!inSinkComponent[i]) component.emplace_back(Vertex(i));
+                if (!inSinkComponent[i]) component.emplace_back(i);
             }
             return component;
         }
@@ -159,7 +159,7 @@ private:
         inline std::vector<Vertex> getSinkComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
-                if (inSinkComponent[i]) component.emplace_back(Vertex(i));
+                if (inSinkComponent[i]) component.emplace_back(i);
             }
             return component;
         }

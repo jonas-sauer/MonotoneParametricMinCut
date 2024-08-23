@@ -21,7 +21,7 @@ public:
 
 private:
     struct ExcessBuckets {
-        ExcessBuckets(const int n) :
+        explicit ExcessBuckets(const int n) :
             buckets(n), positionOfVertex(n, -1), maxBucket(-1) {
         }
 
@@ -57,11 +57,11 @@ private:
             maxBucket = std::max(maxBucket, newDist);
         }
 
-        inline bool empty() const noexcept {
+        [[nodiscard]] inline bool empty() const noexcept {
             return maxBucket < 0;
         }
 
-        inline Vertex front() const noexcept {
+        [[nodiscard]] inline Vertex front() const noexcept {
             Assert(!empty(), "Buckets are empty!");
             return buckets[maxBucket].back();
         }
@@ -109,7 +109,7 @@ private:
             minBucket_ = std::min(minBucket_, newDist);
         }
 
-        inline bool empty() const noexcept {
+        [[nodiscard]] inline bool empty() const noexcept {
             return buckets_.empty();
         }
 
@@ -132,7 +132,7 @@ private:
     };
 
     struct TreeData {
-        TreeData(const size_t n) :
+        explicit TreeData(const size_t n) :
             parentEdge(n, noEdge),
             parentVertex(n , noVertex),
             firstChild(n, noVertex),
@@ -184,7 +184,7 @@ private:
     };
 
     struct Cut {
-        Cut(const int n) : inSinkComponent(n, false) {}
+        explicit Cut(const int n) : inSinkComponent(n, false) {}
 
         inline void compute(const std::vector<int>& dist) {
             for (size_t i = 0; i < dist.size(); i++) {
@@ -192,18 +192,18 @@ private:
             }
         }
 
-        inline std::vector<Vertex> getSourceComponent() const noexcept {
+        [[nodiscard]] inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
-                if (!inSinkComponent[i]) component.emplace_back(Vertex(i));
+                if (!inSinkComponent[i]) component.emplace_back(i);
             }
             return component;
         }
 
-        inline std::vector<Vertex> getSinkComponent() const noexcept {
+        [[nodiscard]] inline std::vector<Vertex> getSinkComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
-                if (inSinkComponent[i]) component.emplace_back(Vertex(i));
+                if (inSinkComponent[i]) component.emplace_back(i);
             }
             return component;
         }
@@ -235,15 +235,15 @@ public:
         runAfterInitialize();
     }
 
-    inline std::vector<Vertex> getSourceComponent() const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSourceComponent() const noexcept {
         return cut.getSourceComponent();
     }
 
-    inline std::vector<Vertex> getSinkComponent() const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSinkComponent() const noexcept {
         return cut.getSinkComponent();
     }
 
-    inline const std::vector<bool>& getInSinkComponent() const noexcept {
+    [[nodiscard]] inline const std::vector<bool>& getInSinkComponent() const noexcept {
         return cut.inSinkComponent;
     }
 
@@ -260,7 +260,6 @@ public:
         return edges;
     }
 
-    //TODO: Maintain the flow value throughout the algorithm.
     inline FlowType getFlowValue() const noexcept {
         FlowType flow = 0;
         for (const Vertex vertex : graph.vertices()) {
@@ -420,7 +419,6 @@ private:
         treeData.removeVertex(vertex);
     }
 
-    //TODO: Three-pass/hybrid adoption
     template<int DIRECTION>
     inline void adoptOrphans() noexcept {
         while (!orphans[DIRECTION].empty()) {

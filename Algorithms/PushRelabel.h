@@ -19,12 +19,44 @@ public:
     using FlowType = MaxFlowInstance::FlowType;
     using GraphType = MaxFlowInstance::GraphType;
 
+    struct NoMeasurements {
+        inline void startTimer() noexcept {}
+        inline void measureUpdateTime() noexcept {}
+        inline void measureFlowTime() noexcept {}
+        [[nodiscard]] inline std::string getCSV() const noexcept { return ""; }
+    };
+
+    struct Measurements {
+        inline void startTimer() noexcept {
+            timer.restart();
+        }
+
+        inline void measureUpdateTime() noexcept {
+            updateTime += timer.elapsedMicroseconds();
+        }
+
+        inline void measureFlowTime() noexcept {
+            flowTime += timer.elapsedMicroseconds();
+        }
+
+        [[nodiscard]] inline std::string getCSV() const noexcept {
+            return std::to_string(updateTime) + "," +
+                   std::to_string(flowTime);
+        }
+
+        double updateTime = 0;
+        double flowTime = 0;
+        Timer timer;
+    };
+
+    using MeasurementsType = std::conditional_t<MEASUREMENTS, Measurements, NoMeasurements>;
+
 private:
     inline static constexpr int VertexToEdgeRatio = 12;
 
 public:
     struct VertexBuckets {
-        VertexBuckets(const int n) :
+        explicit VertexBuckets(const int n) :
             activeVertices(n), inactiveVertices(n), isVertexActive(n, false), positionOfVertex(Vector::id<int>(n)), maxActiveBucket(-1), maxBucket(-1) {
         }
 
@@ -136,12 +168,12 @@ public:
     };
 
     struct Cut {
-        Cut(const int n) : inSinkComponent(n, false) {}
+        explicit Cut(const int n) : inSinkComponent(n, false) {}
 
         inline std::vector<Vertex> getSourceComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
-                if (!inSinkComponent[i]) component.emplace_back(Vertex(i));
+                if (!inSinkComponent[i]) component.emplace_back(i);
             }
             return component;
         }
@@ -149,7 +181,7 @@ public:
         inline std::vector<Vertex> getSinkComponent() const noexcept {
             std::vector<Vertex> component;
             for (size_t i = 0; i < inSinkComponent.size(); i++) {
-                if (inSinkComponent[i]) component.emplace_back(Vertex(i));
+                if (inSinkComponent[i]) component.emplace_back(i);
             }
             return component;
         }
@@ -179,21 +211,19 @@ public:
 
 public:
     inline void run() noexcept {
-        if (MEASUREMENTS) timer.restart();
+        measurements.startTimer();
         initialize();
         runAfterInitialize();
-        if(MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
+        measurements.measureFlowTime();
     }
 
     inline void continueAfterUpdate() noexcept {
-        if (MEASUREMENTS) timer.restart();
+        measurements.startTimer();
         updateCapacities();
-        if (MEASUREMENTS) {
-            updateTime += timer.elapsedMicroseconds();
-            timer.restart();
-        }
+        measurements.measureUpdateTime();
+        measurements.startTimer();
         runAfterInitialize();
-        if (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
+        measurements.measureFlowTime();
     }
 
     inline std::vector<Vertex> getSourceComponent() const noexcept {
@@ -230,12 +260,8 @@ public:
         return flow;
     }
 
-    inline double getUpdateTime() const noexcept {
-        return updateTime;
-    }
-
-    inline double getFlowTime() const noexcept {
-        return flowTime;
+    inline std::string getMeasurementsCSV() const noexcept {
+        return measurements.getCSV();
     }
 
 private:
@@ -481,8 +507,5 @@ private:
     int workSinceLastUpdate;
     const int workLimit;
     Cut cut;
-
-    double updateTime = 0;
-    double flowTime = 0;
-    Timer timer;
+    MeasurementsType measurements;
 };

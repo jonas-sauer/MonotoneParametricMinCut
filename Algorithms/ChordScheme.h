@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <type_traits>
 
 #include "PushRelabel.h"
 
@@ -21,6 +22,52 @@ public:
     using ParametricInstance = ParametricMaxFlowInstance<FlowFunction>;
     using ParametricWrapper = ChordSchemeMaxFlowWrapper<FlowFunction>;
     using SearchAlgorithm = SEARCH_ALGORITHM;
+
+    struct NoMeasurements {
+        inline void startTimer() noexcept {}
+        inline void measureContractionTime() noexcept {}
+        inline void measureFlowTime() noexcept {}
+        inline void addToTotalVertices(const size_t) noexcept {}
+        inline void print() const noexcept {}
+        [[nodiscard]] inline std::string getCSV() const noexcept { return ""; }
+    };
+
+    struct Measurements {
+        inline void startTimer() noexcept {
+            timer.restart();
+        }
+
+        inline void measureContractionTime() noexcept {
+            contractionTime += timer.elapsedMicroseconds();
+        }
+
+        inline void measureFlowTime() noexcept {
+            flowTime += timer.elapsedMicroseconds();
+        }
+
+        inline void addToTotalVertices(const size_t value) noexcept {
+            totalVertices += value;
+        }
+
+        inline void print() const noexcept {
+            std::cout << "Contraction time: " << String::musToString(contractionTime) << std::endl;
+            std::cout << "Flow time: " << String::musToString(flowTime) << std::endl;
+            std::cout << "#Vertices (total): " << totalVertices << std::endl;
+        }
+
+        [[nodiscard]] inline std::string getCSV() const noexcept {
+            return std::to_string(contractionTime) + "," +
+                   std::to_string(flowTime) + "," +
+                   std::to_string(totalVertices);
+        }
+
+        double contractionTime = 0;
+        double flowTime = 0;
+        long long totalVertices = 0;
+        Timer timer;
+    };
+
+    using MeasurementsType = std::conditional_t<MEASUREMENTS, Measurements, NoMeasurements>;
 
     struct Solution {
         Solution(const ParametricWrapper& wrapper, const SearchAlgorithm& search, const double alpha) :
@@ -54,27 +101,23 @@ public:
             }
         }
         breakpoints.emplace_back(instance.alphaMin);
-        timer.restart();
+        measurements.startTimer();
         ParametricWrapper contractedWrapper = wrapper.contractSourceAndSinkComponents(solMin.inSinkComponent, solMax.inSinkComponent);
-        if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
+        measurements.measureContractionTime();
         recurse(instance.alphaMin, instance.alphaMax, solMin, solMax, contractedWrapper, wrapper);
         if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax, wrapper);
-        if constexpr (MEASUREMENTS) {
-            std::cout << "Contraction time: " << String::musToString(contractionTime) << std::endl;
-            std::cout << "Flow time: " << String::musToString(flowTime) << std::endl;
-            std::cout << "#Vertices (total): " << totalVertices << std::endl;
-        }
+        measurements.print();
     }
 
-    inline const std::vector<double>& getBreakpoints() const noexcept {
+    [[nodiscard]] inline const std::vector<double>& getBreakpoints() const noexcept {
         return breakpoints;
     }
 
-    inline const std::vector<double>& getVertexBreakpoints() const noexcept {
+    [[nodiscard]] inline const std::vector<double>& getVertexBreakpoints() const noexcept {
         return breakpointOfVertex;
     }
 
-    inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
         std::vector<Vertex> sinkComponent;
         for (const Vertex vertex : instance.graph.vertices()) {
             if (breakpointOfVertex[vertex] <= alpha) continue;
@@ -83,7 +126,7 @@ public:
         return sinkComponent;
     }
 
-    inline double getFlowValue(const double alpha) const noexcept {
+    [[nodiscard]] inline double getFlowValue(const double alpha) const noexcept {
         double flow = 0;
         for (const Vertex from : instance.graph.vertices()) {
             if (breakpointOfVertex[from] > alpha) continue;
@@ -96,30 +139,19 @@ public:
         return flow;
     }
 
-    inline double getContractionTime() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return contractionTime;
-    }
-
-    inline double getFlowTime() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return flowTime;
-    }
-
-    inline long long getTotalVertices() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return totalVertices;
+    inline std::string getMeasurementsCSV() const noexcept {
+        return measurements.getCSV();
     }
 
 private:
     inline Solution runSearch(ParametricWrapper& wrapper, const double alpha) noexcept {
-        if constexpr (MEASUREMENTS) timer.restart();
-        if constexpr (MEASUREMENTS) totalVertices += wrapper.graph.numVertices();
+        measurements.startTimer();
+        measurements.addToTotalVertices(wrapper.graph.numVertices());
         wrapper.setAlpha(alpha);
         SearchAlgorithm search(wrapper);
         search.run();
         Solution result(wrapper, search, alpha);
-        if constexpr (MEASUREMENTS) flowTime += timer.elapsedMicroseconds();
+        measurements.measureFlowTime();
         return result;
     }
 
@@ -142,10 +174,10 @@ private:
             return;
         }
 
-        if constexpr (MEASUREMENTS) timer.restart();
+        measurements.startTimer();
         ParametricWrapper wrapperLeft = wrapper.contractSinkComponent(solMid.inSinkComponent);
         ParametricWrapper wrapperRight = wrapper.contractSourceComponent(solMid.inSinkComponent);
-        if constexpr (MEASUREMENTS) contractionTime += timer.elapsedMicroseconds();
+        measurements.measureContractionTime();
         recurse(left, mid, solLeft, solMid, wrapperLeft, wrapper);
         recurse(mid, right, solMid, solRight, wrapperRight, evalWrapper);
     }
@@ -168,9 +200,5 @@ private:
     const double epsilon;
     std::vector<double> breakpoints;
     std::vector<double> breakpointOfVertex;
-
-    double contractionTime = 0;
-    double flowTime = 0;
-    long long totalVertices = 0;
-    Timer timer;
+    MeasurementsType measurements;
 };

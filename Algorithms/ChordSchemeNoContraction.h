@@ -57,15 +57,15 @@ public:
         if (instance.alphaMax < INFTY) addSolution(instance.alphaMax, solMax);
     }
 
-    inline const std::vector<double>& getBreakpoints() const noexcept {
+    [[nodiscard]] inline const std::vector<double>& getBreakpoints() const noexcept {
         return breakpoints;
     }
 
-    inline const std::vector<double>& getVertexBreakpoints() const noexcept {
+    [[nodiscard]] inline const std::vector<double>& getVertexBreakpoints() const noexcept {
         return breakpointOfVertex;
     }
 
-    inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
         std::vector<Vertex> sinkComponent;
         for (const Vertex vertex : instance.graph.vertices()) {
             if (breakpointOfVertex[vertex] <= alpha) continue;
@@ -74,7 +74,7 @@ public:
         return sinkComponent;
     }
 
-    inline double getFlowValue(const double alpha) const noexcept {
+    [[nodiscard]] inline double getFlowValue(const double alpha) const noexcept {
         double flow = 0;
         for (const Vertex from : instance.graph.vertices()) {
             if (breakpointOfVertex[from] > alpha) continue;

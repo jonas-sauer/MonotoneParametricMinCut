@@ -25,9 +25,104 @@ public:
     using StaticWrapper = RestartableMaxFlowWrapper<FlowFunction>;
     using IBFSType = IBFS<StaticWrapper>;
 
+    struct NoMeasurements {
+        inline void startTimer() noexcept {}
+        inline void measureInitTime() noexcept {}
+        inline void measureUpdateTime() noexcept {}
+        inline void measureReconnectTime() noexcept {}
+        inline void measureDrainTime() noexcept {}
+        inline void countIteration() noexcept {}
+        inline void countBottleneck() noexcept {}
+        inline void countAdoption(const uint) noexcept {}
+        inline void countDrain() noexcept {}
+        inline void print() const noexcept {}
+        [[nodiscard]] inline std::string getCSV() const noexcept { return ""; }
+    };
+
+    struct Measurements {
+        inline void startTimer() noexcept {
+            timer.restart();
+        }
+
+        inline void measureInitTime() noexcept {
+            initTime += timer.elapsedMicroseconds();
+        }
+
+        inline void measureUpdateTime() noexcept {
+            updateTime += timer.elapsedMicroseconds();
+        }
+
+        inline void measureReconnectTime() noexcept {
+            reconnectTime += timer.elapsedMicroseconds();
+        }
+
+        inline void measureDrainTime() noexcept {
+            drainTime += timer.elapsedMicroseconds();
+        }
+
+        inline void countIteration() noexcept {
+            numIterations++;
+        }
+
+        inline void countBottleneck() noexcept {
+            numBottlenecks++;
+        }
+
+        inline void countAdoption(const uint dist) noexcept {
+            numAdoptions++;
+            avgDistance += dist;
+        }
+
+        inline void countDrain() noexcept {
+            numDrains++;
+        }
+
+        inline void print() const noexcept {
+            std::cout << "#Iterations: " << numIterations << std::endl;
+            std::cout << "#Bottlenecks: " << numBottlenecks << std::endl;
+            std::cout << "#Adoptions: " << numAdoptions << std::endl;
+            std::cout << "Avg. distance: " << getAvgDistance() << std::endl;
+            std::cout << "#Drains: " << numDrains << std::endl;
+            std::cout << "Init time: " << String::musToString(initTime) << std::endl;
+            std::cout << "Update time: " << String::musToString(updateTime) << std::endl;
+            std::cout << "Reconnect time: " << String::musToString(reconnectTime) << std::endl;
+            std::cout << "Drain time: " << String::musToString(drainTime) << std::endl;
+            std::cout << "Drain time: " << String::musToString(drainTime) << std::endl;
+        }
+
+        [[nodiscard]] inline std::string getCSV() const noexcept {
+            return std::to_string(numIterations) + "," +
+                   std::to_string(numBottlenecks) + "," +
+                   std::to_string(numAdoptions) + "," +
+                   std::to_string(getAvgDistance()) + "," +
+                   std::to_string(numDrains) + "," +
+                   std::to_string(initTime) + "," +
+                   std::to_string(updateTime) + "," +
+                   std::to_string(reconnectTime) + "," +
+                   std::to_string(drainTime);
+        }
+
+        [[nodiscard]] inline double getAvgDistance() const noexcept {
+            return avgDistance/static_cast<double>(numAdoptions);
+        }
+
+        double initTime = 0;
+        double updateTime = 0;
+        double reconnectTime = 0;
+        double drainTime = 0;
+        long long numIterations = 0;
+        long long numBottlenecks = 0;
+        long long numAdoptions = 0;
+        long long avgDistance = 0;
+        long long numDrains = 0;
+        Timer timer;
+    };
+
+    using MeasurementsType = std::conditional_t<MEASUREMENTS, Measurements, NoMeasurements>;
+
 private:
     struct ExcessBuckets {
-        ExcessBuckets(const int n) :
+        explicit ExcessBuckets(const int n) :
             positionOfVertex_(n, -1) {
         }
 
@@ -79,7 +174,7 @@ private:
     };
 
     struct OrphanBuckets {
-        OrphanBuckets(const int n) :
+        explicit OrphanBuckets(const int n) :
            positionOfVertex_(n, -1), minBucket_(INFTY) {
         }
 
@@ -151,7 +246,7 @@ private:
     };
 
     struct TreeData {
-        TreeData(const size_t n) :
+        explicit TreeData(const size_t n) :
             edgeToParent_(n, noEdge),
             children_(n),
             childIndex_(n, -1) {
@@ -198,7 +293,7 @@ private:
     };
 
 public:
-    ParametricIBFS(const ParametricMaxFlowInstance<FlowFunction>& instance) :
+    explicit ParametricIBFS(const ParametricMaxFlowInstance<FlowFunction>& instance) :
         instance_(instance),
         graph_(instance.graph),
         source_(instance.source),
@@ -228,37 +323,27 @@ public:
     };
 
     inline void run() noexcept {
-        Timer timer;
+        measurements.startTimer();
         initialize();
-        if constexpr (MEASUREMENTS) initTime = timer.elapsedMicroseconds();
+        measurements.measureInitTime();
         double alpha = alphaMin_;
         while (isNumberLessThanAbsolute(alpha, alphaMax_)) {
-            if constexpr (MEASUREMENTS) numIterations++;
+            measurements.countIteration();
             if (alphaQ_.empty()) break;
             assert(alphaQ_.front()->value_ > alpha);
             alpha = alphaQ_.front()->value_;
             if (alpha > alphaMax_) break;
-            if constexpr (MEASUREMENTS) timer.restart();
+            measurements.startTimer();
             updateTree(alpha);
-            if constexpr (MEASUREMENTS) updateTime += timer.elapsedMicroseconds();
-            if constexpr (MEASUREMENTS) timer.restart();
+            measurements.measureUpdateTime();
+            measurements.startTimer();
             reconnectTree(alpha);
-            if constexpr (MEASUREMENTS) reconnectTime += timer.elapsedMicroseconds();
-            if constexpr (MEASUREMENTS) timer.restart();
+            measurements.measureReconnectTime();
+            measurements.startTimer();
             drainExcess(alpha);
-            if constexpr (MEASUREMENTS) drainTime += timer.elapsedMicroseconds();
+            measurements.measureDrainTime();
         }
-        if constexpr (MEASUREMENTS) {
-            std::cout << "#Iterations: " << numIterations << std::endl;
-            std::cout << "#Bottlenecks: " << numBottlenecks << std::endl;
-            std::cout << "#Adoptions: " << numAdoptions << std::endl;
-            std::cout << "Avg. distance: " << getAvgDistance() << std::endl;
-            std::cout << "#Drains: " << numDrains << std::endl;
-            std::cout << "Init time: " << String::musToString(initTime) << std::endl;
-            std::cout << "Update time: " << String::musToString(updateTime) << std::endl;
-            std::cout << "Reconnect time: " << String::musToString(reconnectTime) << std::endl;
-            std::cout << "Drain time: " << String::musToString(drainTime) << std::endl;
-        }
+        measurements.print();
     }
 
     inline const std::vector<double>& getBreakpoints() const noexcept {
@@ -291,49 +376,8 @@ public:
         return flow;
     }
 
-    inline double getInitTime() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return initTime;
-    }
-
-    inline double getUpdateTime() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return updateTime;
-    }
-
-    inline double getReconnectTime() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return reconnectTime;
-    }
-
-    inline double getDrainTime() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return drainTime;
-    }
-
-    inline long long getNumBottlenecks() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return numBottlenecks;
-    }
-
-    inline long long getNumIterations() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return numIterations;
-    }
-
-    inline long long getNumAdoptions() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return numAdoptions;
-    }
-
-    inline double getAvgDistance() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return avgDistance/static_cast<double>(numAdoptions);
-    }
-
-    inline long long getNumDrains() const noexcept {
-        // if (!MEASUREMENTS) throw std::runtime_error("Detailed measurements are only done if template parameter MEASUREMENTS is true");
-        return numDrains;
+    inline std::string getMeasurementsCSV() const noexcept {
+        return measurements.getCSV();
     }
 
 private:
@@ -344,44 +388,6 @@ private:
         initializeSinkTree(sinkComponent);
         createInitialExcesses(sinkComponent, initialResidualCapacity);
         drainExcess(alphaMin_);
-
-        /*#ifndef NDEBUG
-        for (Vertex v : graph_.vertices()) {
-            if (v == source_)
-                continue;
-            for (Edge e : graph_.edgesFrom(v)) {
-                if (breakpointOfVertex_[v] == alphaMin_ || breakpointOfVertex_[graph_.get(ToVertex, e)] == alphaMin_)
-                    continue;
-                if (graph_.get(ToVertex, e) != sink_) {
-                    std::cout << "Edge connecting " << v << " and " << graph_.get(ToVertex, e) << std::endl;
-                    std::cout << "Residual capacity of edge " << e << " is " << residualCapacity_[e].eval(instance_.alphaMin) << ", initial residual capacity is " << initialResidualCapacity[e] << std::endl;
-                    std::cout << "Residual capacity of reverse edge " << e << " is " << residualCapacity_[instance_.graph.get(ReverseEdge, e)].eval(instance_.alphaMin) << ", initial residual capacity is " << initialResidualCapacity[instance_.graph.get(ReverseEdge, e)] << std::endl;
-                    std::cout << "Capacity of edge " << e << " is " << graph_.get(Capacity, e) << " and " << graph_.get(Capacity, graph_.get(ReverseEdge, e)) << " for reverse edge" << std::endl;
-                    assert(pmf::doubleEqualAbs(residualCapacity_[e].eval(instance_.alphaMin), initialResidualCapacity[e]));
-                }
-            }
-        }
-
-        for (Vertex v : initialFlow.getSinkComponent()) {
-            if (v != instance_.sink && treeData_.edgeToParent_[v] == noEdge) {
-                std::cout << "Vertex " << v << " in initial flow sink, but not parametric flow sink" << std::endl;
-            }
-        }
-
-        std::vector<bool> initialSource(n, false);
-        for (Vertex v : initialFlow.getSourceComponent())
-            initialSource[v] = true;
-
-        for (Vertex v : initialFlow.getSourceComponent()) {
-            if (v != instance_.source && treeData_.edgeToParent_[v] != noEdge) {
-                for (Vertex w = v; initialSource[w]; w = graph_.get(ToVertex, treeData_.edgeToParent_[w])) {
-                    std::cout << "Vertex " << w << " in initial flow source, but not parametric flow source" << std::endl;
-                    std::cout << "Residual capacity of parent edge " << residualCapacity_[treeData_.edgeToParent_[w]].eval(alphaMin_) << " and initial residual capacity is " << initialResidualCapacity[treeData_.edgeToParent_[w]] <<  std::endl;
-                }
-                std::cout << std::endl << "Reached shared sink component" << std::endl << std::endl;
-            }
-        }
-#endif*/
     }
 
     inline void initializeSinkTree(std::vector<Vertex>& sinkComponent) noexcept {
@@ -437,7 +443,7 @@ private:
         assert(orphans_.empty());
         assert(threePassOrphans_.empty());
         while (!alphaQ_.empty() && alphaQ_.front()->value_ == nextAlpha) {
-            if constexpr (MEASUREMENTS) numBottlenecks++;
+            measurements.countBottleneck();
             const Vertex v(alphaQ_.front() - &(rootAlpha_[0]));
             const Edge e = treeData_.edgeToParent_[v];
             assert(e != noEdge);
@@ -467,20 +473,14 @@ private:
             orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) {
-                if constexpr (MEASUREMENTS) {
-                    numAdoptions++;
-                    avgDistance += dist_[v];
-                }
+                measurements.countAdoption(dist_[v]);
                 continue;
             }
             treeData_.removeChildren(v, [&](const Vertex child, const Edge e) {
                 removeTreeEdge<false>(e, child, v, nextAlpha);
             });
             if (adoptWithNewDist(v, nextAlpha)) {
-                if constexpr (MEASUREMENTS) {
-                    numAdoptions++;
-                    avgDistance += dist_[v];
-                }
+                measurements.countAdoption(dist_[v]);
                 continue;
             }
             moved.emplace_back(v);
@@ -553,10 +553,7 @@ private:
                 // Pass 3 (only if pass 2 succeeded): Finalize the adoption and update the distances of potential children.
                 //std::cout << "Third pass of " << v << " with distance " << dist_[v] << std::endl;
                 reconnectTreeThirdPass(v, nextAlpha);
-                if constexpr (MEASUREMENTS) {
-                    numAdoptions++;
-                    avgDistance += dist_[v];
-                }
+                measurements.countAdoption(dist_[v]);
             } else {
                 // If pass 2 failed, v leaves the sink component.
                 moved.emplace_back(v);
@@ -581,10 +578,7 @@ private:
             const Vertex v = orphans_.pop();
             excessVertices_.removeVertex(v, dist_[v]);
             if (adoptWithSameDist(v, nextAlpha)) {
-                if constexpr (MEASUREMENTS) {
-                    numAdoptions++;
-                    avgDistance += dist_[v];
-                }
+                measurements.countAdoption(dist_[v]);
                 continue;
             }
             //std::cout << "First pass of " << v << " with distance " << dist_[v] << " failed!" << std::endl;
@@ -675,7 +669,7 @@ private:
 
     inline void drainExcess(const double nextAlpha) noexcept {
         while (!excessVertices_.empty()) {
-            if constexpr (MEASUREMENTS) numDrains++;
+            measurements.countDrain();
             const Vertex v = excessVertices_.pop();
             if (v == sink_) continue;
             assert(dist_[v] != INFTY);
@@ -859,14 +853,5 @@ private:
     int currentTimestamp_;
 
     std::vector<FlowFunction> excess_at_vertex_;
-
-    double initTime = 0;
-    double updateTime = 0;
-    double reconnectTime = 0;
-    double drainTime = 0;
-    long long numIterations = 0;
-    long long numBottlenecks = 0;
-    long long numAdoptions = 0;
-    long long avgDistance = 0;
-    long long numDrains = 0;
+    MeasurementsType measurements;
 };

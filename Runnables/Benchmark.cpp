@@ -26,13 +26,7 @@ inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream&
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime,iterations,bottlenecks,adoptions,avgDistance,drains,initTime,updateTime,reconnectTime,drainTime\n";
     out << rowPrefix << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
-           std::to_string(algo.getNumIterations()) + "," +
-           std::to_string(algo.getNumBottlenecks()) + "," +
-           std::to_string(algo.getNumAdoptions()) + "," +
-           std::to_string(algo.getAvgDistance()) + "," +
-           std::to_string(algo.getNumDrains()) + "," +
-           std::to_string(algo.getInitTime()) + "," + std::to_string(algo.getUpdateTime()) + "," +
-           std::to_string(algo.getReconnectTime()) + "," + std::to_string(algo.getDrainTime()) + "\n";
+           algo.getMeasurementsCSV() + "\n";
 }
 
 template<typename ALGO>
@@ -43,8 +37,7 @@ inline void runChordScheme(const ParametricInstance& instance, const double epsi
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime,contractionTime,flowTime,totalVertices\n";
     out << rowPrefix << std::to_string(algo.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
-           std::to_string(algo.getContractionTime()) + "," + std::to_string(algo.getFlowTime()) + "," +
-           std::to_string(algo.getTotalVertices()) + "\n";
+           algo.getMeasurementsCSV() + "\n";
 }
 
 template<typename ALGO>
@@ -76,7 +69,7 @@ inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofs
 
     out << headerPrefix + "breakpoints,runtime,updateTime,flowTime\n";
     out << rowPrefix << std::to_string(breakpointGetter.getBreakpoints().size()) + "," + std::to_string(runtime) + "," +
-           std::to_string(algo.getUpdateTime()) + "," + std::to_string(algo.getFlowTime()) + "\n";
+           algo.getMeasurementsCSV() + "\n";
 }
 
 inline void usage() noexcept {
