@@ -2,16 +2,16 @@
 
 #include <vector>
 
-#include "PushRelabel.h"
+#include "../StaticMaxFlow/PushRelabel.h"
 
-#include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowFunction.h"
-#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
+#include "../../DataStructures/Graph/Graph.h"
+#include "../../DataStructures/MaxFlow/FlowFunction.h"
+#include "../../DataStructures/MaxFlow/MaxFlowInstance.h"
 
-#include "../Helpers/Assert.h"
-#include "../Helpers/Meta.h"
-#include "../Helpers/Types.h"
-#include "../Helpers/Vector/Vector.h"
+#include "../../Helpers/Assert.h"
+#include "../../Helpers/Meta.h"
+#include "../../Helpers/Types.h"
+#include "../../Helpers/Vector/Vector.h"
 
 template<Meta::Derived<FlowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM>
 class DichotomicSchemeNoContraction {

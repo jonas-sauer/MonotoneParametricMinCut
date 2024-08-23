@@ -5,12 +5,12 @@
 
 #include "../Helpers/Console/Progress.h"
 
-#include "../Algorithms/ExcessesIBFS.h"
-#include "../Algorithms/IBFS.h"
-#include "../Algorithms/ParametricIBFS.h"
-#include "../Algorithms/PushRelabel.h"
-#include "../Algorithms/RestartableIBFS.h"
-#include "../Algorithms/DichotomicScheme.h"
+#include "../Algorithms/StaticMaxFlow/ExcessesIBFS.h"
+#include "../Algorithms/StaticMaxFlow/IBFS.h"
+#include "../Algorithms/ParametricMaxFlow/ParametricIBFS.h"
+#include "../Algorithms/StaticMaxFlow/PushRelabel.h"
+#include "../Algorithms/ParametricMaxFlow/RestartableIBFS.h"
+#include "../Algorithms/ParametricMaxFlow/DichotomicScheme.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
@@ -26,11 +26,6 @@ TEST(parametricMaxFlow, smallTest) {
     algo.run();
 
     const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
-
-    for (uint i = 0; i < 5; i++) {
-        std::cout << "Vertex " << i + 1 << " has value " << vertexBreakpoints[i] << std::endl;
-    }
-
     EXPECT_DOUBLE_EQ(vertexBreakpoints[0], 0.0);
     EXPECT_DOUBLE_EQ(vertexBreakpoints[1], 0.5);
     EXPECT_DOUBLE_EQ(vertexBreakpoints[2], 0.3333333333333333);

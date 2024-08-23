@@ -104,7 +104,7 @@ def createLiverTable(frames):
 					'bottlenecksPerBreakpoint': 'bottlenecksPerBreakpoint_PBFS',
 					'adoptionsPerBottleneck': 'adoptionsPerBottleneck_PBFS',
 					'avgDistance': 'avgDistance_PBFS', 'loopToInitRatio': 'loopToInitRatio_PBFS'}
-	pbfs = selectColumns(frames['parametricIBFS'], selectorPBFS)
+	pbfs = selectColumns(frames['PBFS'], selectorPBFS)
 
 	dichotomicIBFS = frames['DS'].loc[lambda df: df['algorithm'] == 'DS[IBFS]']
 	selectorDichotomicIBFS = {'instance': 'instance', 'runtime': 'runtime_DS[IBFS]',
@@ -151,11 +151,13 @@ def createEpsilonTable(frames):
 	tbl['exponent'] = np.abs(np.log10(tbl['exponent'])).replace(np.inf, 1000).astype(int)
 	np.seterr(divide = 'warn')
 	tbl = tbl.sort_values(by=['exponent'])
+	print(tbl)
 
 	pivot = tbl.pivot_table(index=['exponent'], columns=['instance'], values=['breakpoints', 'slowdown'])
 	pivot['breakpoints'] = pivot['breakpoints']/pivot['breakpoints'].iloc[-1]
+	print(pivot)
 	flatten(pivot)
-	pivot.to_csv("results/epsilonTable.csv", index=False, sep='\t')
+	pivot.to_csv("results/epsilonTable.csv", index=True, sep='\t')
 
 if __name__ == "__main__":
 	if not os.path.exists("results/"):

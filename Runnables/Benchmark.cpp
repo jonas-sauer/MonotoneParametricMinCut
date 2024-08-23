@@ -6,12 +6,12 @@
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
 
-#include "../Algorithms/IBFS.h"
-#include "../Algorithms/ParametricIBFS.h"
-#include "../Algorithms/PushRelabel.h"
-#include "../Algorithms/RestartableIBFS.h"
-#include "../Algorithms/DichotomicScheme.h"
-#include "../Algorithms/DichotomicSchemeNoContraction.h"
+#include "../Algorithms/StaticMaxFlow/IBFS.h"
+#include "../Algorithms/ParametricMaxFlow/ParametricIBFS.h"
+#include "../Algorithms/StaticMaxFlow/PushRelabel.h"
+#include "../Algorithms/ParametricMaxFlow/RestartableIBFS.h"
+#include "../Algorithms/ParametricMaxFlow/DichotomicScheme.h"
+#include "../Algorithms/ParametricMaxFlow/DichotomicSchemeNoContraction.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
