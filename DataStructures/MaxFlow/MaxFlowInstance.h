@@ -459,16 +459,16 @@ public:
 };
 
 template<Meta::Derived<FlowFunction> FLOW_FUNCTION>
-class ChordSchemeMaxFlowWrapper {
+class DichotomicSchemeMaxFlowWrapper {
 public:
     using FlowFunction = FLOW_FUNCTION;
-    using Type = ChordSchemeMaxFlowWrapper<FlowFunction>;
+    using Type = DichotomicSchemeMaxFlowWrapper<FlowFunction>;
     using InstanceType = ParametricMaxFlowInstance<FlowFunction>;
     using GraphType = InstanceType::GraphType;
     using FlowType = InstanceType::FlowType;
 
 public:
-    ChordSchemeMaxFlowWrapper(const InstanceType& instance, const double alpha) :
+    DichotomicSchemeMaxFlowWrapper(const InstanceType& instance, const double alpha) :
         graph(instance.graph),
         source(instance.source),
         sink(instance.sink),
@@ -480,10 +480,10 @@ public:
         }
     }
 
-    ChordSchemeMaxFlowWrapper(const InstanceType& instance) :
-        ChordSchemeMaxFlowWrapper(instance, instance.alphaMin) {}
+    DichotomicSchemeMaxFlowWrapper(const InstanceType& instance) :
+            DichotomicSchemeMaxFlowWrapper(instance, instance.alphaMin) {}
 
-    ChordSchemeMaxFlowWrapper(const Type& parent, const GraphType& graph, const Vertex source, const Vertex sink, const std::vector<Vertex>& newToOldVertex) :
+    DichotomicSchemeMaxFlowWrapper(const Type& parent, const GraphType& graph, const Vertex source, const Vertex sink, const std::vector<Vertex>& newToOldVertex) :
         graph(graph),
         source(source),
         sink(sink),

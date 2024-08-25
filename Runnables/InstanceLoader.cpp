@@ -30,11 +30,11 @@ inline void loadParametricFromDimacs(const std::string& inputFile, const std::st
 }
 
 inline void usage() noexcept {
-    std::cout << "Parse static or parametric max-flow instances. Arguments:" << std::endl;
+    std::cout << "Parse static or parametric min-cut instances. Arguments:" << std::endl;
     std::cout << "\t-m:   Mode:" << std::endl;
-    std::cout << "\t\tstatic:     Converts static max-flow instance in DIMACS format to binary format." << std::endl;
-    std::cout << "\t\tparametric: Converts parametric max-flow instance in DIMACS format to binary format." << std::endl;
-    std::cout << "\t\tconvert:    Converts static to parametric max-flow instance, both in binary format." << std::endl;
+    std::cout << "\t\tstatic:     Converts static min-cut instance in DIMACS format to binary format." << std::endl;
+    std::cout << "\t\tparametric: Converts parametric min-cut instance in DIMACS format to binary format." << std::endl;
+    std::cout << "\t\tconvert:    Converts static to parametric min-cut instance, both in binary format." << std::endl;
     std::cout << "\t\t            By default, edges retain their static weights. For source- and sink-incident edges," << std::endl;
     std::cout << "\t\t            the parameters -p_src and -p_snk control the probability that the static weight" << std::endl;
     std::cout << "\t\t            is replaced with a random parametric one. In this case, both coefficients are" << std::endl;

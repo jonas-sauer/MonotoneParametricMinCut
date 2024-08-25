@@ -26,8 +26,8 @@ To download and prepare the instances used in our experiments, run
 
 # Using Your Own Instances
 This framework supports two types of instances:
-* Instances for the static max-flow problem in DIMACS format (`.max` file extension). These are made parametric by randomly assigning parametric weights to the source-incident edges. See `Runnables/InstanceLoader.cpp` for more details on how this is done.
-* Instances for the (source-sink-mononote) max-flow problem in our own DIMACS-like format (`.pmax` file extension).
+* Instances for the static max-flow-min-cut problem in DIMACS format (`.max` file extension). These are made parametric by randomly assigning parametric weights to the source-incident edges. See `Runnables/InstanceLoader.cpp` for more details on how this is done.
+* Instances for the (source-sink-monotone) parametric min-cut problem in our own DIMACS-like format (`.pmax` file extension).
 
 All inputs must be placed inside the `Data/RawInstances/` directory or a subdirectory of it. If you have instances that come in compressed `.tbz2` archives, you can unzip them by running
 ```bash

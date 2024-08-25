@@ -3,19 +3,19 @@
 #include <queue>
 #include <vector>
 
-#include "IBFS.h"
+#include "../StaticMinCut/IBFS.h"
 
-#include "../DataStructures/Container/ExternalKHeap.h"
-#include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowFunction.h"
-#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
+#include "../../DataStructures/Container/ExternalKHeap.h"
+#include "../../DataStructures/Graph/Graph.h"
+#include "../../DataStructures/MaxFlow/FlowFunction.h"
+#include "../../DataStructures/MaxFlow/MaxFlowInstance.h"
 
-#include "../Helpers/Assert.h"
-#include "../Helpers/FloatingPointMath.h"
-#include "../Helpers/Meta.h"
-#include "../Helpers/Timer.h"
-#include "../Helpers/Types.h"
-#include "../Helpers/Vector/Vector.h"
+#include "../../Helpers/Assert.h"
+#include "../../Helpers/FloatingPointMath.h"
+#include "../../Helpers/Meta.h"
+#include "../../Helpers/Timer.h"
+#include "../../Helpers/Types.h"
+#include "../../Helpers/Vector/Vector.h"
 
 template<Meta::Derived<FlowFunction> FLOW_FUNCTION, bool MEASUREMENTS = false>
 class ParametricIBFS {

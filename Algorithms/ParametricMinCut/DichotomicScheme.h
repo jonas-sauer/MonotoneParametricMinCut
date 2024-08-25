@@ -3,24 +3,24 @@
 #include <vector>
 #include <type_traits>
 
-#include "PushRelabel.h"
+#include "../StaticMinCut/PushRelabel.h"
 
-#include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/FlowFunction.h"
-#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
+#include "../../DataStructures/Graph/Graph.h"
+#include "../../DataStructures/MaxFlow/FlowFunction.h"
+#include "../../DataStructures/MaxFlow/MaxFlowInstance.h"
 
-#include "../Helpers/Assert.h"
-#include "../Helpers/Meta.h"
-#include "../Helpers/Types.h"
-#include "../Helpers/Vector/Vector.h"
+#include "../../Helpers/Assert.h"
+#include "../../Helpers/Meta.h"
+#include "../../Helpers/Types.h"
+#include "../../Helpers/Vector/Vector.h"
 
 template<Meta::Derived<FlowFunction> FLOW_FUNCTION, typename SEARCH_ALGORITHM, bool MEASUREMENTS = false>
-class ChordScheme {
+class DichotomicScheme {
 public:
     using FlowFunction = FLOW_FUNCTION;
     using FlowType = FlowFunction::FlowType;
     using ParametricInstance = ParametricMaxFlowInstance<FlowFunction>;
-    using ParametricWrapper = ChordSchemeMaxFlowWrapper<FlowFunction>;
+    using ParametricWrapper = DichotomicSchemeMaxFlowWrapper<FlowFunction>;
     using SearchAlgorithm = SEARCH_ALGORITHM;
 
     struct NoMeasurements {
@@ -89,7 +89,7 @@ public:
         }
     };
 
-    ChordScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
+    DichotomicScheme(const ParametricInstance& instance, const double epsilon) : instance(instance), epsilon(epsilon), breakpointOfVertex(instance.graph.numVertices(), INFTY) {}
 
     inline void run() noexcept {
         ParametricWrapper wrapper(instance);

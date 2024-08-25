@@ -3,13 +3,13 @@
 #include <queue>
 #include <vector>
 
-#include "../DataStructures/Graph/Graph.h"
-#include "../DataStructures/MaxFlow/MaxFlowInstance.h"
+#include "../../DataStructures/Graph/Graph.h"
+#include "../../DataStructures/MaxFlow/MaxFlowInstance.h"
 
-#include "../Helpers/Assert.h"
-#include "../Helpers/FloatingPointMath.h"
-#include "../Helpers/Types.h"
-#include "../Helpers/Vector/Vector.h"
+#include "../../Helpers/Assert.h"
+#include "../../Helpers/FloatingPointMath.h"
+#include "../../Helpers/Types.h"
+#include "../../Helpers/Vector/Vector.h"
 
 template<typename MAX_FLOW_INSTANCE>
 class IBFS {
@@ -71,7 +71,7 @@ private:
     };
 
     struct OrphanBuckets {
-        OrphanBuckets(const int n) :
+        explicit OrphanBuckets(const int n) :
             positionOfVertex_(n, -1), minBucket_(INFTY) {
         }
 
@@ -178,8 +178,8 @@ public:
         maxDistance{0, 0},
         currentEdge(n, noEdge),
         treeData(n),
-        orphans{n, n},
-        threePassOrphans{n, n},
+        orphans{OrphanBuckets(n), OrphanBuckets(n)},
+        threePassOrphans{OrphanBuckets(n), OrphanBuckets(n)},
         processedOrphans_(0),
         processedUniqueOrphans_(0),
         orphanTimestamp_(n, 0),

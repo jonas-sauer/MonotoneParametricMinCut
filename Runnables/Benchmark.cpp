@@ -6,18 +6,16 @@
 #include "../DataStructures/MaxFlow/MaxFlowInstance.h"
 #include "../Helpers/Console/CommandLineParser.h"
 
-#include "../Algorithms/IBFS.h"
-#include "../Algorithms/ParametricIBFS.h"
-#include "../Algorithms/PushRelabel.h"
-#include "../Algorithms/RestartableIBFS.h"
-#include "../Algorithms/ChordScheme.h"
-#include "../Algorithms/ChordSchemeNoContraction.h"
+#include "../Algorithms/StaticMinCut/IBFS.h"
+#include "../Algorithms/ParametricMinCut/ParametricIBFS.h"
+#include "../Algorithms/StaticMinCut/PushRelabel.h"
+#include "../Algorithms/ParametricMinCut/RestartableIBFS.h"
+#include "../Algorithms/ParametricMinCut/DichotomicScheme.h"
+#include "../Algorithms/ParametricMinCut/DichotomicSchemeNoContraction.h"
 
-using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
-using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
 using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
 using ParametricWrapper = RestartableMaxFlowWrapper<LinearFlowFunction>;
-using ChordSchemeWrapper = ChordSchemeMaxFlowWrapper<LinearFlowFunction>;
+using DichotomicSchemeWrapper = DichotomicSchemeMaxFlowWrapper<LinearFlowFunction>;
 
 inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
@@ -32,7 +30,7 @@ inline void runParametricIBFS(const ParametricInstance& instance, std::ofstream&
 template<typename ALGO>
 inline void runChordScheme(const ParametricInstance& instance, const double epsilon, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
-    ChordScheme<LinearFlowFunction, ALGO, true> algo(instance, epsilon);
+    DichotomicScheme<LinearFlowFunction, ALGO, true> algo(instance, epsilon);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime,contractionTime,flowTime,totalVertices\n";
@@ -43,7 +41,7 @@ inline void runChordScheme(const ParametricInstance& instance, const double epsi
 template<typename ALGO>
 inline void runChordSchemeNoContraction(const ParametricInstance& instance, const double epsilon, std::ofstream& out, const std::string& headerPrefix, const std::string& rowPrefix) noexcept {
     Timer timer;
-    ChordSchemeNoContraction<LinearFlowFunction, ALGO> algo(instance, epsilon);
+    DichotomicSchemeNoContraction<LinearFlowFunction, ALGO> algo(instance, epsilon);
     algo.run();
     const double runtime = timer.elapsedMicroseconds();
     out << headerPrefix + "breakpoints,runtime\n";
@@ -73,18 +71,18 @@ inline void runRestartableAlgorithm(const ParametricInstance& instance, std::ofs
 }
 
 inline void usage() noexcept {
-    std::cout << "Benchmarks a parametric max-flow algorithm. Arguments:" << std::endl;
-    std::cout << "\t-i:   Parametric max-flow instance in binary format." << std::endl;
+    std::cout << "Benchmarks a parametric min-cut algorithm. Arguments:" << std::endl;
+    std::cout << "\t-i:   Parametric min-cut instance in binary format." << std::endl;
     std::cout << "\t-o:   Output CSV file to which the statistics are written." << std::endl;
     std::cout << "\t-e:   Chord scheme only: Desired precision (default: 0)" << std::endl;
     std::cout << "\t-a:   Algorithm. Options are:" << std::endl;
-    std::cout << "\t\t    parametricIBFS" << std::endl;
-    std::cout << "\t\t    chordScheme[IBFS]" << std::endl;
-    std::cout << "\t\t    chordScheme[PushRelabel]" << std::endl;
-    std::cout << "\t\t    chordSchemeNoContraction[IBFS]" << std::endl;
-    std::cout << "\t\t    chordSchemeNoContraction[PushRelabel]" << std::endl;
+    std::cout << "\t\t    PBFS" << std::endl;
+    std::cout << "\t\t    DS[IBFS]" << std::endl;
+    std::cout << "\t\t    DS[PRF]" << std::endl;
+    std::cout << "\t\t    DSNoContraction[IBFS]" << std::endl;
+    std::cout << "\t\t    DSNoContraction[PRF]" << std::endl;
     std::cout << "\t\t    restartableIBFS" << std::endl;
-    std::cout << "\t\t    restartablePushRelabel" << std::endl;
+    std::cout << "\t\t    restartablePRF" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -111,19 +109,19 @@ int main(int argc, char **argv) {
     const std::string rowPrefix = algorithm + "," + String::split(inputFileName, '/').back() + "," + std::to_string(instance.graph.numVertices())
             + "," + std::to_string(instance.graph.numEdges()) + "," + epsilonPrecise + ",";
 
-    if (algorithm == "parametricIBFS") {
+    if (algorithm == "PBFS") {
         runParametricIBFS(instance, out, headerPrefix, rowPrefix);
-    } else if (algorithm == "chordScheme[IBFS]") {
-        runChordScheme<IBFS<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
-    } else if (algorithm == "chordScheme[PushRelabel]") {
-        runChordScheme<PushRelabel<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
-    } else if (algorithm == "chordSchemeNoContraction[IBFS]") {
-        runChordSchemeNoContraction<IBFS<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
-    } else if (algorithm == "chordSchemeNoContraction[PushRelabel]") {
-        runChordSchemeNoContraction<PushRelabel<ChordSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
+    } else if (algorithm == "DS[IBFS]") {
+        runChordScheme<IBFS<DichotomicSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
+    } else if (algorithm == "DS[PRF]") {
+        runChordScheme<PushRelabel<DichotomicSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
+    } else if (algorithm == "DSNoContraction[IBFS]") {
+        runChordSchemeNoContraction<IBFS<DichotomicSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
+    } else if (algorithm == "DSNoContraction[PRF]") {
+        runChordSchemeNoContraction<PushRelabel<DichotomicSchemeWrapper>>(instance, epsilon, out, headerPrefix, rowPrefix);
     } else if (algorithm == "restartableIBFS") {
         runRestartableAlgorithm<RestartableIBFS<ParametricWrapper, true>>(instance, out, headerPrefix, rowPrefix);
-    } else if (algorithm == "restartablePushRelabel") {
+    } else if (algorithm == "restartablePRF") {
         runRestartableAlgorithm<PushRelabel<ParametricWrapper, true>>(instance, out, headerPrefix, rowPrefix);
     }
     else {

@@ -5,12 +5,12 @@
 
 #include "../Helpers/Console/Progress.h"
 
-#include "../Algorithms/ExcessesIBFS.h"
-#include "../Algorithms/IBFS.h"
-#include "../Algorithms/ParametricIBFS.h"
-#include "../Algorithms/PushRelabel.h"
-#include "../Algorithms/RestartableIBFS.h"
-#include "../Algorithms/ChordScheme.h"
+#include "../Algorithms/StaticMinCut/ExcessesIBFS.h"
+#include "../Algorithms/StaticMinCut/IBFS.h"
+#include "../Algorithms/ParametricMinCut/ParametricIBFS.h"
+#include "../Algorithms/StaticMinCut/PushRelabel.h"
+#include "../Algorithms/ParametricMinCut/RestartableIBFS.h"
+#include "../Algorithms/ParametricMinCut/DichotomicScheme.h"
 
 using FlowEdgeList = ParametricFlowGraphEdgeList<LinearFlowFunction>;
 using FlowGraph = ParametricFlowGraph<LinearFlowFunction>;
@@ -18,7 +18,7 @@ using ParametricInstance = ParametricMaxFlowInstance<LinearFlowFunction>;
 using ParametricWrapper = RestartableMaxFlowWrapper<LinearFlowFunction>;
 
 
-TEST(parametricMaxFlow, smallTest) {
+TEST(parametricMinCut, smallTest) {
     ParametricInstance instance;
     instance.fromDimacs("../../Test/Instances/smallTest");
 
@@ -26,11 +26,6 @@ TEST(parametricMaxFlow, smallTest) {
     algo.run();
 
     const std::vector<double>& vertexBreakpoints = algo.getVertexBreakpoints();
-
-    for (uint i = 0; i < 5; i++) {
-        std::cout << "Vertex " << i + 1 << " has value " << vertexBreakpoints[i] << std::endl;
-    }
-
     EXPECT_DOUBLE_EQ(vertexBreakpoints[0], 0.0);
     EXPECT_DOUBLE_EQ(vertexBreakpoints[1], 0.5);
     EXPECT_DOUBLE_EQ(vertexBreakpoints[2], 0.3333333333333333);
@@ -185,10 +180,10 @@ inline void validateParametricIBFSFast(const ParametricInstance& instance, const
 }
 
 template<typename STATIC_ALGO>
-inline void validateChordScheme(const ParametricInstance& instance, const double precision, const double tolerance) {
-    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<LinearFlowFunction>>;
-    using Chord = ChordScheme<LinearFlowFunction, SearchAlgorithm>;
-    Chord algo(instance, precision);
+inline void validateDichotomicScheme(const ParametricInstance& instance, const double precision, const double tolerance) {
+    using SearchAlgorithm = IBFS<DichotomicSchemeMaxFlowWrapper<LinearFlowFunction>>;
+    using Dichotomic = DichotomicScheme<LinearFlowFunction, SearchAlgorithm>;
+    Dichotomic algo(instance, precision);
     algo.run();
     ParametricWrapper wrapper(instance);
 
@@ -206,59 +201,59 @@ inline void validateChordScheme(const ParametricInstance& instance, const double
 }
 
 inline void compareParametricAlgorithms(const ParametricInstance& instance, const double precision, const double tolerance) {
-    using SearchAlgorithm = IBFS<ChordSchemeMaxFlowWrapper<LinearFlowFunction>>;
-    using Chord = ChordScheme<LinearFlowFunction, SearchAlgorithm>;
-    Chord chordScheme(instance, precision);
-    chordScheme.run();
+    using SearchAlgorithm = IBFS<DichotomicSchemeMaxFlowWrapper<LinearFlowFunction>>;
+    using Dichotomic = DichotomicScheme<LinearFlowFunction, SearchAlgorithm>;
+    Dichotomic dichotomicScheme(instance, precision);
+    dichotomicScheme.run();
     ParametricIBFS<LinearFlowFunction> parametricIBFS(instance);
     parametricIBFS.run();
 
     const std::vector<double>& parametricBreakpoints = parametricIBFS.getBreakpoints();
-    const std::vector<double>& chordBreakpoints = chordScheme.getBreakpoints();
+    const std::vector<double>& dichotomicBreakpoints = dichotomicScheme.getBreakpoints();
     std::cout << "Parametric IBFS: " << parametricBreakpoints.size() << " breakpoints" << std::endl;
-    std::cout << "Chord scheme: " << chordBreakpoints.size() << " breakpoints" << std::endl;
+    std::cout << "Dichotomic scheme: " << dichotomicBreakpoints.size() << " breakpoints" << std::endl;
 
-    std::cout << "Check validity of Parametric IBFS" << std::endl;
-    Progress progress(chordBreakpoints.size());
-    for (const double breakpoint : chordBreakpoints) {
-        EXPECT_LE(parametricIBFS.getFlowValue(breakpoint), chordScheme.getFlowValue(breakpoint) + tolerance);
+    std::cout << "Check validity of parametric IBFS" << std::endl;
+    Progress progress(dichotomicBreakpoints.size());
+    for (const double breakpoint : dichotomicBreakpoints) {
+        EXPECT_LE(parametricIBFS.getFlowValue(breakpoint), dichotomicScheme.getFlowValue(breakpoint) + tolerance);
         progress++;
     }
 
-    std::cout << "Check validity of chord scheme" << std::endl;
+    std::cout << "Check validity of dichotomic scheme" << std::endl;
     progress.init(parametricBreakpoints.size());
     size_t i = 0;
     for (const double breakpoint : parametricBreakpoints) {
-        while (i < chordBreakpoints.size() && chordBreakpoints[i] < breakpoint) i++;
-        double chordValue = INFTY;
-        if (i < chordBreakpoints.size()) {
-            chordValue = std::min(chordValue, chordScheme.getFlowValue(chordBreakpoints[i]));
+        while (i < dichotomicBreakpoints.size() && dichotomicBreakpoints[i] < breakpoint) i++;
+        double dichotomicValue = INFTY;
+        if (i < dichotomicBreakpoints.size()) {
+            dichotomicValue = std::min(dichotomicValue, dichotomicScheme.getFlowValue(dichotomicBreakpoints[i]));
         }
         if (i >= 1) {
-            chordValue = std::min(chordValue, chordScheme.getFlowValue(chordBreakpoints[i-1]));
+            dichotomicValue = std::min(dichotomicValue, dichotomicScheme.getFlowValue(dichotomicBreakpoints[i - 1]));
         }
-        const double ibfsValue = parametricIBFS.getFlowValue(chordBreakpoints[i]);
-        EXPECT_LE(chordValue, (1 + precision) * ibfsValue);
+        const double ibfsValue = parametricIBFS.getFlowValue(dichotomicBreakpoints[i]);
+        EXPECT_LE(dichotomicValue, (1 + precision) * ibfsValue);
         progress++;
     }
 }
 
-TEST(parametricMaxFlow, randomStatic) {
+TEST(parametricMinCut, randomStatic) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateStaticAlgorithms(instance, 100);
 }
 
-TEST(parametricMaxFlow, randomRestartable) {
+TEST(parametricMinCut, randomRestartable) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateRestartableAlgorithms(instance, 100);
 }
 
-TEST(parametricMaxFlow, randomParametricIBFSPushRelabel) {
+TEST(parametricMinCut, randomParametricIBFSPushRelabel) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-9);
 }
 
-TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
+TEST(parametricMinCut, randomParametricIBFSRestartableIBFS) {
     const ParametricInstance instance = createRandomParametricInstance(1000);
     validateParametricIBFS<IBFS<ParametricWrapper>, RestartableIBFS<ParametricWrapper>>(instance, 1e-9);
 }
@@ -266,32 +261,32 @@ TEST(parametricMaxFlow, randomParametricIBFSRestartableIBFS) {
 const std::string ahremPath = "../../Data/Instances/Aggregation/small/ahrem";
 const std::string bonnPath = "../../Data/Instances/Aggregation/large/bonn";
 
-TEST(parametricMaxFlow, ahremParametricIBFS) {
+TEST(parametricMinCut, ahremParametricIBFS) {
     const ParametricInstance instance(ahremPath);
     validateParametricIBFS<PushRelabel<ParametricWrapper>, PushRelabel<ParametricWrapper>>(instance, 1e-4);
 }
 
-TEST(parametricMaxFlow, ahremChord) {
+TEST(parametricMinCut, ahremDichotomic) {
     const ParametricInstance instance(ahremPath);
-    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-5);
+    validateDichotomicScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-5);
 }
 
-TEST(parametricMaxFlow, ahremCompare) {
+TEST(parametricMinCut, ahremCompare) {
     const ParametricInstance instance(ahremPath);
     compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }
 
-TEST(parametricMaxFlow, bonnParametricIBFS) {
+TEST(parametricMinCut, bonnParametricIBFS) {
     const ParametricInstance instance(bonnPath);
     validateParametricIBFSFast<PushRelabel<ParametricWrapper>>(instance, 1e-3);
 }
 
-TEST(parametricMaxFlow, bonnChord) {
+TEST(parametricMinCut, bonnDichotomic) {
     const ParametricInstance instance(bonnPath);
-    validateChordScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-4);
+    validateDichotomicScheme<PushRelabel<ParametricWrapper>>(instance, 1e-16, 1e-4);
 }
 
-TEST(parametricMaxFlow, bonnCompare) {
+TEST(parametricMinCut, bonnCompare) {
     const ParametricInstance instance(bonnPath);
     compareParametricAlgorithms(instance, 1e-16, 1e-5);
 }
