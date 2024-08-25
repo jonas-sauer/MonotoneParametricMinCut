@@ -75,7 +75,8 @@ namespace IO {
 
     //################################################# Serialization #################################################################//
     inline const std::string& ensureDirectoryExists(const std::string& fileName) noexcept {
-        std::filesystem::create_directories(fileName);
+        const std::filesystem::path path(fileName);
+        std::filesystem::create_directories(path.parent_path());
         return fileName;
     }
 
