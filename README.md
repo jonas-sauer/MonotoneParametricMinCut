@@ -11,7 +11,7 @@ To compile all executables, run
 ```bash
 mkdir -p cmake-build-release
 cd cmake-build-release
-cmake .. && cmake --build . --config Release
+cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build . --config Release
 ```
 
 Use ```InstanceLoader``` to load max-flow instances and ```Benchmark``` to run the algorithms. Additional experiments to evaluate the precision of the computed solutions are contained in ```PrecisionExperiment```.

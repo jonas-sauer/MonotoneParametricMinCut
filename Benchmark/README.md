@@ -12,7 +12,7 @@ Before you run the loading scripts, you must compile `Runnables/InstanceLoader.c
 cd ..
 mkdir -p cmake-build-release
 cd cmake-build-release
-cmake .. && cmake --build . --target InstanceLoader --config Release
+cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build . --target InstanceLoader --config Release
 ```
 
 To download and prepare the instances used in our experiments, run
