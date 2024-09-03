@@ -5,6 +5,14 @@ pip3 install simexpal
 pip3 install pandas
 ```
 
+# Quick Start
+To simply run the entire experimental pipeline in one go, execute
+```bash
+./run.sh
+```
+
+You can then find CSV files containing the aggregated results in the `results/` folder. For detailed steps, see below.
+
 # Preparing the Instances
 Before you run the loading scripts, you must compile `Runnables/InstanceLoader.cpp`. Run
 
@@ -20,7 +28,7 @@ To download and prepare the instances used in our experiments, run
   python3 downloadAggregationInstances.py
   python3 loadParametricInstances.py
   python3 downloadVisionInstances.py
-  python3 unzip.py
+  python3 unzipInstances.py
   python3 loadStaticInstances.py
   ```
 
@@ -31,7 +39,7 @@ This framework supports two types of instances:
 
 All inputs must be placed inside the `Data/RawInstances/` directory or a subdirectory of it. If you have instances that come in compressed `.tbz2` archives, you can unzip them by running
 ```bash
-python3 unzip.py
+python3 unzipInstances.py
 ```
 
 To prepare parametric instances, run
