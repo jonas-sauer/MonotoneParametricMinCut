@@ -1,4 +1,5 @@
 import requests
+import os
 
 url_path = "https://vision.cs.uwaterloo.ca/files/"
 local_path = "../Data/RawInstances/Vision/"
@@ -12,6 +13,8 @@ def download(file):
 		f.write(resp.content)
 
 if __name__ == "__main__":
+	if not os.path.exists(local_path):
+		os.makedirs(local_path)
 	for prefix in prefixes:
 		for config in configurations:
 			download(prefix + '.' + config + '.tbz2')

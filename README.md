@@ -1,5 +1,6 @@
 # MonotoneParametricMinCut
-This repository contains algorithms for the parametric minimum s-t-cut problem with source-sink-monotone edge capacities. It is developed by the [Computational Analytics](https://ca.cs.uni-bonn.de) group at the University of Bonn. Auxiliary code, including the graph data structures, is taken from the [ULTRA](https://github.com/kit-algo/ULTRA) framework developed by the KIT Algorithmics group.
+This repository contains algorithms for the parametric minimum s-t-cut problem with source-sink-monotone edge capacities. It is developed by the [Computational Analytics](https://ca.cs.uni-bonn.de) group at the University of Bonn. Auxiliary code, including the graph data structures, is taken from the [ULTRA](https://github.com/kit-algo/ULTRA) framework developed by the KIT Algorithmics group. This repository contains all experimental code for the following publication:
+* **A Simpler Approach for Monotone Parametric Minimum Cut: Finding the Breakpoints in Order.** Arne Beines, Michael Kaibel, Philip Mayer, Petra Mutzel, Jonas Sauer. To be published in: Proceedings of the 27th Workshop on Algorithm Engineering and Experiments (ALENEX'25), SIAM, 2025.
 
 ## What is this for?
 The (static) minimum s-t-cut problem asks for a cut with minimal capacity between two vertices s and t in a flow network. This is equivalent to finding a maximum s-t-flow. In the parametric version of the problem, the edge capacities are functions of a single parameter $\lambda$. The objective is to find a minimum s-t-cut for every value of $\lambda$ within some interval $[\lambda_\text{min}, \lambda_\text{max}]$.
@@ -35,7 +36,10 @@ cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build . --config Release
 ```
 
 ## Usage
-The algorithms can be run with the executable ```Benchmark```. It expects the input networks to be in a special binary format. To convert max-flow instances in [DIMACS format](https://lpsolve.sourceforge.net/5.5/DIMACS_maxf.htm) to this binary format, use the executable ```InstanceLoader```. Launch the executables without arguments to get specific usage instructions.
+The algorithms can be run with the executable ```Benchmark```, which expects the input networks to be in a special binary format. Use the executable ```InstanceLoader``` to convert instances to this format. Two input types are supported:
+* Static max-flow instances in [DIMACS format](https://lpsolve.sourceforge.net/5.5/DIMACS_maxf.htm). The executable also offers a command for converting these into parametric instances.
+* Parametric max-flow instances in a custom, DIMACS-like format. Example instances and a documentation of the format can be found [here](https://zenodo.org/records/13642985).
+For more detailed usage instructions, launch either executable without arguments.
 
 ## Benchmarking
 A guide for running the benchmark experiments can be found in `Benchmark/README.md`.
