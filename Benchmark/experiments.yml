@@ -115,7 +115,7 @@ instances:
 
 builds:
   - name: MonotoneParametricMinCut
-    git: git@github.com:jonas-sauer/MonotoneParametricMinCut.git
+    git: https://github.com/jonas-sauer/MonotoneParametricMinCut.git
     recursive-clone: true
     configure:
       - args:
