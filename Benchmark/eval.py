@@ -151,11 +151,9 @@ def createEpsilonTable(frames):
 	tbl['exponent'] = np.abs(np.log10(tbl['exponent'])).replace(np.inf, 1000).astype(int)
 	np.seterr(divide = 'warn')
 	tbl = tbl.sort_values(by=['exponent'])
-	print(tbl)
 
 	pivot = tbl.pivot_table(index=['exponent'], columns=['instance'], values=['breakpoints', 'slowdown'])
 	pivot['breakpoints'] = pivot['breakpoints']/pivot['breakpoints'].iloc[-1]
-	print(pivot)
 	flatten(pivot)
 	pivot.to_csv("results/epsilonTable.csv", index=True, sep='\t')
 
