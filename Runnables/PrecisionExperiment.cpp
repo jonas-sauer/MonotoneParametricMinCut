@@ -17,12 +17,12 @@ inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, cons
     Progress progress(groundTruth.size());
     double cumulativeError = 0;
     size_t numErrors = 0;
-    for (const double breakpoint : groundTruth) {
-        const double actualFlow = truthAlgo.getFlowValue(breakpoint);
-        const double resultFlow = compAlgo.getFlowValue(breakpoint);
+    const std::vector<double> actualFlows = truthAlgo.getFlowValuesAtPoints(groundTruth);
+    const std::vector<double> resultFlows = compAlgo.getFlowValuesAtPoints(groundTruth);
+    for (size_t i = 0; i < groundTruth.size(); i++) {
         progress++;
-        if (resultFlow <= actualFlow + tolerance) continue;
-        cumulativeError += (resultFlow - actualFlow)/actualFlow;
+        if (resultFlows[i] <= actualFlows[i] + tolerance) continue;
+        cumulativeError += (resultFlows[i] - actualFlows[i])/actualFlows[i];
         numErrors++;
     }
     progress.finished();

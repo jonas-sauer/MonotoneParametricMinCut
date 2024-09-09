@@ -346,15 +346,15 @@ public:
         measurements.print();
     }
 
-    inline const std::vector<double>& getBreakpoints() const noexcept {
+    [[nodiscard]] inline const std::vector<double>& getBreakpoints() const noexcept {
         return breakpoints_;
     };
 
-    inline const std::vector<double>& getVertexBreakpoints() const noexcept {
+    [[nodiscard]] inline const std::vector<double>& getVertexBreakpoints() const noexcept {
         return breakpointOfVertex_;
     }
 
-    inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
+    [[nodiscard]] inline std::vector<Vertex> getSinkComponent(const double alpha) const noexcept {
         std::vector<Vertex> sinkComponent;
         for (const Vertex vertex : graph_.vertices()) {
             if (breakpointOfVertex_[vertex] <= alpha) continue;
@@ -363,7 +363,7 @@ public:
         return sinkComponent;
     }
 
-    inline double getFlowValue(const double alpha) const noexcept {
+    [[nodiscard]] inline double getFlowValue(const double alpha) const noexcept {
         double flow = 0;
         for (const Vertex from : graph_.vertices()) {
             if (breakpointOfVertex_[from] > alpha) continue;
@@ -376,7 +376,48 @@ public:
         return flow;
     }
 
-    inline std::string getMeasurementsCSV() const noexcept {
+    struct EdgeCutData {
+        Edge edge;
+        double minCutAlpha;
+        double maxCutAlpha;
+
+        inline bool operator<(const EdgeCutData& other) const noexcept {
+            return minCutAlpha < other.minCutAlpha;
+        }
+    };
+
+    [[nodiscard]] inline std::vector<FlowFunction> getFlowFunctionsAtBreakpoints() const noexcept {
+        std::vector<EdgeCutData> edgeData;
+        for (const auto [edge, from] : graph_.edgesWithFromVertex()) {
+            const Vertex to = graph_.get(ToVertex, edge);
+            edgeData.emplace_back(EdgeCutData{edge, breakpointOfVertex_[from], breakpointOfVertex_[to]});
+        }
+        std::sort(edgeData.begin(), edgeData.end());
+
+        size_t i = 0;
+        std::vector<FlowFunction> result(breakpoints_.size(), FlowFunction(0));
+        for (const EdgeCutData& d : edgeData) {
+            while (i < breakpoints_.size() && breakpoints_[i] < d.minCutAlpha) i++;
+            const FlowFunction capacity = graph_.get(Capacity, d.edge);
+            for (size_t j = i; j < breakpoints_.size() && breakpoints_[j] < d.maxCutAlpha; j++) {
+                result[j] += capacity;
+            }
+        }
+        return result;
+    }
+
+    [[nodiscard]] inline std::vector<double> getFlowValuesAtPoints(const std::vector<double>& points) const noexcept {
+        const std::vector<FlowFunction> flowFunctions = getFlowFunctionsAtBreakpoints();
+        size_t i = 0;
+        std::vector<double> result;
+        for (const double p : points) {
+            while (i < breakpoints_.size() - 1 && breakpoints_[i+1] <= p) i++;
+            result.emplace_back(flowFunctions[i].eval(p));
+        }
+        return result;
+    }
+
+    [[nodiscard]] inline std::string getMeasurementsCSV() const noexcept {
         return measurements.getCSV();
     }
 
