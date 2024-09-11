@@ -22,6 +22,7 @@ inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, cons
     const std::vector<double> resultFlows = compAlgo.getFlowValuesAtPoints(groundTruth);
     for (size_t i = 0; i < groundTruth.size(); i++) {
         progress++;
+        if (actualFlows[i] >= INFTY) continue;
         maxError = std::max(maxError, resultFlows[i] - actualFlows[i]);
         if (resultFlows[i] <= actualFlows[i] + tolerance) continue;
         cumulativeError += (resultFlows[i] - actualFlows[i])/actualFlows[i];
