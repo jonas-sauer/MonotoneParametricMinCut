@@ -2,7 +2,7 @@
 Our benchmarking toolchain uses simexpal and pandas. If necessary, install them with
 ```bash
 pip3 install "simexpal>=1.1"
-pip3 install pandase
+pip3 install pandas
 ```
 
 # Quick Start
