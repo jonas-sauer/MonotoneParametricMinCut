@@ -263,4 +263,5 @@ matrix:
       axes: [ epsilon, DSAlgo ]
       variants: [ DS-IBFS ]
     - experiments: [ precision ]
+      instsets: [ 'small', 'medium', 'large', 'group', 'vision' ]
       axes: [ ]

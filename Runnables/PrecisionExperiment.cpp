@@ -15,12 +15,14 @@ template<typename TRUTH_ALGO, typename COMP_ALGO>
 inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, const double tolerance, std::ofstream& out) noexcept {
     const std::vector<double>& groundTruth = truthAlgo.getBreakpoints();
     Progress progress(groundTruth.size());
-    double cumulativeError = 0;
     size_t numErrors = 0;
+    double cumulativeError = 0;
+    double maxError = 0;
     const std::vector<double> actualFlows = truthAlgo.getFlowValuesAtPoints(groundTruth);
     const std::vector<double> resultFlows = compAlgo.getFlowValuesAtPoints(groundTruth);
     for (size_t i = 0; i < groundTruth.size(); i++) {
         progress++;
+        maxError = std::max(maxError, resultFlows[i] - actualFlows[i]);
         if (resultFlows[i] <= actualFlows[i] + tolerance) continue;
         cumulativeError += (resultFlows[i] - actualFlows[i])/actualFlows[i];
         numErrors++;
@@ -28,7 +30,7 @@ inline void compare(const TRUTH_ALGO& truthAlgo, const COMP_ALGO& compAlgo, cons
     progress.finished();
     const double avgError = numErrors == 0 ? 0 : cumulativeError/static_cast<double>(numErrors);
     const double accuracy = cumulativeError/groundTruth.size();
-    out << std::to_string(groundTruth.size()) << "," << std::to_string(numErrors) << "," << std::to_string(cumulativeError)  << "," << std::to_string(avgError) << "," << std::to_string(accuracy) << "\n";
+    out << std::to_string(groundTruth.size()) << "," << std::to_string(numErrors) << "," << std::to_string(maxError) << "," << std::to_string(cumulativeError)  << "," << std::to_string(avgError) << "," << std::to_string(accuracy) << "\n";
 }
 
 inline void runPrecisionExperiment(const std::string& instanceFile, std::ofstream& out, const double tolerance) noexcept {
@@ -47,7 +49,7 @@ inline void runPrecisionExperiment(const std::string& instanceFile, std::ofstrea
     toleranceHelper << tolerance;
     const std::string tolerancePrecise = toleranceHelper.str();
 
-    out << "instance,tolerance,algorithm,groundTruthBreakpoints,errors,cumulativeError,avgError,accuracy\n";
+    out << "instance,tolerance,algorithm,groundTruthBreakpoints,errors,maxError,cumulativeError,avgError,accuracy\n";
     std::cout << "Evaluate dichotomic scheme:" << std::endl;
     const std::string instanceName = String::split(instanceFile, '/').back();
     out << instanceName << "," << tolerancePrecise << ",DS,";
