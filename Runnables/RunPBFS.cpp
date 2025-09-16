@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     instance.fromDimacs(inputFileName, infinity);
     Graph::printInfo(instance.graph);
     instance.graph.printAnalysis();
-    std::ofstream out(outputFileName, std::ios::app);
+    std::ofstream out(outputFileName);
 
     ParametricIBFS<LinearFlowFunction, true> algo(instance);
     algo.run();
