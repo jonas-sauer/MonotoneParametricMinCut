@@ -12,6 +12,8 @@ add_executable(Benchmark Runnables/Benchmark.cpp)
 add_executable(InstanceLoader Runnables/InstanceLoader.cpp)
 add_executable(PrecisionExperiment Runnables/PrecisionExperiment.cpp)
 add_executable(RunPBFS Runnables/RunPBFS.cpp)
+add_library(MonotoneParametricMinCutLib INTERFACE)
+
 
 # tests
 option(TESTS "Build the tests" ON)

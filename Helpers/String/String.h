@@ -14,17 +14,6 @@
 #include "../Assert.h"
 #include "../Ranges/ReverseRange.h"
 
-namespace std {
-
-    std::string to_string(bool b) {
-        if (b) {
-            return "true";
-        } else {
-            return "false";
-        }
-    }
-
-}
 
 namespace String {
 
@@ -387,7 +376,7 @@ namespace String {
         return prettyDouble(b) + "TB";
     }
 
-    std::string trim(const std::string& s) {
+    inline std::string trim(const std::string& s) {
         std::stringstream ss;
         int end = s.size() - 1;
         while (end >= 0 && isWhiteSpace(s[end])) end--;
@@ -407,7 +396,7 @@ namespace String {
         return ss.str();
     }
 
-    std::string replaceAll(const std::string& s, const char c, const std::string& replacement) {
+    inline std::string replaceAll(const std::string& s, const char c, const std::string& replacement) {
         std::stringstream ss;
         for (size_t i = 0; i < s.size(); i++) {
             char cs = s[i];
@@ -420,7 +409,7 @@ namespace String {
         return ss.str();
     }
 
-    std::string replaceAll(const std::string& s, const std::string& pattern, const std::string& replacement) {
+    inline std::string replaceAll(const std::string& s, const std::string& pattern, const std::string& replacement) {
         if (pattern.size() > s.size()) return s;
         std::stringstream ss;
         size_t i = 0;
