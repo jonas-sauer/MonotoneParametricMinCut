@@ -114,6 +114,7 @@ public:
                     const Vertex from(String::lexicalCast<size_t>(tokens[1]) - 1);
                     const Vertex to(String::lexicalCast<size_t>(tokens[2]) - 1);
                     const FlowType capacity = String::lexicalCast<FlowType>(tokens[3]);
+                    if (from == to) continue;
                     if (from == source) hasEdgeFromSource[to] = true;
                     else if (from == sink) hasEdgeFromSink[to] = true;
                     if (!temp.isVertex(from)) {
@@ -321,6 +322,7 @@ public:
                     capacityA = std::min(capacityA, infinity);
                     FlowType capacityB = String::lexicalCast<FlowType>(tokens[4]);
                     if (capacityB >= infinity) capacityB = INFTY;
+                    if (from == to) continue;
                     if (from == source) hasEdgeFromSource[to] = true;
                     else if (from == sink) hasEdgeFromSink[to] = true;
                     if (!temp.isVertex(from)) {
