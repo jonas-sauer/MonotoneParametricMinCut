@@ -8,9 +8,9 @@ struct Sep {
     Sep(const std::string& sep = ", ") : sep(sep) {}
     std::string sep;
 };
-Sep newline("\n\r");
-Sep clear("");
-Sep sep(", ");
+inline Sep newline("\n\r");
+inline Sep clear("");
+inline Sep sep(", ");
 
 class Enumeration {
 

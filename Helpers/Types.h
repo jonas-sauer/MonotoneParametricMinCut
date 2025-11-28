@@ -22,4 +22,4 @@ struct NO_OPERATION {
     constexpr inline bool operator() (ARGS...) const noexcept {return false;}
 };
 
-NO_OPERATION NoOperation;
+inline NO_OPERATION NoOperation;
